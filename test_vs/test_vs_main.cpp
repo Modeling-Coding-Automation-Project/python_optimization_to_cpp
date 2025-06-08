@@ -149,12 +149,24 @@ void test_qp_active_set_solver() {
     qp_solver_2.set_tol(static_cast<T>(1.0e-8));
     qp_solver_2.set_kkt_inv_solver_division_min(static_cast<T>(1.0e-5));
 
+    /* 空代入チェック */
+    auto E_empty = PythonNumpy::make_SparseMatrixEmpty<
+        T, NUMBER_OF_VARIABLES_2, NUMBER_OF_VARIABLES_2>();
+    auto L_empty = PythonNumpy::make_SparseMatrixEmpty<T, NUMBER_OF_VARIABLES_2, 1>();
+
     auto E_2 = PythonNumpy::make_DiagMatrixIdentity<T, NUMBER_OF_VARIABLES_2>();
     auto L_2 = PythonNumpy::make_DenseMatrix<NUMBER_OF_VARIABLES_2, 1>(
         static_cast<T>(2),
         static_cast<T>(3),
         static_cast<T>(1)
     );
+
+    qp_solver_2.update_E(E_2);
+    qp_solver_2.update_L(L_2);
+
+    qp_solver_2.update_E(E_empty);
+    qp_solver_2.update_L(L_empty);
+
 
     auto M_2 = PythonNumpy::make_DenseMatrix<NUMBER_OF_CONSTRAINTS_2, NUMBER_OF_VARIABLES_2>(
         static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),

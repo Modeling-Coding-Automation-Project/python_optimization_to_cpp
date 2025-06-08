@@ -351,6 +351,13 @@ protected:
   /* Type */
   using _T = T;
 
+  using _E_Empty_Type =
+      PythonNumpy::SparseMatrixEmpty_Type<T, Number_Of_Variables,
+                                          Number_Of_Variables>;
+
+  using _L_Empty_Type =
+      PythonNumpy::SparseMatrixEmpty_Type<T, Number_Of_Variables, 1>;
+
 public:
   /* Constant */
   static constexpr std::size_t NUMBER_OF_VARIABLES = Number_Of_Variables;
@@ -428,12 +435,36 @@ public:
 
 public:
   /* Function */
-  template <typename E_Type> inline void update_E(E_Type E) {
+  template <typename E_Type>
+  inline
+      typename std::enable_if<!std::is_same<E_Type, _E_Empty_Type>::value>::type
+      update_E(const E_Type &E) {
     PythonNumpy::substitute_part_matrix<0, 0>(this->_KKT, E);
   }
 
-  template <typename L_Type> inline void update_L(L_Type L) {
+  template <typename E_Type>
+  inline
+      typename std::enable_if<std::is_same<E_Type, _E_Empty_Type>::value>::type
+      update_E(const E_Type &E) {
+
+    // Do Nothing.
+    static_cast<void>(E);
+  }
+
+  template <typename L_Type>
+  inline
+      typename std::enable_if<!std::is_same<L_Type, _L_Empty_Type>::value>::type
+      update_L(const L_Type &L) {
     PythonNumpy::substitute_part_matrix<0, 0>(this->_RHS, L);
+  }
+
+  template <typename L_Type>
+  inline
+      typename std::enable_if<std::is_same<L_Type, _L_Empty_Type>::value>::type
+      update_L(const L_Type &L) {
+
+    // Do Nothing.
+    static_cast<void>(L);
   }
 
   template <typename E_Type, typename L_Type>
