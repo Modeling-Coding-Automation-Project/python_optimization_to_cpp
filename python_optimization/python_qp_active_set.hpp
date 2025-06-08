@@ -639,8 +639,8 @@ protected:
 
   inline auto _solve_KKT_inv(const std::size_t &k) -> Sol_Type {
 
-    return this->_kkt_inv_solver.solve(this->_KKT, this->_RHS,
-                                       NUMBER_OF_VARIABLES + k);
+    return this->_kkt_inv_solver.cold_solve(this->_KKT, this->_RHS,
+                                            NUMBER_OF_VARIABLES + k);
   }
 
 public:
