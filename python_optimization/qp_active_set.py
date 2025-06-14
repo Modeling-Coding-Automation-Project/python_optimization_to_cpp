@@ -1,3 +1,11 @@
+"""
+File: qp_active_set.py
+
+This module implements a Quadratic Programming (QP) solver using the Active Set method. 
+It provides classes to manage the set of active constraints and to solve QP problems of the form:
+    minimize (1/2) X^T E X - X^T L  subject to  M X <= gamma,
+where E, L, M, and gamma are numpy arrays representing the problem parameters.
+"""
 import numpy as np
 
 MAX_ITERATION_DEFAULT = 100
@@ -28,12 +36,30 @@ class ActiveSet:
         self._number_of_active = 0
 
     def push_active(self, index: int):
+        """
+        Marks the constraint at the specified index as active and adds it to the list of active constraints.
+
+        Args:
+            index (int): The index of the constraint to activate.
+
+        Notes:
+            - If the constraint at the given index is already active, this method does nothing.
+            - Updates the internal flags and indices to reflect the activation.
+        """
         if not self._active_flags[index]:
             self._active_flags[index] = True
             self._active_indices[self._number_of_active] = index
             self._number_of_active += 1
 
     def push_inactive(self, index: int):
+        """
+        Marks the constraint at the specified index as inactive and removes it from the list of active constraints.
+        Args:
+            index (int): The index of the constraint to deactivate.
+        Notes:
+            - If the constraint at the given index is not active, this method does nothing.
+            - Updates the internal flags and indices to reflect the deactivation.
+        """
         if self._active_flags[index]:
             self._active_flags[index] = False
             found = False
@@ -47,17 +73,43 @@ class ActiveSet:
                 self._number_of_active -= 1
 
     def get_active(self, index: int):
+        """
+        Returns the index of the active constraint at the specified position in the active set.
+        Args:
+            index (int): The position in the active set to retrieve the index from.
+        Returns:
+            int: The index of the active constraint at the specified position.
+        Raises:
+            IndexError: If the index is out of bounds for the active set.
+        """
         if index < 0 or index >= self._number_of_active:
             raise IndexError("Index out of bounds for active set.")
         return self._active_indices[index]
 
     def get_active_indices(self):
+        """
+        Returns the indices of all currently active constraints.
+        Returns:
+            np.ndarray: An array of indices of active constraints.
+        """
         return self._active_indices
 
     def get_number_of_active(self):
+        """
+        Returns the number of currently active constraints.
+        Returns:
+            int: The number of active constraints.
+        """
         return self._number_of_active
 
     def is_active(self, index: int):
+        """
+        Checks if the constraint at the specified index is currently active.
+        Args:
+            index (int): The index of the constraint to check.
+        Returns:
+            bool: True if the constraint is active, False otherwise.
+        """
         return self._active_flags[index]
 
 
@@ -96,17 +148,38 @@ class QP_ActiveSetSolver:
         self.rhs = np.zeros((number_of_variables + number_of_constraints, 1))
 
     def update_E(self, E: np.ndarray):
+        """
+        Update the KKT matrix with the provided E matrix.
+        Args:
+            E (np.ndarray): The matrix E to update the KKT matrix with.
+        Raises:
+            ValueError: If E is not a square matrix of size (n, n) where n is the number of variables.
+        """
         m = self.number_of_variables
 
         self.KKT[:m, :m] = E
 
     def update_L(self, L: np.ndarray):
+        """
+        Update the right-hand side vector with the provided L vector.
+        Args:
+            L (np.ndarray): The vector L to update the right-hand side with.
+        Raises:
+            ValueError: If L is not a column vector of size (n, 1) where n is the number of variables.
+        """
         m = self.number_of_variables
 
         self.rhs[:m, 0] = L.flatten()
 
     def _set_KKT(self, E: np.ndarray = None, M: np.ndarray = None):
-
+        """
+        Set the KKT matrix based on the provided E and M matrices.
+        Args:
+            E (np.ndarray): The matrix E to set in the KKT matrix.
+            M (np.ndarray): The matrix M to set in the KKT matrix.
+        Raises:
+            ValueError: If E is not a square matrix of size (n, n) or M is not a matrix of size (m, n).
+        """
         if E is None and M is None:
             return
 
@@ -121,7 +194,14 @@ class QP_ActiveSetSolver:
             self.KKT[m + i, :m] = M[index, :]
 
     def _set_rhs(self, L: np.ndarray = None, gamma: np.ndarray = None):
-
+        """
+        Set the right-hand side vector based on the provided L and gamma vectors.
+        Args:
+            L (np.ndarray): The vector L to set in the right-hand side.
+            gamma (np.ndarray): The vector gamma to set in the right-hand side.
+        Raises:
+            ValueError: If L is not a column vector of size (n, 1) or gamma is not a column vector of size (m, 1).
+        """
         if L is None and gamma is None:
             return
 
@@ -137,6 +217,15 @@ class QP_ActiveSetSolver:
             self.rhs[m + i, 0] = gamma[index, 0]
 
     def _solve_KKT_inv(self, k) -> np.ndarray:
+        """
+        Solve the KKT system of equations using the inverse method.
+        Args:
+            k (int): The number of active constraints.
+        Returns:
+            np.ndarray: The solution vector containing the optimal X and lambda values.
+        Raises:
+            np.linalg.LinAlgError: If the KKT matrix is singular or not invertible.
+        """
         m = self.number_of_variables
 
         KKT = self.KKT[:(m + k), :(m + k)]
@@ -149,7 +238,16 @@ class QP_ActiveSetSolver:
     def solve_no_constrained_X(self,
                                E: np.ndarray = None,
                                L: np.ndarray = None):
-
+        """
+        Solve the unconstrained QP problem (E X = L) using the provided E and L matrices.
+        Args:
+            E (np.ndarray): The matrix E for the QP problem.
+            L (np.ndarray): The vector L for the QP problem.
+        Returns:
+            np.ndarray: The solution vector X for the unconstrained problem.
+        Raises:
+            np.linalg.LinAlgError: If the E matrix is singular or not invertible.
+        """
         m = self.number_of_variables
 
         if E is None and L is None:
@@ -169,7 +267,16 @@ class QP_ActiveSetSolver:
 
     def initialize_X(self, E: np.ndarray, L: np.ndarray,
                      M: np.ndarray, gamma: np.ndarray):
-
+        """
+        Initialize the solution vector X based on the provided E, L, M, and gamma matrices.
+        Args:
+            E (np.ndarray): The matrix E for the QP problem.
+            L (np.ndarray): The vector L for the QP problem.
+            M (np.ndarray): The matrix M for the constraints.
+            gamma (np.ndarray): The vector gamma for the constraints.
+        Raises:
+            ValueError: If E, L, M, or gamma are not of the expected shapes.
+        """
         m = self.number_of_variables
 
         if 0 == self.active_set.get_number_of_active():
@@ -191,6 +298,19 @@ class QP_ActiveSetSolver:
     def solve(self,
               E: np.ndarray = None, L: np.ndarray = None,
               M: np.ndarray = None, gamma: np.ndarray = None) -> np.ndarray:
+        """
+        Solve the QP problem using the Active Set method.
+        Args:
+            E (np.ndarray): The matrix E for the QP problem.
+            L (np.ndarray): The vector L for the QP problem.
+            M (np.ndarray): The matrix M for the constraints.
+            gamma (np.ndarray): The vector gamma for the constraints.
+        Returns:
+            np.ndarray: The optimal solution vector X for the QP problem.
+        Raises:
+            ValueError: If E, L, M, or gamma are not of the expected shapes.
+            np.linalg.LinAlgError: If the KKT matrix is singular or not invertible.
+        """
         # check compatibility
         if E is not None:
             if E.shape[0] != self.number_of_variables or \
