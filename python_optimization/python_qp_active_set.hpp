@@ -1,3 +1,13 @@
+/**
+ * @file python_qp_active_set.hpp
+ * @brief Quadratic Programming (QP) Active Set Solver for C++.
+ *
+ * This header provides a C++ implementation of a Quadratic Programming solver
+ * using the Active Set method. It is designed for problems of the form:
+ * minimize (1/2) X^T E X - X^T L subject to M X <= gamma. The code is templated
+ * for compile-time fixed problem sizes and is compatible with custom matrix
+ * types defined in "python_numpy.hpp".
+ */
 #ifndef __PYTHON_QP_ACTIVE_SET_HPP__
 #define __PYTHON_QP_ACTIVE_SET_HPP__
 
@@ -76,6 +86,17 @@ public:
 
 public:
   /* Function */
+
+  /**
+   * @brief Adds the specified index to the set of active constraints if it is
+   * not already active.
+   *
+   * This function checks if the constraint at the given index is currently
+   * inactive. If so, it marks the constraint as active, adds its index to the
+   * list of active indices, and increments the count of active constraints.
+   *
+   * @param index The index of the constraint to activate.
+   */
   inline void push_active(std::size_t index) {
     if (!this->_active_flags[index]) {
       this->_active_flags[index] = true;
@@ -85,6 +106,16 @@ public:
     }
   }
 
+  /**
+   * @brief Removes the specified index from the set of active constraints if it
+   * is currently active.
+   *
+   * This function checks if the constraint at the given index is currently
+   * active. If so, it marks the constraint as inactive, removes its index from
+   * the list of active indices, and decrements the count of active constraints.
+   *
+   * @param index The index of the constraint to deactivate.
+   */
   inline void push_inactive(std::size_t index) {
     if (this->_active_flags[index]) {
       this->_active_flags[index] = false;
@@ -105,6 +136,15 @@ public:
     }
   }
 
+  /**
+   * @brief Retrieves the index of the active constraint at the specified index.
+   *
+   * This function returns the index of the active constraint at the given
+   * index. If the index is out of bounds, it returns the last active index.
+   *
+   * @param index The index of the active constraint to retrieve.
+   * @return The index of the active constraint.
+   */
   inline auto get_active(std::size_t index) const -> std::size_t {
     if (index >= this->_number_of_active) {
       index = this->_number_of_active - 1;
@@ -112,14 +152,38 @@ public:
     return this->_active_indices[index];
   }
 
+  /**
+   * @brief Retrieves the list of active indices.
+   *
+   * This function returns a reference to the array containing the indices of
+   * the currently active constraints.
+   *
+   * @return A reference to the array of active indices.
+   */
   inline auto get_active_indices() const -> _Active_Indices_Type & {
     return this->_active_indices;
   }
 
+  /**
+   * @brief Retrieves the number of currently active constraints.
+   *
+   * This function returns the count of active constraints in the active set.
+   *
+   * @return The number of active constraints.
+   */
   inline auto get_number_of_active() const -> std::size_t {
     return this->_number_of_active;
   }
 
+  /**
+   * @brief Checks if the constraint at the specified index is currently active.
+   *
+   * This function checks the active flags to determine if the constraint at
+   * the given index is active.
+   *
+   * @param index The index of the constraint to check.
+   * @return True if the constraint is active, false otherwise.
+   */
   inline auto is_active(std::size_t index) const -> bool {
     return this->_active_flags[index];
   }
@@ -136,6 +200,14 @@ protected:
 };
 
 /* make Active Set */
+
+/**
+ * @brief Creates an instance of ActiveSet with the specified number of
+ * constraints.
+ *
+ * @tparam NumberOfConstraints The number of constraints for the active set.
+ * @return An instance of ActiveSet with the specified number of constraints.
+ */
 template <std::size_t NumberOfConstraints>
 inline auto make_ActiveSet(void) -> ActiveSet<NumberOfConstraints> {
   return ActiveSet<NumberOfConstraints>();
@@ -149,6 +221,20 @@ namespace QP_ActiveSetSolverOperation {
 
 /* Set KKT Column */
 template <std::size_t M, std::size_t J> struct SetKKTColumn {
+  /**
+   * @brief Sets the KKT matrix column for the specified index.
+   *
+   * This function sets the KKT matrix column for the specified index using the
+   * active set and M matrix.
+   *
+   * @tparam KKT_Type The type of the KKT matrix.
+   * @tparam ActiveSet_Type The type of the active set.
+   * @tparam M_Type The type of the M matrix.
+   * @param KKT The KKT matrix to be updated.
+   * @param active_set The active set containing active constraints.
+   * @param M_matrix The M matrix used for setting the KKT column.
+   * @param i The index for which the KKT column is set.
+   */
   template <typename KKT_Type, typename ActiveSet_Type, typename M_Type>
   static void set(KKT_Type &KKT, const ActiveSet_Type &active_set,
                   M_Type &M_matrix, const std::size_t &i) {
@@ -161,6 +247,20 @@ template <std::size_t M, std::size_t J> struct SetKKTColumn {
 };
 
 template <std::size_t M> struct SetKKTColumn<M, 0> {
+  /**
+   * @brief Sets the KKT matrix column for the specified index when J is 0.
+   *
+   * This function sets the KKT matrix column for the specified index using the
+   * active set and M matrix when J is 0.
+   *
+   * @tparam KKT_Type The type of the KKT matrix.
+   * @tparam ActiveSet_Type The type of the active set.
+   * @tparam M_Type The type of the M matrix.
+   * @param KKT The KKT matrix to be updated.
+   * @param active_set The active set containing active constraints.
+   * @param M_matrix The M matrix used for setting the KKT column.
+   * @param i The index for which the KKT column is set.
+   */
   template <typename KKT_Type, typename ActiveSet_Type, typename M_Type>
   static void set(KKT_Type &KKT, const ActiveSet_Type &active_set,
                   M_Type &M_matrix, const std::size_t &i) {
@@ -172,6 +272,17 @@ template <std::size_t M> struct SetKKTColumn<M, 0> {
 
 /* X from Sol */
 template <std::size_t M> struct X_From_Sol {
+  /**
+   * @brief Sets the X vector from the solution vector.
+   *
+   * This function sets the X vector using the solution vector for the
+   * specified index.
+   *
+   * @tparam Sol_Type The type of the solution vector.
+   * @tparam X_Type The type of the X vector.
+   * @param X The X vector to be updated.
+   * @param sol The solution vector containing the values to set in X.
+   */
   template <typename Sol_Type, typename X_Type>
   static void apply(X_Type &X, const Sol_Type &sol) {
 
@@ -182,6 +293,17 @@ template <std::size_t M> struct X_From_Sol {
 };
 
 template <> struct X_From_Sol<0> {
+  /**
+   * @brief Sets the X vector from the solution vector when M is 0.
+   *
+   * This function sets the X vector using the solution vector for the
+   * specified index when M is 0.
+   *
+   * @tparam Sol_Type The type of the solution vector.
+   * @tparam X_Type The type of the X vector.
+   * @param X The X vector to be updated.
+   * @param sol The solution vector containing the values to set in X.
+   */
   template <typename Sol_Type, typename X_Type>
   static void apply(X_Type &X, const Sol_Type &sol) {
 
@@ -192,6 +314,17 @@ template <> struct X_From_Sol<0> {
 /* Sol from Sol */
 template <std::size_t Number_Of_Variables, std::size_t M>
 struct Lambda_From_Sol {
+  /**
+   * @brief Sets the Lambda vector from the solution vector.
+   *
+   * This function sets the Lambda vector using the solution vector for the
+   * specified index.
+   *
+   * @tparam Sol_Type The type of the solution vector.
+   * @tparam Lambda_Type The type of the Lambda vector.
+   * @param Lambda The Lambda vector to be updated.
+   * @param sol The solution vector containing the values to set in Lambda.
+   */
   template <typename Sol_Type, typename Lambda_Type>
   static void apply(Lambda_Type &Lambda, const Sol_Type &sol) {
 
@@ -203,6 +336,17 @@ struct Lambda_From_Sol {
 
 template <std::size_t Number_Of_Variables>
 struct Lambda_From_Sol<Number_Of_Variables, 0> {
+  /**
+   * @brief Sets the Lambda vector from the solution vector when M is 0.
+   *
+   * This function sets the Lambda vector using the solution vector for the
+   * specified index when M is 0.
+   *
+   * @tparam Sol_Type The type of the solution vector.
+   * @tparam Lambda_Type The type of the Lambda vector.
+   * @param Lambda The Lambda vector to be updated.
+   * @param sol The solution vector containing the values to set in Lambda.
+   */
   template <typename Sol_Type, typename Lambda_Type>
   static void apply(Lambda_Type &Lambda, const Sol_Type &sol) {
 
@@ -212,6 +356,22 @@ struct Lambda_From_Sol<Number_Of_Variables, 0> {
 
 /* Check gamma violation */
 template <typename T, std::size_t J> struct CheckGammaViolation {
+  /**
+   * @brief Checks if the gamma constraint is violated for the specified index.
+   *
+   * This function checks if the gamma constraint is violated for the specified
+   * index and updates the violation index, violation status, and maximum
+   * violation value accordingly.
+   *
+   * @tparam Gamma_Type The type of the gamma vector.
+   * @tparam M_X_Type The type of the M X vector.
+   * @param gamma The gamma vector containing the constraints.
+   * @param M_X The M X vector to check against the gamma constraints.
+   * @param violation_index The index of the violated constraint (if any).
+   * @param is_violated Flag indicating if a violation was found.
+   * @param max_violation The maximum violation value found.
+   * @param tol The tolerance for numerical errors.
+   */
   template <typename Gamma_Type, typename M_X_Type>
   static void check(const Gamma_Type &gamma, const M_X_Type &M_X,
                     std::size_t &violation_index, bool &is_violated,
@@ -234,6 +394,22 @@ template <typename T, std::size_t J> struct CheckGammaViolation {
 };
 
 template <typename T> struct CheckGammaViolation<T, 0> {
+  /**
+   * @brief Checks if the gamma constraint is violated for the index 0.
+   *
+   * This function checks if the gamma constraint is violated for index 0 and
+   * updates the violation index, violation status, and maximum violation value
+   * accordingly.
+   *
+   * @tparam Gamma_Type The type of the gamma vector.
+   * @tparam M_X_Type The type of the M X vector.
+   * @param gamma The gamma vector containing the constraints.
+   * @param M_X The M X vector to check against the gamma constraints.
+   * @param violation_index The index of the violated constraint (if any).
+   * @param is_violated Flag indicating if a violation was found.
+   * @param max_violation The maximum violation value found.
+   * @param tol The tolerance for numerical errors.
+   */
   template <typename Gamma_Type, typename M_X_Type>
   static void check(const Gamma_Type &gamma, const M_X_Type &M_X,
                     std::size_t &violation_index, bool &is_violated,
@@ -254,6 +430,21 @@ template <typename T> struct CheckGammaViolation<T, 0> {
 
 /* Check negative lambda  */
 template <typename T, std::size_t J> struct CheckNegativeLambda {
+  /**
+   * @brief Checks if the lambda value is negative for the specified index.
+   *
+   * This function checks if the lambda value is negative for the specified
+   * index and updates the minimum lambda index, negative lambda found status,
+   * and minimum lambda value accordingly.
+   *
+   * @tparam Lambda_Type The type of the lambda vector.
+   * @param Lambda_candidate The candidate lambda vector to check.
+   * @param tol The tolerance for numerical errors.
+   * @param min_lambda_index The index of the minimum negative lambda (if any).
+   * @param negative_lambda_found Flag indicating if a negative lambda was
+   * found.
+   * @param min_lambda_value The minimum negative lambda value found.
+   */
   template <typename Lambda_Type>
   static void check(const Lambda_Type &Lambda_candidate, const T &tol,
                     std::size_t &min_lambda_index, bool &negative_lambda_found,
@@ -271,6 +462,21 @@ template <typename T, std::size_t J> struct CheckNegativeLambda {
 };
 
 template <typename T> struct CheckNegativeLambda<T, 0> {
+  /**
+   * @brief Checks if the lambda value is negative for index 0.
+   *
+   * This function checks if the lambda value is negative for index 0 and
+   * updates the minimum lambda index, negative lambda found status, and
+   * minimum lambda value accordingly.
+   *
+   * @tparam Lambda_Type The type of the lambda vector.
+   * @param Lambda_candidate The candidate lambda vector to check.
+   * @param tol The tolerance for numerical errors.
+   * @param min_lambda_index The index of the minimum negative lambda (if any).
+   * @param negative_lambda_found Flag indicating if a negative lambda was
+   * found.
+   * @param min_lambda_value The minimum negative lambda value found.
+   */
   template <typename Lambda_Type>
   static void check(const Lambda_Type &Lambda_candidate, const T &tol,
                     std::size_t &min_lambda_index, bool &negative_lambda_found,
@@ -285,6 +491,15 @@ template <typename T> struct CheckNegativeLambda<T, 0> {
 };
 
 template <std::size_t J> struct DeactivateAllActiveConstraints {
+  /**
+   * @brief Deactivates all active constraints up to the specified index J.
+   *
+   * This function checks if the constraint at index J is active and deactivates
+   * it. It then recursively calls itself for the previous index.
+   *
+   * @tparam ActiveSetType The type of the active set.
+   * @param active_set The active set to be updated.
+   */
   template <typename ActiveSetType>
   static void apply(ActiveSetType &active_set) {
     if (active_set.is_active(J)) {
@@ -295,6 +510,15 @@ template <std::size_t J> struct DeactivateAllActiveConstraints {
 };
 
 template <> struct DeactivateAllActiveConstraints<0> {
+  /**
+   * @brief Deactivates the active constraint at index 0.
+   *
+   * This function checks if the constraint at index 0 is active and deactivates
+   * it.
+   *
+   * @tparam ActiveSetType The type of the active set.
+   * @param active_set The active set to be updated.
+   */
   template <typename ActiveSetType>
   static void apply(ActiveSetType &active_set) {
     if (active_set.is_active(0)) {
@@ -435,6 +659,16 @@ public:
 
 public:
   /* Function */
+
+  /**
+   * @brief Sets the KKT matrix based on the provided E and M matrices.
+   *
+   * This function constructs the KKT matrix using the E matrix and the active
+   * constraints from the M matrix.
+   *
+   * @param E The E matrix used in the KKT formulation.
+   * @param M The M matrix containing the constraints.
+   */
   template <typename E_Type>
   inline
       typename std::enable_if<!std::is_same<E_Type, _E_Empty_Type>::value>::type
@@ -442,6 +676,13 @@ public:
     PythonNumpy::substitute_part_matrix<0, 0>(this->_KKT, E);
   }
 
+  /**
+   * @brief Sets the KKT matrix when E is empty.
+   *
+   * This function does nothing when E is an empty type.
+   *
+   * @param E The E matrix (empty in this case).
+   */
   template <typename E_Type>
   inline
       typename std::enable_if<std::is_same<E_Type, _E_Empty_Type>::value>::type
@@ -451,6 +692,14 @@ public:
     static_cast<void>(E);
   }
 
+  /**
+   * @brief Updates the RHS vector with the provided L matrix.
+   *
+   * This function substitutes the L matrix into the RHS vector of the KKT
+   * system.
+   *
+   * @param L The L matrix used in the RHS vector.
+   */
   template <typename L_Type>
   inline
       typename std::enable_if<!std::is_same<L_Type, _L_Empty_Type>::value>::type
@@ -458,6 +707,13 @@ public:
     PythonNumpy::substitute_part_matrix<0, 0>(this->_RHS, L);
   }
 
+  /**
+   * @brief Updates the RHS vector when L is empty.
+   *
+   * This function does nothing when L is an empty type.
+   *
+   * @param L The L matrix (empty in this case).
+   */
   template <typename L_Type>
   inline
       typename std::enable_if<std::is_same<L_Type, _L_Empty_Type>::value>::type
@@ -467,6 +723,15 @@ public:
     static_cast<void>(L);
   }
 
+  /**
+   * @brief Sets the KKT matrix based on the provided E and M matrices.
+   *
+   * This function constructs the KKT matrix using the E matrix and the active
+   * constraints from the M matrix.
+   *
+   * @param E The E matrix used in the KKT formulation.
+   * @param M The M matrix containing the constraints.
+   */
   template <typename E_Type, typename L_Type>
   inline auto solve_no_constrained_X(const E_Type &E, const L_Type &L)
       -> X_Type {
@@ -484,6 +749,15 @@ public:
     return X_out;
   }
 
+  /**
+   * @brief Sets the KKT matrix based on the provided E and M matrices.
+   *
+   * This function constructs the KKT matrix using the E matrix and the active
+   * constraints from the M matrix.
+   *
+   * @param E The E matrix used in the KKT formulation.
+   * @param M The M matrix containing the constraints.
+   */
   template <typename E_Type, typename L_Type, typename M_Type,
             typename Gamma_Type>
   inline void initialize_X(const E_Type &E, const L_Type &L, const M_Type &M,
@@ -502,6 +776,19 @@ public:
     }
   }
 
+  /**
+   * @brief Solves the QP problem using the active set method.
+   *
+   * This function iteratively solves the QP problem by checking constraint
+   * violations and adjusting the active set until an optimal solution is found
+   * or the maximum number of iterations is reached.
+   *
+   * @param E The E matrix used in the QP formulation.
+   * @param L The L matrix used in the QP formulation.
+   * @param M The M matrix containing the constraints.
+   * @param gamma The gamma vector containing the constraint bounds.
+   * @return The optimal solution vector X.
+   */
   template <typename E_Type, typename L_Type, typename M_Type,
             typename Gamma_Type>
   inline auto solve(const E_Type &E, const L_Type &L, const M_Type &M,
@@ -616,33 +903,104 @@ public:
   }
 
   /* Get */
+
+  /**
+   * @brief Retrieves the optimal solution vector X.
+   *
+   * This function returns the optimal solution vector X after solving the QP
+   * problem.
+   *
+   * @return The optimal solution vector X.
+   */
   inline auto get_iteration_count() const -> std::size_t {
     return this->_iteration_count;
   }
 
+  /**
+   * @brief Retrieves the optimal solution vector X.
+   *
+   * This function returns the optimal solution vector X after solving the QP
+   * problem.
+   *
+   * @return The optimal solution vector X.
+   */
   inline auto get_max_iteration() const -> std::size_t {
     return this->max_iteration;
   }
 
+  /**
+   * @brief Retrieves the optimal solution vector X.
+   *
+   * This function returns the optimal solution vector X after solving the QP
+   * problem.
+   *
+   * @return The optimal solution vector X.
+   */
   inline auto get_tol() const -> T { return this->tol; }
 
   /* Set */
+
+  /**
+   * @brief Sets the decay rate for the KKT inverse solver.
+   *
+   * This function sets the decay rate for the KKT inverse solver used in the
+   * QP Active Set Solver.
+   *
+   * @param decay_rate The decay rate to be set for the KKT inverse solver.
+   */
   inline void set_kkt_inv_solver_decay_rate(const T &decay_rate) {
     this->_kkt_inv_solver.set_decay_rate(decay_rate);
   }
 
+  /**
+   * @brief Sets the minimum value for division in the KKT inverse solver.
+   *
+   * This function sets the minimum value for division in the KKT inverse solver
+   * to avoid division by zero errors.
+   *
+   * @param division_min The minimum value for division in the KKT inverse
+   * solver.
+   */
   inline void set_kkt_inv_solver_division_min(const T &division_min) {
     this->_kkt_inv_solver.set_division_min(division_min);
   }
 
+  /**
+   * @brief Sets the maximum number of iterations for the QP Active Set Solver.
+   *
+   * This function sets the maximum number of iterations allowed for the QP
+   * Active Set Solver to find an optimal solution.
+   *
+   * @param max_iteration_in The maximum number of iterations to be set.
+   */
   inline void set_max_iteration(const std::size_t &max_iteration_in) {
     this->max_iteration = max_iteration_in;
   }
 
+  /**
+   * @brief Sets the tolerance for numerical errors in the QP Active Set Solver.
+   *
+   * This function sets the tolerance for numerical errors used in constraint
+   * violation checks and negative lambda checks.
+   *
+   * @param tol_in The tolerance value to be set.
+   */
   inline void set_tol(const T &tol_in) { this->tol = tol_in; }
 
 protected:
   /* Function */
+
+  /**
+   * @brief Sets the KKT matrix based on the provided E and M matrices.
+   *
+   * This function constructs the KKT matrix using the E matrix and the active
+   * constraints from the M matrix.
+   *
+   * @tparam E_Type The type of the E matrix.
+   * @tparam M_Type The type of the M matrix.
+   * @param E The E matrix used in the KKT formulation.
+   * @param M The M matrix containing the constraints.
+   */
   template <typename E_Type, typename M_Type>
   inline void _set_KKT(E_Type E, M_Type M) {
 
@@ -657,6 +1015,17 @@ protected:
     }
   }
 
+  /**
+   * @brief Sets the right-hand side (RHS) vector for the KKT system.
+   *
+   * This function updates the RHS vector with the provided L matrix and
+   * gamma vector, which contains the bounds for the constraints.
+   *
+   * @tparam L_Type The type of the L matrix.
+   * @tparam Gamma_Type The type of the gamma vector.
+   * @param L The L matrix used in the RHS vector.
+   * @param gamma The gamma vector containing the constraint bounds.
+   */
   template <typename L_Type, typename Gamma_Type>
   inline void _set_rhs(L_Type L, Gamma_Type gamma) {
 
@@ -668,6 +1037,16 @@ protected:
     }
   }
 
+  /**
+   * @brief Solves the KKT system using the inverse solver.
+   *
+   * This function solves the KKT system by calling the KKT inverse solver with
+   * the current KKT matrix and RHS vector, considering the number of active
+   * constraints.
+   *
+   * @param k The number of active constraints.
+   * @return The solution vector containing the optimal values for X and lambda.
+   */
   inline auto _solve_KKT_inv(const std::size_t &k) -> Sol_Type {
 
     return this->_kkt_inv_solver.cold_solve(this->_KKT, this->_RHS,
@@ -691,6 +1070,21 @@ protected:
 };
 
 /* make QP Active Set Solver */
+
+/**
+ * @brief Creates an instance of QP_ActiveSetSolver with the specified template
+ * parameters.
+ *
+ * This function is a factory function that creates and returns an instance of
+ * QP_ActiveSetSolver with the given template parameters for type T, number of
+ * variables, and number of constraints.
+ *
+ * @tparam T The type of the solver (e.g., float, double).
+ * @tparam Number_Of_Variables The number of variables in the QP problem.
+ * @tparam Number_Of_Constraints The number of constraints in the QP problem.
+ * @return An instance of QP_ActiveSetSolver with the specified template
+ * parameters.
+ */
 template <typename T, std::size_t Number_Of_Variables,
           std::size_t Number_Of_Constraints>
 inline auto make_QP_ActiveSetSolver(void)
