@@ -1,3 +1,14 @@
+/**
+ * @file qp_active_set_demo_1.cpp
+ * @brief Demonstrates solving a quadratic programming (QP) problem using an
+ * active set solver.
+ *
+ * This example sets up and solves a simple QP problem with two variables and
+ * four constraints. The problem is defined by specifying the quadratic cost
+ * matrix, linear term, constraint matrix, and constraint bounds. The active set
+ * QP solver is used to find the optimal solution, which is then printed to the
+ * standard output.
+ */
 #include <iostream>
 
 #include "python_numpy.hpp"

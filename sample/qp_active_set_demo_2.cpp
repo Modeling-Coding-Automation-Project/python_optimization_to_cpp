@@ -1,3 +1,13 @@
+/**
+ * @file qp_active_set_demo_2.cpp
+ * @brief Demonstrates solving a quadratic programming (QP) problem using an
+ * active set solver in C++.
+ *
+ * This example defines and solves a QP problem with three variables and three
+ * constraints. The code sets up the QP solver, defines the quadratic cost
+ * matrix, linear term, constraint matrix, and constraint bounds, then solves
+ * for the optimal variable values and prints the result.
+ */
 #include <iostream>
 
 #include "python_numpy.hpp"
