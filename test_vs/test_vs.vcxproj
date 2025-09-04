@@ -133,7 +133,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\python_optimization\python_optimization.hpp" />
-    <ClInclude Include="..\python_optimization\python_qp_active_set.hpp" />
+    <ClInclude Include="..\python_optimization\python_optimization_qp_active_set.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
