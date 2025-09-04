@@ -1,5 +1,5 @@
 /**
- * @file python_qp_active_set.hpp
+ * @file python_optimization_qp_active_set.hpp
  * @brief Quadratic Programming (QP) Active Set Solver for C++.
  *
  * This header provides a C++ implementation of a Quadratic Programming solver
@@ -8,8 +8,8 @@
  * for compile-time fixed problem sizes and is compatible with custom matrix
  * types defined in "python_numpy.hpp".
  */
-#ifndef __PYTHON_QP_ACTIVE_SET_HPP__
-#define __PYTHON_QP_ACTIVE_SET_HPP__
+#ifndef __PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP__
+#define __PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP__
 
 #include "python_numpy.hpp"
 
@@ -1100,4 +1100,4 @@ using QP_ActiveSetSolver_Type =
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_QP_ACTIVE_SET_HPP__
+#endif // __PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP__

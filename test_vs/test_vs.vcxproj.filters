@@ -23,7 +23,7 @@
     <ClInclude Include="..\python_optimization\python_optimization.hpp">
       <Filter>リソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\python_optimization\python_qp_active_set.hpp">
+    <ClInclude Include="..\python_optimization\python_optimization_qp_active_set.hpp">
       <Filter>リソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>
