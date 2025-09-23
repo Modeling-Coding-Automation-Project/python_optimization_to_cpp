@@ -88,6 +88,23 @@ void test_active_set_2D() {
     constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-5);
     //const T NEAR_LIMIT_SOFT = 1.0e-2F;
 
+    /* 定義 */
+    constexpr std::size_t COLUMNS = 3;
+    constexpr std::size_t ROWS = 2;
+
+    ActiveSet2D<ROWS, COLUMNS> active_set;
+    active_set.push_active(1, 2);
+
+    ActiveSet2D_Type<ROWS, COLUMNS> active_set_copy = active_set;
+    ActiveSet2D_Type<ROWS, COLUMNS> active_set_move = std::move(active_set_copy);
+    active_set = std::move(active_set_move);
+
+    auto active_pair = active_set.get_active(0);
+
+    tester.expect_near(static_cast<T>(active_pair[0]), static_cast<T>(1), NEAR_LIMIT_STRICT,
+        "check get active col.");
+    tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(2), NEAR_LIMIT_STRICT,
+        "check get active row.");
 
 
 
