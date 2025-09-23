@@ -1,6 +1,7 @@
 #ifndef __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__
 #define __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__
 
+#include "python_math.hpp"
 #include "python_numpy.hpp"
 
 #include <array>
@@ -407,15 +408,15 @@ protected:
 
 /* Factory make */
 
-template <std::size_t NumberOfColumns, std::size_t NumberOfRows>
+template <std::size_t Number_Of_Columns, std::size_t Number_Of_Rows>
 inline auto make_ActiveSet2D(void)
-    -> ActiveSet2D<NumberOfColumns, NumberOfRows> {
-  return ActiveSet2D<NumberOfColumns, NumberOfRows>();
+    -> ActiveSet2D<Number_Of_Columns, Number_Of_Rows> {
+  return ActiveSet2D<Number_Of_Columns, Number_Of_Rows>();
 }
 
 /* Alias */
-template <std::size_t NumberOfColumns, std::size_t NumberOfRows>
-using ActiveSet2D_Type = ActiveSet2D<NumberOfColumns, NumberOfRows>;
+template <std::size_t Number_Of_Columns, std::size_t Number_Of_Rows>
+using ActiveSet2D_Type = ActiveSet2D<Number_Of_Columns, Number_Of_Rows>;
 
 /**
  * @class ActiveSet2D_MatrixOperator
@@ -423,26 +424,35 @@ using ActiveSet2D_Type = ActiveSet2D<NumberOfColumns, NumberOfRows>;
  */
 class ActiveSet2D_MatrixOperator {
 public:
+  /* Type */
+  template <typename T, std::size_t M, std::size_t N>
+  using Matrix_Type = PythonNumpy::DenseMatrix_Type<T, M, N>;
+
+  /* Constant */
+  static constexpr std::size_t COLUMN = 0;
+  static constexpr std::size_t ROW = 1;
+
+public:
   /**
    * @brief Element-wise product over active positions only.
    * result(col,row) = A(col,row) * B(col,row) for active pairs else 0.
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
-  static inline auto element_wise_product(
-      const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
-      const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &B,
-      const ActiveSet2D<MA, NA> &active_set)
-      -> PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> {
+  static inline auto element_wise_product(const Matrix_Type<T, M, N> &A,
+                                          const Matrix_Type<T, M, N> &B,
+                                          const ActiveSet2D<MA, NA> &active_set)
+      -> Matrix_Type<T, M, N> {
     static_assert(M == MA && N == NA,
                   "Matrix size and ActiveSet2D size must match.");
-    PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> result;
+
+    Matrix_Type<T, M, N> result;
 
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      const std::size_t col = pair[0];
-      const std::size_t row = pair[1];
-      result(col, row) = A(col, row) * B(col, row);
+
+      result.access(pair[COLUMN], pair[ROW]) =
+          A.access(pair[COLUMN], pair[ROW]) * B.access(pair[COLUMN], pair[ROW]);
     }
     return result;
   }
@@ -452,16 +462,17 @@ public:
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
-  static inline auto
-  vdot(const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
-       const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &B,
-       const ActiveSet2D<MA, NA> &active_set) -> T {
+  static inline auto vdot(const Matrix_Type<T, M, N> &A,
+                          const Matrix_Type<T, M, N> &B,
+                          const ActiveSet2D<MA, NA> &active_set) -> T {
     static_assert(M == MA && N == NA,
                   "Matrix size and ActiveSet2D size must match.");
+
     T total = static_cast<T>(0);
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      total += A(pair[0], pair[1]) * B(pair[0], pair[1]);
+      total +=
+          A.access(pair[COLUMN], pair[ROW]) * B.access(pair[COLUMN], pair[ROW]);
     }
     return total;
   }
@@ -471,16 +482,18 @@ public:
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
-  static inline auto matrix_multiply_scalar(
-      const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
-      const T &scalar, const ActiveSet2D<MA, NA> &active_set)
-      -> PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> {
+  static inline auto
+  matrix_multiply_scalar(const Matrix_Type<T, M, N> &A, const T &scalar,
+                         const ActiveSet2D<MA, NA> &active_set)
+      -> Matrix_Type<T, M, N> {
     static_assert(M == MA && N == NA,
                   "Matrix size and ActiveSet2D size must match.");
-    PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> result;
+
+    Matrix_Type<T, M, N> result;
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      result(pair[0], pair[1]) = A(pair[0], pair[1]) * scalar;
+      result.access(pair[COLUMN], pair[ROW]) =
+          A.access(pair[COLUMN], pair[ROW]) * scalar;
     }
     return result;
   }
@@ -490,22 +503,19 @@ public:
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
-  static inline auto
-  norm(const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
-       const ActiveSet2D<MA, NA> &active_set) -> T {
+  static inline auto norm(const Matrix_Type<T, M, N> &A,
+                          const ActiveSet2D<MA, NA> &active_set) -> T {
     static_assert(M == MA && N == NA,
                   "Matrix size and ActiveSet2D size must match.");
+
     T total = static_cast<T>(0);
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      const T v = A(pair[0], pair[1]);
+      const T v = A.access(pair[COLUMN], pair[ROW]);
       total += v * v;
     }
-#ifdef __cpp_lib_math_special_functions
-    return static_cast<T>(std::sqrt(total));
-#else
-    return static_cast<T>(std::sqrt(static_cast<double>(total)));
-#endif
+
+    return PythonMath::sqrt(total);
   }
 };
 
