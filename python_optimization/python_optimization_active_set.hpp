@@ -204,6 +204,298 @@ inline auto make_ActiveSet(void) -> ActiveSet<NumberOfConstraints> {
 template <std::size_t NumberOfConstraints>
 using ActiveSet_Type = ActiveSet<NumberOfConstraints>;
 
+/**
+ * @class ActiveSet2D
+ * @brief Manages an active set of (col,row) element positions in a fixed size
+ * matrix.
+ *
+ * @details
+ * Template parameters define compile-time fixed numbers of columns and rows.
+ * Similar to the 1D ActiveSet, this class stores:
+ *  - _active_flags  : A 2D array (flattened) of bool indicating if (col,row) is
+ * active.
+ *  - _active_pairs  : An array of (col,row) index pairs for currently active
+ * elements.
+ *  - _number_of_active : Current count of active elements.
+ *
+ * Insertion/removal keeps the order of earlier active pairs (stable erase via
+ * shift).
+ */
+template <std::size_t NumberOfColumns, std::size_t NumberOfRows>
+class ActiveSet2D {
+public:
+  /* Constant */
+  static constexpr std::size_t NUMBER_OF_COLUMNS = NumberOfColumns;
+  static constexpr std::size_t NUMBER_OF_ROWS = NumberOfRows;
+  static constexpr std::size_t NUMBER_OF_ELEMENTS =
+      NumberOfColumns * NumberOfRows;
+
+protected:
+  /* Type */
+  using _Active_Flags_Type = std::array<bool, NUMBER_OF_ELEMENTS>;
+  using _Index_Pair_Type = std::array<std::size_t, 2>;
+  using _Active_Pairs_Type = std::array<_Index_Pair_Type, NUMBER_OF_ELEMENTS>;
+
+public:
+  /* Constructor */
+  ActiveSet2D() : _active_flags{}, _active_pairs{}, _number_of_active(0) {}
+
+  /* Copy Constructor */
+  ActiveSet2D(const ActiveSet2D &input)
+      : _active_flags(input._active_flags), _active_pairs(input._active_pairs),
+        _number_of_active(input._number_of_active) {}
+
+  ActiveSet2D &operator=(const ActiveSet2D &input) {
+    if (this != &input) {
+      this->_active_flags = input._active_flags;
+      this->_active_pairs = input._active_pairs;
+      this->_number_of_active = input._number_of_active;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  ActiveSet2D(ActiveSet2D &&input) noexcept
+      : _active_flags(std::move(input._active_flags)),
+        _active_pairs(std::move(input._active_pairs)),
+        _number_of_active(input._number_of_active) {}
+
+  ActiveSet2D &operator=(ActiveSet2D &&input) noexcept {
+    if (this != &input) {
+      this->_active_flags = std::move(input._active_flags);
+      this->_active_pairs = std::move(input._active_pairs);
+      this->_number_of_active = input._number_of_active;
+    }
+    return *this;
+  }
+
+public:
+  /* Function */
+
+  /**
+   * @brief Adds the (col,row) pair if not already active.
+   */
+  inline void push_active(std::size_t col, std::size_t row) {
+    _check_bounds(col, row);
+    const std::size_t f = _flat(col, row);
+    if (!this->_active_flags[f]) {
+      this->_active_flags[f] = true;
+      this->_active_pairs[this->_number_of_active][0] = col;
+      this->_active_pairs[this->_number_of_active][1] = row;
+      this->_number_of_active++;
+    }
+  }
+
+  /**
+   * @brief Removes the (col,row) pair if currently active.
+   */
+  inline void push_inactive(std::size_t col, std::size_t row) {
+    _check_bounds(col, row);
+    const std::size_t f = _flat(col, row);
+    if (this->_active_flags[f]) {
+      this->_active_flags[f] = false;
+
+      bool found = false;
+      for (std::size_t i = 0; i < this->_number_of_active; ++i) {
+        if (!found && this->_active_pairs[i][0] == col &&
+            this->_active_pairs[i][1] == row) {
+          found = true;
+        }
+        if (found && i < this->_number_of_active - 1) {
+          this->_active_pairs[i] = this->_active_pairs[i + 1];
+        }
+      }
+      if (found) {
+        this->_active_pairs[this->_number_of_active - 1][0] = 0;
+        this->_active_pairs[this->_number_of_active - 1][1] = 0;
+        this->_number_of_active--;
+      }
+    }
+  }
+
+  /**
+   * @brief Returns the (col,row) pair at active list index.
+   * If index >= number_of_active, it is clamped to last (consistent with 1D
+   * ActiveSet style (safe fallback) instead of throwing).
+   */
+  inline auto get_active(std::size_t index) const -> _Index_Pair_Type {
+    if (index >= this->_number_of_active) {
+      index = (this->_number_of_active == 0) ? 0 : this->_number_of_active - 1;
+    }
+    return this->_active_pairs[index];
+  }
+
+  /**
+   * @brief Returns reference to active pairs list (including unused tail).
+   */
+  inline auto get_active_pairs() const -> const _Active_Pairs_Type & {
+    return this->_active_pairs;
+  }
+
+  /**
+   * @brief Returns number of active (col,row) elements.
+   */
+  inline auto get_number_of_active() const -> std::size_t {
+    return this->_number_of_active;
+  }
+
+  /**
+   * @brief Returns whether (col,row) is active.
+   */
+  inline auto is_active(std::size_t col, std::size_t row) const -> bool {
+    _check_bounds(col, row);
+    return this->_active_flags[_flat(col, row)];
+  }
+
+  /**
+   * @brief Clears all active elements.
+   */
+  inline void clear() {
+    this->_active_flags.fill(false);
+    for (std::size_t i = 0; i < this->_number_of_active; ++i) {
+      this->_active_pairs[i][0] = 0;
+      this->_active_pairs[i][1] = 0;
+    }
+    this->_number_of_active = 0;
+  }
+
+protected:
+  /* Function */
+
+  /**
+   * @brief Convert (col,row) to flattened index for _active_flags.
+   *
+   * We adopt (col,row) -> col + row * NumberOfColumns mapping, matching
+   * operator()(col,row).
+   */
+  inline std::size_t _flat(const std::size_t &col, const std::size_t &row) {
+    return col + row * NUMBER_OF_COLUMNS;
+  }
+
+  /**
+   * @brief Clamp col,row to valid range if out-of-bounds.
+   */
+  inline void _check_bounds(std::size_t &col, std::size_t &row) {
+
+    if (NUMBER_OF_COLUMNS <= col) {
+      col = NUMBER_OF_COLUMNS - 1;
+    }
+    if (NUMBER_OF_ROWS <= row) {
+      row = NUMBER_OF_ROWS - 1;
+    }
+  }
+
+protected:
+  /* variables */
+  _Active_Flags_Type _active_flags; // flattened flags
+  _Active_Pairs_Type _active_pairs; // list of active pairs
+  std::size_t _number_of_active;
+};
+
+/* Factory make */
+
+template <std::size_t NumberOfColumns, std::size_t NumberOfRows>
+inline auto make_ActiveSet2D(void)
+    -> ActiveSet2D<NumberOfColumns, NumberOfRows> {
+  return ActiveSet2D<NumberOfColumns, NumberOfRows>();
+}
+
+/* Alias */
+template <std::size_t NumberOfColumns, std::size_t NumberOfRows>
+using ActiveSet2D_Type = ActiveSet2D<NumberOfColumns, NumberOfRows>;
+
+/**
+ * @class ActiveSet2D_MatrixOperator
+ * @brief Utility functions operating on matrices restricted by an ActiveSet2D.
+ */
+class ActiveSet2D_MatrixOperator {
+public:
+  /**
+   * @brief Element-wise product over active positions only.
+   * result(col,row) = A(col,row) * B(col,row) for active pairs else 0.
+   */
+  template <typename T, std::size_t M, std::size_t N, std::size_t MA,
+            std::size_t NA>
+  static inline auto element_wise_product(
+      const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
+      const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &B,
+      const ActiveSet2D<MA, NA> &active_set)
+      -> PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> {
+    static_assert(M == MA && N == NA,
+                  "Matrix size and ActiveSet2D size must match.");
+    PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> result;
+
+    for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
+      auto pair = active_set.get_active(idx);
+      const std::size_t col = pair[0];
+      const std::size_t row = pair[1];
+      result(col, row) = A(col, row) * B(col, row);
+    }
+    return result;
+  }
+
+  /**
+   * @brief Sum of element-wise product (dot) over active positions.
+   */
+  template <typename T, std::size_t M, std::size_t N, std::size_t MA,
+            std::size_t NA>
+  static inline auto
+  vdot(const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
+       const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &B,
+       const ActiveSet2D<MA, NA> &active_set) -> T {
+    static_assert(M == MA && N == NA,
+                  "Matrix size and ActiveSet2D size must match.");
+    T total = static_cast<T>(0);
+    for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
+      auto pair = active_set.get_active(idx);
+      total += A(pair[0], pair[1]) * B(pair[0], pair[1]);
+    }
+    return total;
+  }
+
+  /**
+   * @brief Active positions multiplied by scalar, others zero.
+   */
+  template <typename T, std::size_t M, std::size_t N, std::size_t MA,
+            std::size_t NA>
+  static inline auto matrix_multiply_scalar(
+      const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
+      const T &scalar, const ActiveSet2D<MA, NA> &active_set)
+      -> PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> {
+    static_assert(M == MA && N == NA,
+                  "Matrix size and ActiveSet2D size must match.");
+    PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> result;
+    for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
+      auto pair = active_set.get_active(idx);
+      result(pair[0], pair[1]) = A(pair[0], pair[1]) * scalar;
+    }
+    return result;
+  }
+
+  /**
+   * @brief Euclidean norm (2-norm) over active positions.
+   */
+  template <typename T, std::size_t M, std::size_t N, std::size_t MA,
+            std::size_t NA>
+  static inline auto
+  norm(const PythonNumpy::Matrix<PythonNumpy::DefDense, T, M, N> &A,
+       const ActiveSet2D<MA, NA> &active_set) -> T {
+    static_assert(M == MA && N == NA,
+                  "Matrix size and ActiveSet2D size must match.");
+    T total = static_cast<T>(0);
+    for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
+      auto pair = active_set.get_active(idx);
+      const T v = A(pair[0], pair[1]);
+      total += v * v;
+    }
+#ifdef __cpp_lib_math_special_functions
+    return static_cast<T>(std::sqrt(total));
+#else
+    return static_cast<T>(std::sqrt(static_cast<double>(total)));
+#endif
+  }
+};
+
 } // namespace PythonOptimization
 
 #endif // __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__

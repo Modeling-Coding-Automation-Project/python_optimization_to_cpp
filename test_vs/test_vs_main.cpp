@@ -77,6 +77,24 @@ void test_active_set() {
     tester.throw_error_if_test_failed();
 }
 
+
+template <typename T>
+void test_active_set_2D() {
+    using namespace PythonNumpy;
+    using namespace PythonOptimization;
+
+    MCAPTester<T> tester;
+
+    constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-5);
+    //const T NEAR_LIMIT_SOFT = 1.0e-2F;
+
+
+
+
+    tester.throw_error_if_test_failed();
+}
+
+
 template <typename T>
 void test_qp_active_set_solver() {
     using namespace PythonNumpy;
@@ -200,6 +218,10 @@ int main() {
     test_active_set<double>();
 
     test_active_set<float>();
+
+    test_active_set_2D<double>();
+
+    test_active_set_2D<float>();
 
     test_qp_active_set_solver<double>();
 
