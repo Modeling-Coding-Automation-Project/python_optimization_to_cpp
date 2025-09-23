@@ -221,18 +221,22 @@ using ActiveSet_Type = ActiveSet<NumberOfConstraints>;
  * Insertion/removal keeps the order of earlier active pairs (stable erase via
  * shift).
  */
-template <std::size_t NumberOfColumns, std::size_t NumberOfRows>
+template <std::size_t Number_Of_Columns, std::size_t Number_Of_Rows>
 class ActiveSet2D {
 public:
   /* Constant */
-  static constexpr std::size_t NUMBER_OF_COLUMNS = NumberOfColumns;
-  static constexpr std::size_t NUMBER_OF_ROWS = NumberOfRows;
+  static constexpr std::size_t NUMBER_OF_COLUMNS = Number_Of_Columns;
+  static constexpr std::size_t NUMBER_OF_ROWS = Number_Of_Rows;
   static constexpr std::size_t NUMBER_OF_ELEMENTS =
-      NumberOfColumns * NumberOfRows;
+      NUMBER_OF_COLUMNS * NUMBER_OF_ROWS;
+
+  static constexpr std::size_t COLUMN = 0;
+  static constexpr std::size_t ROW = 1;
 
 protected:
   /* Type */
-  using _Active_Flags_Type = std::array<bool, NUMBER_OF_ELEMENTS>;
+  using _Active_Flags_Type =
+      std::array<std::array<std::size_t, NUMBER_OF_ROWS>, NUMBER_OF_COLUMNS>;
   using _Index_Pair_Type = std::array<std::size_t, 2>;
   using _Active_Pairs_Type = std::array<_Index_Pair_Type, NUMBER_OF_ELEMENTS>;
 
@@ -275,13 +279,17 @@ public:
   /**
    * @brief Adds the (col,row) pair if not already active.
    */
-  inline void push_active(std::size_t col, std::size_t row) {
-    _check_bounds(col, row);
-    const std::size_t f = _flat(col, row);
-    if (!this->_active_flags[f]) {
-      this->_active_flags[f] = true;
-      this->_active_pairs[this->_number_of_active][0] = col;
-      this->_active_pairs[this->_number_of_active][1] = row;
+  inline void push_active(const std::size_t &col, const std::size_t &row) {
+
+    std::size_t column_clamped = col;
+    std::size_t row_clamped = row;
+
+    this->_check_bounds(column_clamped, row_clamped);
+
+    if (!this->_active_flags[column_clamped][row_clamped]) {
+      this->_active_flags[column_clamped][row_clamped] = true;
+      this->_active_pairs[this->_number_of_active][COLUMN] = column_clamped;
+      this->_active_pairs[this->_number_of_active][ROW] = row_clamped;
       this->_number_of_active++;
     }
   }
@@ -289,25 +297,30 @@ public:
   /**
    * @brief Removes the (col,row) pair if currently active.
    */
-  inline void push_inactive(std::size_t col, std::size_t row) {
-    _check_bounds(col, row);
-    const std::size_t f = _flat(col, row);
-    if (this->_active_flags[f]) {
-      this->_active_flags[f] = false;
+  inline void push_inactive(const std::size_t &col, const std::size_t &row) {
+
+    std::size_t column_clamped = col;
+    std::size_t row_clamped = row;
+
+    this->_check_bounds(column_clamped, row_clamped);
+
+    if (this->_active_flags[column_clamped][row_clamped]) {
+      this->_active_flags[column_clamped][row_clamped] = false;
 
       bool found = false;
       for (std::size_t i = 0; i < this->_number_of_active; ++i) {
-        if (!found && this->_active_pairs[i][0] == col &&
-            this->_active_pairs[i][1] == row) {
+        if (!found && this->_active_pairs[i][COLUMN] == column_clamped &&
+            this->_active_pairs[i][ROW] == row_clamped) {
           found = true;
         }
         if (found && i < this->_number_of_active - 1) {
-          this->_active_pairs[i] = this->_active_pairs[i + 1];
+          this->_active_pairs[i][COLUMN] = this->_active_pairs[i + 1][COLUMN];
+          this->_active_pairs[i][ROW] = this->_active_pairs[i + 1][ROW];
         }
       }
       if (found) {
-        this->_active_pairs[this->_number_of_active - 1][0] = 0;
-        this->_active_pairs[this->_number_of_active - 1][1] = 0;
+        this->_active_pairs[this->_number_of_active - 1][COLUMN] = 0;
+        this->_active_pairs[this->_number_of_active - 1][ROW] = 0;
         this->_number_of_active--;
       }
     }
@@ -318,59 +331,59 @@ public:
    * If index >= number_of_active, it is clamped to last (consistent with 1D
    * ActiveSet style (safe fallback) instead of throwing).
    */
-  inline auto get_active(std::size_t index) const -> _Index_Pair_Type {
-    if (index >= this->_number_of_active) {
-      index = (this->_number_of_active == 0) ? 0 : this->_number_of_active - 1;
+  inline auto get_active(const std::size_t &index) const -> _Index_Pair_Type {
+
+    std::size_t index_clamped = index;
+
+    if (index_clamped >= this->_number_of_active) {
+      index_clamped = this->_number_of_active - 1;
     }
-    return this->_active_pairs[index];
+    return this->_active_pairs[index_clamped];
   }
 
   /**
    * @brief Returns reference to active pairs list (including unused tail).
    */
-  inline auto get_active_pairs() const -> const _Active_Pairs_Type & {
+  inline auto get_active_pairs(void) const -> const _Active_Pairs_Type & {
     return this->_active_pairs;
   }
 
   /**
    * @brief Returns number of active (col,row) elements.
    */
-  inline auto get_number_of_active() const -> std::size_t {
+  inline auto get_number_of_active(void) const -> std::size_t {
     return this->_number_of_active;
   }
 
   /**
    * @brief Returns whether (col,row) is active.
    */
-  inline auto is_active(std::size_t col, std::size_t row) const -> bool {
-    _check_bounds(col, row);
-    return this->_active_flags[_flat(col, row)];
+  inline auto is_active(const std::size_t &col, const std::size_t &row) const
+      -> bool {
+
+    std::size_t column_clamped = col;
+    std::size_t row_clamped = row;
+
+    this->_check_bounds(column_clamped, row_clamped);
+
+    return this->_active_flags[column_clamped][row_clamped];
   }
 
   /**
    * @brief Clears all active elements.
    */
-  inline void clear() {
+  inline void clear(void) {
     this->_active_flags.fill(false);
+
     for (std::size_t i = 0; i < this->_number_of_active; ++i) {
-      this->_active_pairs[i][0] = 0;
-      this->_active_pairs[i][1] = 0;
+      this->_active_pairs[i][COLUMN] = 0;
+      this->_active_pairs[i][ROW] = 0;
     }
     this->_number_of_active = 0;
   }
 
 protected:
   /* Function */
-
-  /**
-   * @brief Convert (col,row) to flattened index for _active_flags.
-   *
-   * We adopt (col,row) -> col + row * NumberOfColumns mapping, matching
-   * operator()(col,row).
-   */
-  inline std::size_t _flat(const std::size_t &col, const std::size_t &row) {
-    return col + row * NUMBER_OF_COLUMNS;
-  }
 
   /**
    * @brief Clamp col,row to valid range if out-of-bounds.
@@ -387,8 +400,8 @@ protected:
 
 protected:
   /* variables */
-  _Active_Flags_Type _active_flags; // flattened flags
-  _Active_Pairs_Type _active_pairs; // list of active pairs
+  _Active_Flags_Type _active_flags;
+  _Active_Pairs_Type _active_pairs;
   std::size_t _number_of_active;
 };
 
