@@ -205,6 +205,21 @@ inline auto make_ActiveSet(void) -> ActiveSet<NumberOfConstraints> {
 template <std::size_t NumberOfConstraints>
 using ActiveSet_Type = ActiveSet<NumberOfConstraints>;
 
+namespace ActiveSet2D_Operation {
+
+/* clear all active flags */
+template <std::size_t NUMBER_OF_COLUMNS, std::size_t NUMBER_OF_ROWS>
+inline void
+clear_all_active_flags(std::array<std::array<bool, NUMBER_OF_ROWS>,
+                                  NUMBER_OF_COLUMNS> &active_flags) {
+
+  for (std::size_t i = 0; i < NUMBER_OF_COLUMNS; ++i) {
+    active_flags[i].fill(false);
+  }
+}
+
+} // namespace ActiveSet2D_Operation
+
 /**
  * @class ActiveSet2D
  * @brief Manages an active set of (col,row) element positions in a fixed size
@@ -237,7 +252,7 @@ public:
 protected:
   /* Type */
   using _Active_Flags_Type =
-      std::array<std::array<std::size_t, NUMBER_OF_ROWS>, NUMBER_OF_COLUMNS>;
+      std::array<std::array<bool, NUMBER_OF_ROWS>, NUMBER_OF_COLUMNS>;
   using _Index_Pair_Type = std::array<std::size_t, 2>;
   using _Active_Pairs_Type = std::array<_Index_Pair_Type, NUMBER_OF_ELEMENTS>;
 
@@ -337,7 +352,11 @@ public:
     std::size_t index_clamped = index;
 
     if (index_clamped >= this->_number_of_active) {
-      index_clamped = this->_number_of_active - 1;
+      if (0 == this->_number_of_active) {
+        index_clamped = 0;
+      } else {
+        index_clamped = this->_number_of_active - 1;
+      }
     }
     return this->_active_pairs[index_clamped];
   }
@@ -374,7 +393,7 @@ public:
    * @brief Clears all active elements.
    */
   inline void clear(void) {
-    this->_active_flags.fill(false);
+    ActiveSet2D_Operation::clear_all_active_flags(this->_active_flags);
 
     for (std::size_t i = 0; i < this->_number_of_active; ++i) {
       this->_active_pairs[i][COLUMN] = 0;

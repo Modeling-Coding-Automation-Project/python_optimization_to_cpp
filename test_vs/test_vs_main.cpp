@@ -115,6 +115,30 @@ void test_active_set_2D() {
     tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(1), NEAR_LIMIT_STRICT,
         "check get active row after push 2,1.");
 
+    /* inactive 動作確認 */
+    active_set.push_inactive(1, 0);
+    active_pair = active_set.get_active(0);
+
+    tester.expect_near(static_cast<T>(active_pair[0]), static_cast<T>(2), NEAR_LIMIT_STRICT,
+        "check get active col after push inactive 1,0.");
+    tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(1), NEAR_LIMIT_STRICT,
+        "check get active row after push inactive 1,0.");
+
+    /*  clear 動作確認 */
+    active_set.push_active(1, 1);
+    active_set.clear();
+
+    tester.expect_near(static_cast<T>(active_set.get_number_of_active()), static_cast<T>(0),
+        NEAR_LIMIT_STRICT,
+        "check get number of active after clear.");
+
+    active_pair = active_set.get_active(0);
+
+    tester.expect_near(static_cast<T>(active_pair[0]), static_cast<T>(0), NEAR_LIMIT_STRICT,
+        "check get active col after clear.");
+    tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(0), NEAR_LIMIT_STRICT,
+        "check get active row after clear.");
+
 
 
     tester.throw_error_if_test_failed();
