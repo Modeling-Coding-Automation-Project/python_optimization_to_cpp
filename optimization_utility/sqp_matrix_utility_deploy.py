@@ -67,22 +67,17 @@ def create_and_write_parameter_class_code(
 
 def create_and_write_state_function_code(function_name: str):
 
-    function_file_path = ControlDeploy.find_file(
+    file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
 
-    extractor = FunctionExtractor(function_file_path)
+    extractor = FunctionExtractor(file_path)
     functions = extractor.extract()
     state_function_code = []
-    SparseAvailable_list = []
 
     for _, code in functions.items():
         converter = FunctionToCppVisitor("X_Type")
 
         state_function_code.append(converter.convert(code))
-        SparseAvailable_list.append(converter.SparseAvailable)
-
-    SparseAvailable_list = [
-        x for x in SparseAvailable_list if x is not None]
 
     # generate code text
     code_text = ""
@@ -120,21 +115,75 @@ def create_and_write_state_function_code(function_name: str):
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{function_name}.hpp")
 
-    return saved_file_name, SparseAvailable_list
+    return saved_file_name
 
 
 def create_and_write_measurement_function_code(function_name: str):
 
-    function_file_path = ControlDeploy.find_file(
+    file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
 
-    extractor = FunctionExtractor(function_file_path)
+    extractor = FunctionExtractor(file_path)
+    functions = extractor.extract()
+    state_function_code = []
+
+    for _, code in functions.items():
+        converter = FunctionToCppVisitor("Y_Type")
+
+        state_function_code.append(converter.convert(code))
+
+    # generate code text
+    code_text = ""
+    header_macro_text = "__" + function_name.upper() + "_HPP__"
+
+    code_text += f"#ifndef {header_macro_text}\n"
+    code_text += f"#define {header_macro_text}\n\n"
+
+    code_text += "#include \"python_math.hpp\"\n\n"
+
+    code_text += f"namespace {function_name} {{\n\n"
+
+    code_text += "using namespace PythonMath;\n\n"
+
+    code_text += "template <typename X_Type, typename U_Type, " + \
+        "typename Parameter_Type, typename Y_Type>\n"
+    code_text += "class Function {\n"
+    code_text += "public:\n"
+
+    # sympy_function
+    code_text += f"static "
+    code_text += state_function_code[0]
+    code_text += "\n"
+
+    # function
+    code_text += f"static "
+    code_text += state_function_code[1]
+    code_text += "\n"
+
+    code_text += "};\n\n"
+
+    code_text += f"}} // namespace {function_name}\n\n"
+
+    code_text += f"#endif // {header_macro_text}\n"
+
+    saved_file_name = ControlDeploy.write_to_file(
+        code_text, f"{function_name}.hpp")
+
+    return saved_file_name
+
+
+def create_and_write_state_jacobian_x_code(function_name: str):
+
+    file_path = ControlDeploy.find_file(
+        f"{function_name}.py", os.getcwd())
+
+    extractor = FunctionExtractor(file_path)
     functions = extractor.extract()
     state_function_code = []
     SparseAvailable_list = []
 
     for _, code in functions.items():
-        converter = FunctionToCppVisitor("Y_Type")
+        converter = FunctionToCppVisitor("State_Jacobian_x_Type")
 
         state_function_code.append(converter.convert(code))
         SparseAvailable_list.append(converter.SparseAvailable)
@@ -156,7 +205,7 @@ def create_and_write_measurement_function_code(function_name: str):
     code_text += "using namespace PythonMath;\n\n"
 
     code_text += "template <typename X_Type, typename U_Type, " + \
-        "typename Parameter_Type, typename Y_Type>\n"
+        " typename Parameter_Type, typename State_Jacobian_x_Type>\n"
     code_text += "class Function {\n"
     code_text += "public:\n"
 
@@ -234,7 +283,7 @@ class SQP_MatrixUtilityDeploy:
         state_function_file_name_without_ext = \
             cost_matrices.state_function_code_file_name.split(".")[0]
 
-        state_function_cpp_file_name, _ = \
+        state_function_cpp_file_name = \
             create_and_write_state_function_code(
                 state_function_file_name_without_ext)
 
@@ -242,6 +291,16 @@ class SQP_MatrixUtilityDeploy:
         measurement_function_file_name_without_ext = \
             cost_matrices.measurement_function_code_file_name.split(".")[0]
 
-        measurement_function_cpp_file_name, _ = \
+        measurement_function_cpp_file_name = \
             create_and_write_measurement_function_code(
                 measurement_function_file_name_without_ext)
+
+        # state jacobian x function code
+        state_jacobian_x_file_name_without_ext = \
+            cost_matrices.state_jacobian_x_code_file_name.split(".")[0]
+
+        state_jacobian_x_cpp_file_name, state_jacobian_x_SparseAvailable_list = \
+            create_and_write_state_jacobian_x_code(
+                state_jacobian_x_file_name_without_ext)
+
+        pass
