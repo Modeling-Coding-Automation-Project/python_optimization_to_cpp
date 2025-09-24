@@ -8,9 +8,11 @@ import ast
 import astor
 import numpy as np
 import sympy as sp
+from dataclasses import dataclass, fields, is_dataclass
 
 from external_libraries.MCAP_python_optimization.optimization_utility.sqp_matrix_utility import SQP_CostMatrices_NMPC
 from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import NumpyDeploy
+from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import python_to_cpp_types
 from external_libraries.MCAP_python_control.python_control.control_deploy import ControlDeploy
 from external_libraries.MCAP_python_control.python_control.control_deploy import ExpressionDeploy
 from external_libraries.MCAP_python_control.python_control.control_deploy import FunctionExtractor
@@ -18,12 +20,55 @@ from external_libraries.MCAP_python_control.python_control.control_deploy import
 from external_libraries.python_control_to_cpp.python_control.kalman_filter_deploy import FunctionToCppVisitor
 
 
+def create_and_write_parameter_class_code(
+        parameter_object,
+        value_type_name: str,
+        file_name_without_extension: str
+):
+
+    if not is_dataclass(parameter_object):
+        raise TypeError("parameter_object must be a dataclass instance")
+
+    file_path = ControlDeploy.find_file(
+        f"{file_name_without_extension}.py", os.getcwd())
+
+    try:
+        value_type_name = python_to_cpp_types[value_type_name]
+    except KeyError:
+        pass
+
+    code_text = ""
+    header_macro_text = "__" + file_name_without_extension.upper() + "_HPP__"
+
+    code_text += f"#ifndef {header_macro_text}\n"
+    code_text += f"#define {header_macro_text}\n\n"
+
+    code_text += f"namespace {file_name_without_extension} {{\n\n"
+
+    code_text += "class Parameter {\n"
+    code_text += "public:\n"
+
+    name_value_pairs = [(f.name, getattr(parameter_object, f.name))
+                        for f in fields(parameter_object)]
+    for _, name_value in enumerate(name_value_pairs):
+        code_text += f"  {value_type_name} {name_value[0]} = static_cast<{value_type_name}>({name_value[1]});\n"
+
+    code_text += "};\n\n"
+
+    code_text += f"}} // namespace {file_name_without_extension}\n\n"
+
+    code_text += f"#endif // {header_macro_text}\n"
+
+    saved_file_name = ControlDeploy.write_to_file(
+        code_text, f"{file_name_without_extension}.hpp")
+
+    return saved_file_name
+
+
 def create_and_write_state_function_code(function_name: str):
 
     function_file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
-    state_function_U_size = ExpressionDeploy.get_input_size_from_function_code(
-        function_file_path)
 
     extractor = FunctionExtractor(function_file_path)
     functions = extractor.extract()
@@ -75,15 +120,13 @@ def create_and_write_state_function_code(function_name: str):
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{function_name}.hpp")
 
-    return saved_file_name, state_function_U_size, SparseAvailable_list
+    return saved_file_name, SparseAvailable_list
 
 
 def create_and_write_measurement_function_code(function_name: str):
 
     function_file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
-    state_function_U_size = ExpressionDeploy.get_input_size_from_function_code(
-        function_file_path)
 
     extractor = FunctionExtractor(function_file_path)
     functions = extractor.extract()
@@ -136,7 +179,7 @@ def create_and_write_measurement_function_code(function_name: str):
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{function_name}.hpp")
 
-    return saved_file_name, state_function_U_size, SparseAvailable_list
+    return saved_file_name, SparseAvailable_list
 
 
 class SQP_MatrixUtilityDeploy:
@@ -177,11 +220,21 @@ class SQP_MatrixUtilityDeploy:
             caller_file_name_without_ext = file_name
 
         # %% generate functions code
+        # parameter class code
+        parameter_class_file_name_without_ext = \
+            f"{caller_file_name_without_ext}_parameter"
+
+        parameter_class_cpp_file_name = \
+            create_and_write_parameter_class_code(
+                cost_matrices.state_space_parameters,
+                type_name,
+                parameter_class_file_name_without_ext)
+
         # state equation function code
         state_function_file_name_without_ext = \
             cost_matrices.state_function_code_file_name.split(".")[0]
 
-        state_function_cpp_file_name, state_function_U_size, _ = \
+        state_function_cpp_file_name, _ = \
             create_and_write_state_function_code(
                 state_function_file_name_without_ext)
 
@@ -189,6 +242,6 @@ class SQP_MatrixUtilityDeploy:
         measurement_function_file_name_without_ext = \
             cost_matrices.measurement_function_code_file_name.split(".")[0]
 
-        measurement_function_cpp_file_name, measurement_function_U_size, _ = \
+        measurement_function_cpp_file_name, _ = \
             create_and_write_measurement_function_code(
                 measurement_function_file_name_without_ext)
