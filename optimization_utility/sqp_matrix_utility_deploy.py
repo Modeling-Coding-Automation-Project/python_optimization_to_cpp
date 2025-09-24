@@ -316,4 +316,13 @@ class SQP_MatrixUtilityDeploy:
                 state_jacobian_u_file_name_without_ext,
                 "State_Jacobian_u_Type")
 
+        # measurement jacobian x function code
+        measurement_jacobian_x_file_name_without_ext = \
+            cost_matrices.measurement_jacobian_x_code_file_name.split(".")[0]
+
+        measurement_jacobian_x_cpp_file_name, measurement_jacobian_x_SparseAvailable_list = \
+            create_and_write_state_measurement_jacobian_code(
+                measurement_jacobian_x_file_name_without_ext,
+                "Measurement_Jacobian_x_Type")
+
         pass
