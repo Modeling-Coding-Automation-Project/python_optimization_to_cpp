@@ -46,10 +46,11 @@ def create_and_write_state_function_code(function_name: str):
     code_text += f"#ifndef {header_macro_text}\n"
     code_text += f"#define {header_macro_text}\n\n"
 
-    code_text += "#include \"python_math.hpp\"\n"
-    code_text += "#include \"python_numpy.hpp\"\n\n"
+    code_text += "#include \"python_math.hpp\"\n\n"
 
     code_text += f"namespace {function_name} {{\n\n"
+
+    code_text += "using namespace PythonMath;\n\n"
 
     code_text += "template <typename X_Type, typename U_Type, typename Parameter_Type>\n"
     code_text += "class Function {\n"
@@ -105,10 +106,11 @@ def create_and_write_measurement_function_code(function_name: str):
     code_text += f"#ifndef {header_macro_text}\n"
     code_text += f"#define {header_macro_text}\n\n"
 
-    code_text += "#include \"python_math.hpp\"\n"
-    code_text += "#include \"python_numpy.hpp\"\n\n"
+    code_text += "#include \"python_math.hpp\"\n\n"
 
     code_text += f"namespace {function_name} {{\n\n"
+
+    code_text += "using namespace PythonMath;\n\n"
 
     code_text += "template <typename X_Type, typename U_Type, " + \
         "typename Parameter_Type, typename Y_Type>\n"
