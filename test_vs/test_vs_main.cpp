@@ -92,19 +92,28 @@ void test_active_set_2D() {
     constexpr std::size_t COLUMNS = 3;
     constexpr std::size_t ROWS = 2;
 
-    ActiveSet2D<ROWS, COLUMNS> active_set;
-    active_set.push_active(1, 2);
+    ActiveSet2D<COLUMNS, ROWS> active_set;
+    active_set.push_active(1, 0);
 
-    ActiveSet2D_Type<ROWS, COLUMNS> active_set_copy = active_set;
-    ActiveSet2D_Type<ROWS, COLUMNS> active_set_move = std::move(active_set_copy);
+    ActiveSet2D_Type<COLUMNS, ROWS> active_set_copy = active_set;
+    ActiveSet2D_Type<COLUMNS, ROWS> active_set_move = std::move(active_set_copy);
     active_set = std::move(active_set_move);
 
     auto active_pair = active_set.get_active(0);
 
     tester.expect_near(static_cast<T>(active_pair[0]), static_cast<T>(1), NEAR_LIMIT_STRICT,
         "check get active col.");
-    tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(2), NEAR_LIMIT_STRICT,
+    tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(0), NEAR_LIMIT_STRICT,
         "check get active row.");
+
+    /* active 動作確認 */
+    active_set.push_active(2, 1);
+    active_pair = active_set.get_active(1);
+
+    tester.expect_near(static_cast<T>(active_pair[0]), static_cast<T>(2), NEAR_LIMIT_STRICT,
+        "check get active col after push 2,1.");
+    tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(1), NEAR_LIMIT_STRICT,
+        "check get active row after push 2,1.");
 
 
 
