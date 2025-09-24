@@ -22,12 +22,11 @@ class SQP_MatrixUtilityDeploy:
     @staticmethod
     def generate_cpp_code(
         cost_matrices: SQP_CostMatrices_NMPC,
-        file_name: str = None,
-        number_of_delay: int = 0
+        file_name: str = None
     ):
 
         deployed_file_names = []
 
-        ControlDeploy.restrict_data_type(cost_matrices.A.dtype.name)
+        ControlDeploy.restrict_data_type(cost_matrices.Qx[0, 0].dtype.name)
 
-        type_name = NumpyDeploy.check_dtype(cost_matrices.Qx.dtype.name)
+        type_name = NumpyDeploy.check_dtype(cost_matrices.Qx)
