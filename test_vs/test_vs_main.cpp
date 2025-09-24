@@ -140,6 +140,31 @@ void test_active_set_2D() {
         "check get active row after clear.");
 
     /* ActiveSet2D MatrixOperator */
+    auto A = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+        static_cast<T>(1), static_cast<T>(2),
+        static_cast<T>(3), static_cast<T>(4),
+        static_cast<T>(5), static_cast<T>(6)
+    );
+
+    auto B = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+        static_cast<T>(7), static_cast<T>(8),
+        static_cast<T>(9), static_cast<T>(10),
+        static_cast<T>(11), static_cast<T>(12)
+    );
+
+    active_set.push_active(2, 1);
+    active_set.push_active(1, 1);
+
+    auto C = ActiveSet2D_MatrixOperator::element_wise_product(A, B, active_set);
+
+    auto C_answer = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+        static_cast<T>(0), static_cast<T>(0),
+        static_cast<T>(0), static_cast<T>(40),
+        static_cast<T>(0), static_cast<T>(72)
+    );
+
+    tester.expect_near(C.matrix.data, C_answer.matrix.data, NEAR_LIMIT_STRICT,
+        "check element wise product.");
 
 
 
