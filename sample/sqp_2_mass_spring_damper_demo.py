@@ -10,10 +10,10 @@ import numpy as np
 import sympy as sp
 from dataclasses import dataclass
 
-from optimization_utility.sqp_matrix_utility import SQP_CostMatrices_NMPC
+from optimization_utility.sqp_matrix_utility_deploy import SQP_CostMatrices_NMPC
 from external_libraries.MCAP_python_optimization.python_optimization.sqp_active_set_pcg_pls import SQP_ActiveSet_PCG_PLS
 
-from optimization_utility.sqp_matrix_utility import SQP_MatrixUtilityDeploy
+from optimization_utility.sqp_matrix_utility_deploy import SQP_MatrixUtilityDeploy
 
 
 def create_plant_model():
