@@ -18,7 +18,7 @@ from external_libraries.MCAP_python_control.python_control.control_deploy import
 from external_libraries.python_control_to_cpp.python_control.kalman_filter_deploy import FunctionToCppVisitor
 
 
-def create_and_write_state_space_function_code(function_name, return_type):
+def create_and_write_state_function_code(function_name: str):
 
     function_file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
@@ -30,8 +30,8 @@ def create_and_write_state_space_function_code(function_name, return_type):
     state_function_code = []
     SparseAvailable_list = []
 
-    for name, code in functions.items():
-        converter = FunctionToCppVisitor(return_type)
+    for _, code in functions.items():
+        converter = FunctionToCppVisitor("X_Type")
 
         state_function_code.append(converter.convert(code))
         SparseAvailable_list.append(converter.SparseAvailable)
@@ -120,5 +120,13 @@ class SQP_MatrixUtilityDeploy:
             cost_matrices.state_function_code_file_name.split(".")[0]
 
         state_function_cpp_file_name, state_function_U_size, _ = \
-            create_and_write_state_space_function_code(
-                state_function_file_name_without_ext, "X_Type")
+            create_and_write_state_function_code(
+                state_function_file_name_without_ext)
+
+        # measurement equation function code
+        measurement_function_file_name_without_ext = \
+            cost_matrices.measurement_function_code_file_name.split(".")[0]
+
+        # measurement_function_cpp_file_name, measurement_function_U_size, _ = \
+        #     create_and_write_state_space_function_code(
+        #         measurement_function_file_name_without_ext, "Y_Type")
