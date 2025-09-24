@@ -16,3 +16,6 @@
 [submodule "external_libraries/MCAP_python_control"]
 	path = external_libraries/MCAP_python_control
 	url = https://github.com/Modeling-Coding-Automation-Project/MCAP_python_control.git
+[submodule "external_libraries/python_control_to_cpp"]
+	path = external_libraries/python_control_to_cpp
+	url = https://github.com/Modeling-Coding-Automation-Project/python_control_to_cpp.git
