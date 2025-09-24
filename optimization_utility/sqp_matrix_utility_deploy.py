@@ -234,6 +234,68 @@ def create_and_write_state_measurement_jacobian_code(
     return saved_file_name, SparseAvailable_list
 
 
+def create_and_write_state_measurement_hessian_code(
+        function_name: str,
+        output_type: str
+):
+
+    file_path = ControlDeploy.find_file(
+        f"{function_name}.py", os.getcwd())
+
+    extractor = FunctionExtractor(file_path)
+    functions = extractor.extract()
+    state_function_code = []
+    SparseAvailable_list = []
+
+    for _, code in functions.items():
+        converter = FunctionToCppVisitor(output_type)
+
+        state_function_code.append(converter.convert(code))
+        SparseAvailable_list.append(converter.SparseAvailable)
+
+    SparseAvailable_list = [
+        x for x in SparseAvailable_list if x is not None]
+
+    # generate code text
+    code_text = ""
+    header_macro_text = "__" + function_name.upper() + "_HPP__"
+
+    code_text += f"#ifndef {header_macro_text}\n"
+    code_text += f"#define {header_macro_text}\n\n"
+
+    code_text += "#include \"python_math.hpp\"\n\n"
+
+    code_text += f"namespace {function_name} {{\n\n"
+
+    code_text += "using namespace PythonMath;\n\n"
+
+    code_text += "template <typename X_Type, typename U_Type, " + \
+        " typename Parameter_Type, typename " + output_type + ">\n"
+    code_text += "class Function {\n"
+    code_text += "public:\n"
+
+    # sympy_function
+    code_text += f"static "
+    code_text += state_function_code[0]
+    code_text += "\n"
+
+    # function
+    code_text += f"static "
+    code_text += state_function_code[1]
+    code_text += "\n"
+
+    code_text += "};\n\n"
+
+    code_text += f"}} // namespace {function_name}\n\n"
+
+    code_text += f"#endif // {header_macro_text}\n"
+
+    saved_file_name = ControlDeploy.write_to_file(
+        code_text, f"{function_name}.hpp")
+
+    return saved_file_name, SparseAvailable_list
+
+
 class SQP_MatrixUtilityDeploy:
 
     def __init__(self):
@@ -324,5 +386,14 @@ class SQP_MatrixUtilityDeploy:
             create_and_write_state_measurement_jacobian_code(
                 measurement_jacobian_x_file_name_without_ext,
                 "Measurement_Jacobian_x_Type")
+
+        # state hessian xx function code
+        state_hessian_xx_file_name_without_ext = \
+            cost_matrices.hf_xx_code_file_name.split(".")[0]
+
+        state_hessian_xx_cpp_file_name, state_hessian_xx_SparseAvailable_list = \
+            create_and_write_state_measurement_hessian_code(
+                state_hessian_xx_file_name_without_ext,
+                "State_Hessian_xx_Type")
 
         pass
