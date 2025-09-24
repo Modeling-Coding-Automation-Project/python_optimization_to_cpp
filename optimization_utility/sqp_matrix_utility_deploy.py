@@ -172,7 +172,10 @@ def create_and_write_measurement_function_code(function_name: str):
     return saved_file_name
 
 
-def create_and_write_state_jacobian_x_code(function_name: str):
+def create_and_write_state_measurement_jacobian_code(
+        function_name: str,
+        output_type: str
+):
 
     file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
@@ -183,7 +186,7 @@ def create_and_write_state_jacobian_x_code(function_name: str):
     SparseAvailable_list = []
 
     for _, code in functions.items():
-        converter = FunctionToCppVisitor("State_Jacobian_x_Type")
+        converter = FunctionToCppVisitor(output_type)
 
         state_function_code.append(converter.convert(code))
         SparseAvailable_list.append(converter.SparseAvailable)
@@ -205,7 +208,7 @@ def create_and_write_state_jacobian_x_code(function_name: str):
     code_text += "using namespace PythonMath;\n\n"
 
     code_text += "template <typename X_Type, typename U_Type, " + \
-        " typename Parameter_Type, typename State_Jacobian_x_Type>\n"
+        " typename Parameter_Type, typename " + output_type + ">\n"
     code_text += "class Function {\n"
     code_text += "public:\n"
 
@@ -300,7 +303,17 @@ class SQP_MatrixUtilityDeploy:
             cost_matrices.state_jacobian_x_code_file_name.split(".")[0]
 
         state_jacobian_x_cpp_file_name, state_jacobian_x_SparseAvailable_list = \
-            create_and_write_state_jacobian_x_code(
-                state_jacobian_x_file_name_without_ext)
+            create_and_write_state_measurement_jacobian_code(
+                state_jacobian_x_file_name_without_ext,
+                "State_Jacobian_x_Type")
+
+        # state jacobian u function code
+        state_jacobian_u_file_name_without_ext = \
+            cost_matrices.state_jacobian_u_code_file_name.split(".")[0]
+
+        state_jacobian_u_cpp_file_name, state_jacobian_u_SparseAvailable_list = \
+            create_and_write_state_measurement_jacobian_code(
+                state_jacobian_u_file_name_without_ext,
+                "State_Jacobian_u_Type")
 
         pass
