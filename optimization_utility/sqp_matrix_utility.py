@@ -51,8 +51,21 @@ def create_and_write_state_space_function_code(function_name, return_type):
 
     code_text += f"namespace {function_name} {{\n\n"
 
-    for code in state_function_code:
-        code_text += f"{code}\n\n"
+    code_text += "template <typename X_Type, typename U_Type, typename Parameter_Type>\n"
+    code_text += "class Function {\n"
+    code_text += "public:\n"
+
+    # sympy_function
+    code_text += f"static "
+    code_text += state_function_code[0]
+    code_text += "\n"
+
+    # function
+    code_text += f"static "
+    code_text += state_function_code[1]
+    code_text += "\n"
+
+    code_text += "};\n\n"
 
     code_text += f"}} // namespace {function_name}\n\n"
 
