@@ -207,15 +207,33 @@ using ActiveSet_Type = ActiveSet<NumberOfConstraints>;
 
 namespace ActiveSet2D_Operation {
 
+template <std::size_t M, std::size_t N>
+using Active_Flags_Type = std::array<std::array<bool, N>, M>;
+
+// Namespace-scope helper: recursively unroll columns at compile time.
+template <std::size_t M, std::size_t N, std::size_t I> struct ClearLoop {
+  static inline void run(Active_Flags_Type<M, N> &flags) {
+
+    flags[I].fill(false);
+    ClearLoop<M, N, I - 1>::run(flags);
+  }
+};
+
+// Termination specialization: when I == 0 do nothing.
+template <std::size_t M, std::size_t N> struct ClearLoop<M, N, 0> {
+  static inline void run(Active_Flags_Type<M, N> &flags) {
+
+    flags[0].fill(false);
+  }
+};
+
 /* clear all active flags */
 template <std::size_t NUMBER_OF_COLUMNS, std::size_t NUMBER_OF_ROWS>
-inline void
-clear_all_active_flags(std::array<std::array<bool, NUMBER_OF_ROWS>,
-                                  NUMBER_OF_COLUMNS> &active_flags) {
+inline void clear_all_active_flags(
+    Active_Flags_Type<NUMBER_OF_COLUMNS, NUMBER_OF_ROWS> &active_flags) {
 
-  for (std::size_t i = 0; i < NUMBER_OF_COLUMNS; ++i) {
-    active_flags[i].fill(false);
-  }
+  ClearLoop<NUMBER_OF_COLUMNS, NUMBER_OF_ROWS, NUMBER_OF_COLUMNS - 1>::run(
+      active_flags);
 }
 
 } // namespace ActiveSet2D_Operation

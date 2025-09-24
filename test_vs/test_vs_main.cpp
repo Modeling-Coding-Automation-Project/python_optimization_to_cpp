@@ -139,6 +139,8 @@ void test_active_set_2D() {
     tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(0), NEAR_LIMIT_STRICT,
         "check get active row after clear.");
 
+    /* ActiveSet2D MatrixOperator */
+
 
 
     tester.throw_error_if_test_failed();
