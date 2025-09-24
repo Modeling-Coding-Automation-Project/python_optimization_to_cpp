@@ -1,3 +1,15 @@
+/**
+ * @file python_optimization_active_set.hpp
+ * @brief Provides classes and utilities for managing active sets of constraints
+ *        in optimization problems, including 1D and 2D active set management.
+ *
+ * Features:
+ * - Efficient push and removal of active constraints.
+ * - Compile-time fixed sizes for safety and performance.
+ * - Support for both 1D and 2D active sets.
+ * - Matrix operations (element-wise product, dot, norm) restricted to active
+ * set elements.
+ */
 #ifndef __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__
 #define __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__
 
@@ -443,15 +455,30 @@ protected:
   std::size_t _number_of_active;
 };
 
-/* Factory make */
+/* make Active Set 2D */
 
+/**
+ * @brief Creates and returns an instance of ActiveSet2D with specified
+ * dimensions.
+ *
+ * This function template constructs an ActiveSet2D object with the given number
+ * of columns and rows, as specified by the template parameters.
+ *
+ * @tparam Number_Of_Columns The number of columns for the ActiveSet2D.
+ * @tparam Number_Of_Rows The number of rows for the ActiveSet2D.
+ * @return An instance of ActiveSet2D<Number_Of_Columns, Number_Of_Rows>.
+ */
 template <std::size_t Number_Of_Columns, std::size_t Number_Of_Rows>
 inline auto make_ActiveSet2D(void)
     -> ActiveSet2D<Number_Of_Columns, Number_Of_Rows> {
   return ActiveSet2D<Number_Of_Columns, Number_Of_Rows>();
 }
 
-/* Alias */
+/* Active Set 2D Type */
+
+/**
+ * @brief Alias for ActiveSet2D with specified dimensions.
+ */
 template <std::size_t Number_Of_Columns, std::size_t Number_Of_Rows>
 using ActiveSet2D_Type = ActiveSet2D<Number_Of_Columns, Number_Of_Rows>;
 
