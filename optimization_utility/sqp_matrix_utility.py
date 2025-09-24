@@ -77,6 +77,66 @@ def create_and_write_state_function_code(function_name: str):
     return saved_file_name, state_function_U_size, SparseAvailable_list
 
 
+def create_and_write_measurement_function_code(function_name: str):
+
+    function_file_path = ControlDeploy.find_file(
+        f"{function_name}.py", os.getcwd())
+    state_function_U_size = ExpressionDeploy.get_input_size_from_function_code(
+        function_file_path)
+
+    extractor = FunctionExtractor(function_file_path)
+    functions = extractor.extract()
+    state_function_code = []
+    SparseAvailable_list = []
+
+    for _, code in functions.items():
+        converter = FunctionToCppVisitor("Y_Type")
+
+        state_function_code.append(converter.convert(code))
+        SparseAvailable_list.append(converter.SparseAvailable)
+
+    SparseAvailable_list = [
+        x for x in SparseAvailable_list if x is not None]
+
+    # generate code text
+    code_text = ""
+    header_macro_text = "__" + function_name.upper() + "_HPP__"
+
+    code_text += f"#ifndef {header_macro_text}\n"
+    code_text += f"#define {header_macro_text}\n\n"
+
+    code_text += "#include \"python_math.hpp\"\n"
+    code_text += "#include \"python_numpy.hpp\"\n\n"
+
+    code_text += f"namespace {function_name} {{\n\n"
+
+    code_text += "template <typename X_Type, typename U_Type, " + \
+        "typename Parameter_Type, typename Y_Type>\n"
+    code_text += "class Function {\n"
+    code_text += "public:\n"
+
+    # sympy_function
+    code_text += f"static "
+    code_text += state_function_code[0]
+    code_text += "\n"
+
+    # function
+    code_text += f"static "
+    code_text += state_function_code[1]
+    code_text += "\n"
+
+    code_text += "};\n\n"
+
+    code_text += f"}} // namespace {function_name}\n\n"
+
+    code_text += f"#endif // {header_macro_text}\n"
+
+    saved_file_name = ControlDeploy.write_to_file(
+        code_text, f"{function_name}.hpp")
+
+    return saved_file_name, state_function_U_size, SparseAvailable_list
+
+
 class SQP_MatrixUtilityDeploy:
 
     def __init__(self):
@@ -127,6 +187,6 @@ class SQP_MatrixUtilityDeploy:
         measurement_function_file_name_without_ext = \
             cost_matrices.measurement_function_code_file_name.split(".")[0]
 
-        # measurement_function_cpp_file_name, measurement_function_U_size, _ = \
-        #     create_and_write_state_space_function_code(
-        #         measurement_function_file_name_without_ext, "Y_Type")
+        measurement_function_cpp_file_name, measurement_function_U_size, _ = \
+            create_and_write_measurement_function_code(
+                measurement_function_file_name_without_ext)
