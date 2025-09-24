@@ -222,8 +222,23 @@ namespace ActiveSet2D_Operation {
 template <std::size_t M, std::size_t N>
 using Active_Flags_Type = std::array<std::array<bool, N>, M>;
 
-// Namespace-scope helper: recursively unroll columns at compile time.
+/**
+ * @brief Recursively clears (sets to false) the active flags in the given flags
+ * structure.
+ *
+ * This template struct defines a static method `run` that, for a given index
+ * `I`, sets all elements of the `I`-th row of the `flags` object to `false`
+ * using the `fill` method, and then recursively calls itself with `I - 1` until
+ * the base case is reached.
+ *
+ * @tparam M Number of rows in the flags structure.
+ * @tparam N Number of columns in the flags structure.
+ * @tparam I Current row index to clear (should be non-negative).
+ * @param flags Reference to the Active_Flags_Type<M, N> object whose flags are
+ * to be cleared.
+ */
 template <std::size_t M, std::size_t N, std::size_t I> struct ClearLoop {
+
   static inline void run(Active_Flags_Type<M, N> &flags) {
 
     flags[I].fill(false);
@@ -231,15 +246,41 @@ template <std::size_t M, std::size_t N, std::size_t I> struct ClearLoop {
   }
 };
 
-// Termination specialization: when I == 0 do nothing.
+/**
+ * @brief Specialization of the ClearLoop struct for the case when the loop
+ * index is 0.
+ *
+ * This specialization provides a static inline function `run` that clears (sets
+ * to false) all elements of the first row (index 0) of the `flags` object,
+ * which is of type `Active_Flags_Type<M, N>`. This is typically used to reset
+ * or clear the active set flags for the first row in an optimization algorithm.
+ *
+ * @tparam M Number of rows in the flags structure.
+ * @tparam N Number of columns in the flags structure.
+ * @param flags Reference to the flags object to be cleared.
+ */
 template <std::size_t M, std::size_t N> struct ClearLoop<M, N, 0> {
+
   static inline void run(Active_Flags_Type<M, N> &flags) {
 
     flags[0].fill(false);
   }
 };
 
-/* clear all active flags */
+/**
+ * @brief Clears all active flags in the provided active_flags structure.
+ *
+ * This function resets or clears all flags within the given Active_Flags_Type
+ * instance by invoking the ClearLoop helper template. It is templated on the
+ * number of columns and rows, allowing for compile-time optimization and type
+ * safety.
+ *
+ * @tparam NUMBER_OF_COLUMNS The number of columns in the active flags
+ * structure.
+ * @tparam NUMBER_OF_ROWS The number of rows in the active flags structure.
+ * @param active_flags Reference to the Active_Flags_Type object whose flags are
+ * to be cleared.
+ */
 template <std::size_t NUMBER_OF_COLUMNS, std::size_t NUMBER_OF_ROWS>
 inline void clear_all_active_flags(
     Active_Flags_Type<NUMBER_OF_COLUMNS, NUMBER_OF_ROWS> &active_flags) {
@@ -323,7 +364,15 @@ public:
   /* Function */
 
   /**
-   * @brief Adds the (col,row) pair if not already active.
+   * @brief Adds the specified (col, row) pair to the active set.
+   *
+   * This function is typically used in optimization algorithms that maintain
+   * an active set of constraints or variables. The active set is updated by
+   * pushing the given column and row indices, which represent the position
+   * of the constraint or variable to be activated.
+   *
+   * @param col The column index to be added to the active set.
+   * @param row The row index to be added to the active set.
    */
   inline void push_active(const std::size_t &col, const std::size_t &row) {
 
@@ -341,7 +390,17 @@ public:
   }
 
   /**
-   * @brief Removes the (col,row) pair if currently active.
+   * @brief Marks the specified (column, row) pair as inactive and removes it
+   * from the list of active pairs.
+   *
+   * This function first clamps the input column and row indices, checks their
+   * bounds, and then checks if the specified pair is currently active. If so,
+   * it marks the pair as inactive in the _active_flags matrix and removes it
+   * from the _active_pairs array by shifting subsequent elements left to fill
+   * the gap. The number of active pairs (_number_of_active) is decremented.
+   *
+   * @param col The column index of the pair to deactivate.
+   * @param row The row index of the pair to deactivate.
    */
   inline void push_inactive(const std::size_t &col, const std::size_t &row) {
 
@@ -373,9 +432,16 @@ public:
   }
 
   /**
-   * @brief Returns the (col,row) pair at active list index.
-   * If index >= number_of_active, it is clamped to last (consistent with 1D
-   * ActiveSet style (safe fallback) instead of throwing).
+   * @brief Retrieves the active pair at the specified index, clamping the index
+   * if out of bounds.
+   *
+   * If the provided index is greater than or equal to the number of active
+   * pairs, the function clamps the index to the last valid position. If there
+   * are no active pairs, the index is set to 0. Returns the active pair at the
+   * resulting index.
+   *
+   * @param index The index of the active pair to retrieve.
+   * @return _Index_Pair_Type The active pair at the clamped index.
    */
   inline auto get_active(const std::size_t &index) const -> _Index_Pair_Type {
 
@@ -392,21 +458,42 @@ public:
   }
 
   /**
-   * @brief Returns reference to active pairs list (including unused tail).
+   * @brief Returns a constant reference to the current set of active pairs.
+   *
+   * This function provides access to the internal collection of active pairs,
+   * which are typically used to represent constraints or relationships that are
+   * currently active in the optimization process.
+   *
+   * @return A constant reference to the internal _Active_Pairs_Type container
+   *         holding the active pairs.
    */
   inline auto get_active_pairs(void) const -> const _Active_Pairs_Type & {
     return this->_active_pairs;
   }
 
   /**
-   * @brief Returns number of active (col,row) elements.
+   * @brief Returns the current number of active elements.
+   *
+   * This function provides access to the private member variable that tracks
+   * the number of active elements in the active set.
+   *
+   * @return The number of active elements as a std::size_t.
    */
   inline auto get_number_of_active(void) const -> std::size_t {
     return this->_number_of_active;
   }
 
   /**
-   * @brief Returns whether (col,row) is active.
+   * @brief Checks if the specified element is active.
+   *
+   * This function determines whether the element at the given column and row
+   * indices is marked as active. The indices are clamped to valid bounds before
+   * checking. If the indices are out of range, an internal bounds check is
+   * performed.
+   *
+   * @param col The column index of the element to check.
+   * @param row The row index of the element to check.
+   * @return true if the element is active; false otherwise.
    */
   inline auto is_active(const std::size_t &col, const std::size_t &row) const
       -> bool {
@@ -420,7 +507,18 @@ public:
   }
 
   /**
-   * @brief Clears all active elements.
+   * @brief Clears the active set by resetting all active flags and active
+   * pairs.
+   *
+   * This function performs the following actions:
+   * - Calls ActiveSet2D_Operation::clear_all_active_flags to reset all active
+   * flags.
+   * - Iterates through the current active pairs and sets their COLUMN and ROW
+   * values to 0.
+   * - Resets the number of active pairs to zero.
+   *
+   * After calling this function, the active set will be empty and ready for
+   * reuse.
    */
   inline void clear(void) {
     ActiveSet2D_Operation::clear_all_active_flags(this->_active_flags);
@@ -436,7 +534,17 @@ protected:
   /* Function */
 
   /**
-   * @brief Clamp col,row to valid range if out-of-bounds.
+   * @brief Ensures that the given column and row indices do not exceed their
+   * respective bounds.
+   *
+   * This function checks if the provided column (`col`) and row (`row`) indices
+   * are within the valid range, defined by `NUMBER_OF_COLUMNS` and
+   * `NUMBER_OF_ROWS`. If an index is out of bounds (greater than or equal to
+   * the maximum allowed value), it is set to the maximum valid index
+   * (`NUMBER_OF_COLUMNS - 1` or `NUMBER_OF_ROWS - 1`).
+   *
+   * @param col Reference to the column index to check and potentially adjust.
+   * @param row Reference to the row index to check and potentially adjust.
    */
   inline void _check_bounds(std::size_t &col, std::size_t &row) {
 
@@ -484,7 +592,30 @@ using ActiveSet2D_Type = ActiveSet2D<Number_Of_Columns, Number_Of_Rows>;
 
 /**
  * @class ActiveSet2D_MatrixOperator
- * @brief Utility functions operating on matrices restricted by an ActiveSet2D.
+ * @brief Provides static matrix operations restricted to active positions
+ * defined by an ActiveSet2D.
+ *
+ * This class defines a set of static methods for performing element-wise and
+ * scalar operations on matrices, but only over positions marked as "active" in
+ * a corresponding ActiveSet2D. All operations ignore inactive positions, which
+ * are left as zero in the result.
+ *
+ * @tparam T  Matrix element type.
+ * @tparam M  Number of columns in the matrix.
+ * @tparam N  Number of rows in the matrix.
+ * @tparam MA Number of columns in the ActiveSet2D.
+ * @tparam NA Number of rows in the ActiveSet2D.
+ *
+ * @section Methods
+ * - element_wise_product: Computes the element-wise product of two matrices
+ * over active positions.
+ * - vdot: Computes the sum of element-wise products (dot product) over active
+ * positions.
+ * - matrix_multiply_scalar: Multiplies active positions of a matrix by a
+ * scalar.
+ * - norm: Computes the Euclidean (2-)norm over active positions.
+ *
+ * @note All methods require that the matrix and ActiveSet2D dimensions match.
  */
 class ActiveSet2D_MatrixOperator {
 public:
@@ -497,9 +628,31 @@ public:
   static constexpr std::size_t ROW = 1;
 
 public:
+  /* Function */
+
   /**
-   * @brief Element-wise product over active positions only.
-   * result(col,row) = A(col,row) * B(col,row) for active pairs else 0.
+   * @brief Computes the element-wise product of two matrices at positions
+   * specified by an active set.
+   *
+   * This static inline function multiplies corresponding elements of matrices A
+   * and B, but only at the indices specified by the provided ActiveSet2D. The
+   * result is a matrix of the same size as A and B, with non-active positions
+   * left uninitialized or default-initialized.
+   *
+   * @tparam T   The type of the matrix elements.
+   * @tparam M   Number of rows in the matrices.
+   * @tparam N   Number of columns in the matrices.
+   * @tparam MA  Number of rows in the active set (must match M).
+   * @tparam NA  Number of columns in the active set (must match N).
+   * @param A          The first input matrix.
+   * @param B          The second input matrix.
+   * @param active_set The set of active indices where the element-wise product
+   * is computed.
+   * @return Matrix_Type<T, M, N> A matrix containing the element-wise products
+   * at active positions.
+   *
+   * @note The function asserts at compile time that the matrix and active set
+   * dimensions match.
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
@@ -522,7 +675,24 @@ public:
   }
 
   /**
-   * @brief Sum of element-wise product (dot) over active positions.
+   * @brief Computes the dot product (vdot) of two matrices over an active set
+   * of elements.
+   *
+   * This function calculates the sum of element-wise products of matrices A and
+   * B, but only for the indices specified in the provided ActiveSet2D. The
+   * active set defines which elements are included in the computation.
+   *
+   * @tparam T   The type of the matrix elements.
+   * @tparam M   Number of rows in matrices A and B.
+   * @tparam N   Number of columns in matrices A and B.
+   * @tparam MA  Number of rows in the ActiveSet2D.
+   * @tparam NA  Number of columns in the ActiveSet2D.
+   * @param A          The first input matrix.
+   * @param B          The second input matrix.
+   * @param active_set The set of active indices to include in the dot product.
+   * @return The sum of products of corresponding elements of A and B over the
+   * active set.
+   * @note   The matrix dimensions and active set dimensions must match.
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
@@ -542,7 +712,27 @@ public:
   }
 
   /**
-   * @brief Active positions multiplied by scalar, others zero.
+   * @brief Multiplies elements of a matrix by a scalar, restricted to an active
+   * set.
+   *
+   * This static inline function multiplies the elements of the input matrix `A`
+   * by the given `scalar`, but only at the positions specified by the provided
+   * `ActiveSet2D`. The result is a new matrix of the same size, where only the
+   * elements in the active set are updated (others remain default-initialized).
+   *
+   * @tparam T   The type of the matrix elements.
+   * @tparam M   Number of rows in the matrix.
+   * @tparam N   Number of columns in the matrix.
+   * @tparam MA  Number of rows in the active set.
+   * @tparam NA  Number of columns in the active set.
+   * @param A         The input matrix to be multiplied.
+   * @param scalar    The scalar value to multiply with.
+   * @param active_set The set of active positions to apply the multiplication.
+   * @return Matrix_Type<T, M, N> A new matrix with updated values at active
+   * positions.
+   *
+   * @note The function asserts at compile time that the matrix and active set
+   * sizes match.
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
@@ -563,7 +753,23 @@ public:
   }
 
   /**
-   * @brief Euclidean norm (2-norm) over active positions.
+   * @brief Computes the Euclidean norm (L2 norm) of the elements in a matrix
+   * specified by an active set.
+   *
+   * This static inline function calculates the square root of the sum of
+   * squares of the matrix elements that are marked as active in the provided
+   * ActiveSet2D. The function asserts at compile time that the dimensions of
+   * the matrix and the active set match.
+   *
+   * @tparam T   The type of the matrix elements (e.g., float, double).
+   * @tparam M   Number of rows in the matrix.
+   * @tparam N   Number of columns in the matrix.
+   * @tparam MA  Number of rows in the active set.
+   * @tparam NA  Number of columns in the active set.
+   * @param A           The matrix whose norm is to be computed.
+   * @param active_set  The ActiveSet2D object specifying which elements are
+   * active.
+   * @return T          The Euclidean norm of the active elements in the matrix.
    */
   template <typename T, std::size_t M, std::size_t N, std::size_t MA,
             std::size_t NA>
