@@ -166,6 +166,31 @@ void test_active_set_2D() {
     tester.expect_near(C.matrix.data, C_answer.matrix.data, NEAR_LIMIT_STRICT,
         "check element wise product.");
 
+    auto vdot_value = ActiveSet2D_MatrixOperator::vdot(A, B, active_set);
+
+    auto vdot_value_answer = static_cast<T>(112);
+
+    tester.expect_near(vdot_value, vdot_value_answer, NEAR_LIMIT_STRICT,
+        "check vdot.");
+
+    auto D = ActiveSet2D_MatrixOperator::matrix_multiply_scalar(A, static_cast<T>(3), active_set);
+
+    auto D_answer = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+        static_cast<T>(0), static_cast<T>(0),
+        static_cast<T>(0), static_cast<T>(12),
+        static_cast<T>(0), static_cast<T>(18)
+    );
+
+    tester.expect_near(D.matrix.data, D_answer.matrix.data, NEAR_LIMIT_STRICT,
+        "check matrix multiply scalar.");
+
+    auto norm_value = ActiveSet2D_MatrixOperator::norm(A, active_set);
+
+    auto norm_value_answer = std::sqrt(static_cast<T>(52));
+
+    tester.expect_near(norm_value, norm_value_answer, NEAR_LIMIT_STRICT,
+        "check norm.");
+
 
 
     tester.throw_error_if_test_failed();
