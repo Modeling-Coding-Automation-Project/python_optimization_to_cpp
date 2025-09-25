@@ -13,7 +13,8 @@ static constexpr double Y_MIN_MAX_RHO_FACTOR_DEFAULT = 1.0e2;
 
 template <typename T, std::size_t State_Size_In, std::size_t Input_Size_In,
           std::size_t Output_Size_In, std::size_t Np_In,
-          typename Parameter_Type_In>
+          typename Parameter_Type_In, typename U_Min_Type, typename U_Max_Type,
+          typename Y_Min_Type, typename Y_Max_Type>
 class SQP_CostMatrices_NMPC {
 public:
   /* Constant */
@@ -31,9 +32,18 @@ protected:
   using _T = T;
   using _Parameter_Type = Parameter_Type_In;
 
-  using Qx_Type = PythonNumpy::DiagMatrix_Type<_T, STATE_SIZE>;
-  using R_Type = PythonNumpy::DiagMatrix_Type<_T, INPUT_SIZE>;
-  using Qy_Type = PythonNumpy::DiagMatrix_Type<_T, OUTPUT_SIZE>;
+  using _Qx_Type = PythonNumpy::DiagMatrix_Type<_T, STATE_SIZE>;
+  using _R_Type = PythonNumpy::DiagMatrix_Type<_T, INPUT_SIZE>;
+  using _Qy_Type = PythonNumpy::DiagMatrix_Type<_T, OUTPUT_SIZE>;
+
+  using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, U_Min_Type>;
+  using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, U_Max_Type>;
+  using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type>;
+  using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type>;
+
+protected:
+  /* Variable */
+  _T Y_min_max_rho;
 };
 
 } // namespace PythonOptimization
