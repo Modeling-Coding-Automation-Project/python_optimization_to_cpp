@@ -20,6 +20,43 @@ from external_libraries.MCAP_python_control.python_control.control_deploy import
 from external_libraries.python_control_to_cpp.python_control.kalman_filter_deploy import FunctionToCppVisitor
 
 
+def create_sparse_matrix_code(
+        sparse_available_list: np.ndarray,
+        type_name: str,
+        matrix_name: str
+):
+    code_text = ""
+
+    code_text = "using namespace PythonNumpy;\n\n"
+
+    sparse_available_name = matrix_name + "_SparseAvailable"
+    code_text += "using " + sparse_available_name + \
+        " = SparseAvailable<\n"
+
+    for i in range(sparse_available_list.shape[0]):
+        code_text += "    ColumnAvailable<"
+        for j in range(sparse_available_list.shape[1]):
+
+            if True == sparse_available_list[i, j]:
+                code_text += "true"
+            else:
+                code_text += "false"
+            if j != sparse_available_list.shape[1] - 1:
+                code_text += ", "
+        if i == sparse_available_list.shape[0] - 1:
+            code_text += ">\n"
+        else:
+            code_text += ">,\n"
+
+    code_text += ">;\n\n"
+
+    code_text += "using " + matrix_name + " = SparseMatrix_Type<" + \
+        type_name + ", " + \
+        sparse_available_name + ">;\n\n"
+
+    return code_text
+
+
 def create_and_write_parameter_class_code(
         parameter_object,
         value_type_name: str,
@@ -174,7 +211,8 @@ def create_and_write_measurement_function_code(function_name: str):
 
 def create_and_write_state_measurement_jacobian_code(
         function_name: str,
-        output_type: str
+        output_type: str,
+        type_name: str,
 ):
 
     file_path = ControlDeploy.find_file(
@@ -201,14 +239,18 @@ def create_and_write_state_measurement_jacobian_code(
     code_text += f"#ifndef {header_macro_text}\n"
     code_text += f"#define {header_macro_text}\n\n"
 
-    code_text += "#include \"python_math.hpp\"\n\n"
+    code_text += "#include \"python_math.hpp\"\n"
+    code_text += "#include \"python_numpy.hpp\"\n\n"
 
     code_text += f"namespace {function_name} {{\n\n"
 
-    code_text += "using namespace PythonMath;\n\n"
+    code_text += "using namespace PythonMath;\n"
+
+    code_text += create_sparse_matrix_code(
+        SparseAvailable_list[0], type_name, output_type)
 
     code_text += "template <typename X_Type, typename U_Type, " + \
-        " typename Parameter_Type, typename " + output_type + ">\n"
+        " typename Parameter_Type>\n"
     code_text += "class Function {\n"
     code_text += "public:\n"
 
@@ -236,7 +278,8 @@ def create_and_write_state_measurement_jacobian_code(
 
 def create_and_write_state_measurement_hessian_code(
         function_name: str,
-        output_type: str
+        output_type: str,
+        type_name: str,
 ):
 
     file_path = ControlDeploy.find_file(
@@ -263,14 +306,18 @@ def create_and_write_state_measurement_hessian_code(
     code_text += f"#ifndef {header_macro_text}\n"
     code_text += f"#define {header_macro_text}\n\n"
 
-    code_text += "#include \"python_math.hpp\"\n\n"
+    code_text += "#include \"python_math.hpp\"\n"
+    code_text += "#include \"python_numpy.hpp\"\n\n"
 
     code_text += f"namespace {function_name} {{\n\n"
 
-    code_text += "using namespace PythonMath;\n\n"
+    code_text += "using namespace PythonMath;\n"
+
+    code_text += create_sparse_matrix_code(
+        SparseAvailable_list[0], type_name, output_type)
 
     code_text += "template <typename X_Type, typename U_Type, " + \
-        " typename Parameter_Type, typename " + output_type + ">\n"
+        " typename Parameter_Type>\n"
     code_text += "class Function {\n"
     code_text += "public:\n"
 
@@ -367,7 +414,8 @@ class SQP_MatrixUtilityDeploy:
         state_jacobian_x_cpp_file_name, state_jacobian_x_SparseAvailable_list = \
             create_and_write_state_measurement_jacobian_code(
                 state_jacobian_x_file_name_without_ext,
-                "State_Jacobian_x_Type")
+                "State_Jacobian_x_Type",
+                type_name)
 
         # state jacobian u function code
         state_jacobian_u_file_name_without_ext = \
@@ -376,7 +424,8 @@ class SQP_MatrixUtilityDeploy:
         state_jacobian_u_cpp_file_name, state_jacobian_u_SparseAvailable_list = \
             create_and_write_state_measurement_jacobian_code(
                 state_jacobian_u_file_name_without_ext,
-                "State_Jacobian_u_Type")
+                "State_Jacobian_u_Type",
+                type_name)
 
         # measurement jacobian x function code
         measurement_jacobian_x_file_name_without_ext = \
@@ -385,7 +434,8 @@ class SQP_MatrixUtilityDeploy:
         measurement_jacobian_x_cpp_file_name, measurement_jacobian_x_SparseAvailable_list = \
             create_and_write_state_measurement_jacobian_code(
                 measurement_jacobian_x_file_name_without_ext,
-                "Measurement_Jacobian_x_Type")
+                "Measurement_Jacobian_x_Type",
+                type_name)
 
         # state hessian xx function code
         state_hessian_xx_file_name_without_ext = \
@@ -394,7 +444,8 @@ class SQP_MatrixUtilityDeploy:
         state_hessian_xx_cpp_file_name, state_hessian_xx_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
                 state_hessian_xx_file_name_without_ext,
-                "State_Hessian_xx_Type")
+                "State_Hessian_xx_Type",
+                type_name)
 
         # state hessian xu function code
         state_hessian_xu_file_name_without_ext = \
@@ -403,7 +454,8 @@ class SQP_MatrixUtilityDeploy:
         state_hessian_xu_cpp_file_name, state_hessian_xu_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
                 state_hessian_xu_file_name_without_ext,
-                "State_Hessian_xu_Type")
+                "State_Hessian_xu_Type",
+                type_name)
 
         # state hessian uu function code
         state_hessian_uu_file_name_without_ext = \
@@ -412,7 +464,8 @@ class SQP_MatrixUtilityDeploy:
         state_hessian_uu_cpp_file_name, state_hessian_uu_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
                 state_hessian_uu_file_name_without_ext,
-                "State_Hessian_uu_Type")
+                "State_Hessian_uu_Type",
+                type_name)
 
         # measurement hessian xx function code
         measurement_hessian_xx_file_name_without_ext = \
@@ -421,6 +474,7 @@ class SQP_MatrixUtilityDeploy:
         measurement_hessian_xx_cpp_file_name, measurement_hessian_xx_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
                 measurement_hessian_xx_file_name_without_ext,
-                "Measurement_Hessian_xx_Type")
+                "Measurement_Hessian_xx_Type",
+                type_name)
 
         pass
