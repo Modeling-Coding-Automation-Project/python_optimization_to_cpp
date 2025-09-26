@@ -14,16 +14,18 @@ static constexpr double Y_MIN_MAX_RHO_FACTOR_DEFAULT = 1.0e2;
 template <typename T, std::size_t Np_In, typename Parameter_Type_In,
           typename U_Min_Type_In, typename U_Max_Type_In,
           typename Y_Min_Type_In, typename Y_Max_Type_In,
-          typename A_Matrix_Type_In, typename B_Matrix_Type_In,
-          typename C_Matrix_Type_In, typename Hf_xx_Matrix_Type_In,
-          typename Hf_xu_Matrix_Type_In, typename Hf_ux_Matrix_Type_In,
-          typename Hf_uu_Matrix_Type_In, typename Hh_xx_Matrix_Type_In>
+          typename State_Jacobian_X_Type_In, typename State_Jacobian_U_Type_In,
+          typename Measurement_Jacobian_X_Type_In,
+          typename State_Hessian_XX_Type_In, typename State_Hessian_XU_Type_In,
+          typename State_Hessian_UX_Type_In, typename State_Hessian_UU_Type_In,
+          typename Measurement_Hessian_XX_Type_In>
 class SQP_CostMatrices_NMPC {
 public:
   /* Constant */
-  static constexpr std::size_t STATE_SIZE = A_Matrix_Type_In::COLS;
-  static constexpr std::size_t INPUT_SIZE = B_Matrix_Type_In::COLS;
-  static constexpr std::size_t OUTPUT_SIZE = C_Matrix_Type_In::COLS;
+  static constexpr std::size_t STATE_SIZE = State_Jacobian_X_Type_In::COLS;
+  static constexpr std::size_t INPUT_SIZE = State_Jacobian_U_Type_In::COLS;
+  static constexpr std::size_t OUTPUT_SIZE =
+      Measurement_Jacobian_X_Type_In::COLS;
   static constexpr std::size_t NP = Np_In;
 
 public:
@@ -39,6 +41,26 @@ public:
                 "Y_Min_Type_In::Value_Type != T");
   static_assert(std::is_same<Y_Max_Type_In::Value_Type, T>::value,
                 "Y_Max_Type_In::Value_Type != T");
+
+  static_assert(std::is_same<State_Jacobian_X_Type_In::Value_Type, T>::value,
+                "State_Jacobian_X_Type_In::Value_Type != T");
+  static_assert(std::is_same<State_Jacobian_U_Type_In::Value_Type, T>::value,
+                "State_Jacobian_U_Type_In::Value_Type != T");
+  static_assert(
+      std::is_same<Measurement_Jacobian_X_Type_In::Value_Type, T>::value,
+      "Measurement_Jacobian_X_Type_In::Value_Type != T");
+
+  static_assert(std::is_same<State_Hessian_XX_Type_In::Value_Type, T>::value,
+                "State_Hessian_XX_Type_In::Value_Type != T");
+  static_assert(std::is_same<State_Hessian_XU_Type_In::Value_Type, T>::value,
+                "State_Hessian_XU_Type_In::Value_Type != T");
+  static_assert(std::is_same<State_Hessian_UX_Type_In::Value_Type, T>::value,
+                "State_Hessian_UX_Type_In::Value_Type != T");
+  static_assert(std::is_same<State_Hessian_UU_Type_In::Value_Type, T>::value,
+                "State_Hessian_UU_Type_In::Value_Type != T");
+  static_assert(
+      std::is_same<Measurement_Hessian_XX_Type_In::Value_Type, T>::value,
+      "Measurement_Hessian_XX_Type_In::Value_Type != T");
 
   static_assert(U_Min_Type_In::COLS == INPUT_SIZE,
                 "U_Min_Type_In::COLS != INPUT_SIZE");
@@ -56,6 +78,47 @@ public:
                 "Y_Max_Type_In::COLS != OUTPUT_SIZE");
   static_assert(Y_Max_Type_In::ROWS == 1, "Y_Max_Type_In::ROWS != 1");
 
+  static_assert(State_Jacobian_X_Type_In::COLS == STATE_SIZE,
+                "State_Jacobian_X_Type_In::COLS != STATE_SIZE");
+  static_assert(State_Jacobian_X_Type_In::ROWS == STATE_SIZE,
+                "State_Jacobian_X_Type_In::ROWS != STATE_SIZE");
+
+  static_assert(State_Jacobian_U_Type_In::COLS == STATE_SIZE,
+                "State_Jacobian_U_Type_In::COLS != STATE_SIZE");
+  static_assert(State_Jacobian_U_Type_In::ROWS == INPUT_SIZE,
+                "State_Jacobian_U_Type_In::ROWS != INPUT_SIZE");
+
+  static_assert(Measurement_Jacobian_X_Type_In::COLS == OUTPUT_SIZE,
+                "Measurement_Jacobian_X_Type_In::COLS != OUTPUT_SIZE");
+  static_assert(Measurement_Jacobian_X_Type_In::ROWS == STATE_SIZE,
+                "Measurement_Jacobian_X_Type_In::ROWS != STATE_SIZE");
+
+  static_assert(State_Hessian_XX_Type_In::COLS == STATE_SIZE * STATE_SIZE,
+                "State_Hessian_XX_Type_In::COLS != STATE_SIZE * STATE_SIZE");
+  static_assert(State_Hessian_XX_Type_In::ROWS == STATE_SIZE,
+                "State_Hessian_XX_Type_In::ROWS != STATE_SIZE");
+
+  static_assert(State_Hessian_XU_Type_In::COLS == STATE_SIZE * STATE_SIZE,
+                "State_Hessian_XU_Type_In::COLS != STATE_SIZE * INPUT_SIZE");
+  static_assert(State_Hessian_XU_Type_In::ROWS == INPUT_SIZE,
+                "State_Hessian_XU_Type_In::ROWS != INPUT_SIZE");
+
+  static_assert(State_Hessian_UX_Type_In::COLS == INPUT_SIZE * STATE_SIZE,
+                "State_Hessian_UX_Type_In::COLS != INPUT_SIZE * STATE_SIZE");
+  static_assert(State_Hessian_UX_Type_In::ROWS == STATE_SIZE,
+                "State_Hessian_UX_Type_In::ROWS != STATE_SIZE");
+
+  static_assert(State_Hessian_UU_Type_In::COLS == INPUT_SIZE * STATE_SIZE,
+                "State_Hessian_UU_Type_In::COLS != INPUT_SIZE * STATE_SIZE");
+  static_assert(State_Hessian_UU_Type_In::ROWS == INPUT_SIZE,
+                "State_Hessian_UU_Type_In::ROWS != INPUT_SIZE");
+
+  static_assert(
+      Measurement_Hessian_XX_Type_In::COLS == OUTPUT_SIZE * STATE_SIZE,
+      "Measurement_Hessian_XX_Type_In::COLS != OUTPUT_SIZE * STATE_SIZE");
+  static_assert(Measurement_Hessian_XX_Type_In::ROWS == STATE_SIZE,
+                "Measurement_Hessian_XX_Type_In::ROWS != STATE_SIZE");
+
 protected:
   /* Type */
   using _T = T;
@@ -71,15 +134,15 @@ protected:
   using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type_In>;
   using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type_In>;
 
-  using _A_Matrix_Type = A_Matrix_Type_In;
-  using _B_Matrix_Type = B_Matrix_Type_In;
-  using _C_Matrix_Type = C_Matrix_Type_In;
+  using _State_Jacobian_X_Type = State_Jacobian_X_Type_In;
+  using _State_Jacobian_U_Type = State_Jacobian_U_Type_In;
+  using _Measurement_Jacobian_X_Type = Measurement_Jacobian_X_Type_In;
 
-  using _Hf_xx_Matrix_Type = Hf_xx_Matrix_Type_In;
-  using _Hf_xu_Matrix_Type = Hf_xu_Matrix_Type_In;
-  using _Hf_ux_Matrix_Type = Hf_ux_Matrix_Type_In;
-  using _Hf_uu_Matrix_Type = Hf_uu_Matrix_Type_In;
-  using _Hh_xx_Matrix_Type = Hh_xx_Matrix_Type_In;
+  using _State_Hessian_XX_Type = State_Hessian_XX_Type_In;
+  using _State_Hessian_XU_Type = State_Hessian_XU_Type_In;
+  using _State_Hessian_UX_Type = State_Hessian_UX_Type_In;
+  using _State_Hessian_UU_Type = State_Hessian_UU_Type_In;
+  using _Measurement_Hessian_XX_Type = Measurement_Hessian_XX_Type_In;
 
 protected:
   /* Variable */
