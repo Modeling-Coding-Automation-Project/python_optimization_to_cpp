@@ -12,22 +12,44 @@ namespace PythonOptimization {
 
 static constexpr double Y_MIN_MAX_RHO_FACTOR_DEFAULT = 1.0e2;
 
-template <typename T, std::size_t Np_In, typename Parameter_Type_In,
-          typename U_Min_Type_In, typename U_Max_Type_In,
-          typename Y_Min_Type_In, typename Y_Max_Type_In,
-          typename State_Jacobian_X_Type_In, typename State_Jacobian_U_Type_In,
-          typename Measurement_Jacobian_X_Type_In,
-          typename State_Hessian_XX_Type_In, typename State_Hessian_XU_Type_In,
-          typename State_Hessian_UX_Type_In, typename State_Hessian_UU_Type_In,
-          typename Measurement_Hessian_XX_Type_In>
+template <typename T, std::size_t Np_In, std::size_t State_Size_In,
+          std::size_t Input_Size_In, std::size_t Output_Size_In,
+          typename Parameter_Type_In, typename U_Min_Type_In,
+          typename U_Max_Type_In, typename Y_Min_Type_In,
+          typename Y_Max_Type_In>
 class SQP_CostMatrices_NMPC {
 public:
   /* Constant */
-  static constexpr std::size_t STATE_SIZE = State_Jacobian_X_Type_In::COLS;
-  static constexpr std::size_t INPUT_SIZE = State_Jacobian_U_Type_In::COLS;
-  static constexpr std::size_t OUTPUT_SIZE =
-      Measurement_Jacobian_X_Type_In::COLS;
+  static constexpr std::size_t STATE_SIZE = State_Size_In;
+  static constexpr std::size_t INPUT_SIZE = Input_Size_In;
+  static constexpr std::size_t OUTPUT_SIZE = Output_Size_In;
+
   static constexpr std::size_t NP = Np_In;
+
+  static constexpr std::size_t STATE_JACOBIAN_X_COLS = STATE_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_X_ROWS = STATE_SIZE;
+
+  static constexpr std::size_t STATE_JACOBIAN_U_COLS = STATE_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_U_ROWS = INPUT_SIZE;
+
+  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_COLS = OUTPUT_SIZE;
+  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_ROWS = STATE_SIZE;
+
+  static constexpr std::size_t STATE_HESSIAN_XX_COLS = STATE_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_XX_ROWS = STATE_SIZE;
+
+  static constexpr std::size_t STATE_HESSIAN_XU_COLS = STATE_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_XU_ROWS = INPUT_SIZE;
+
+  static constexpr std::size_t STATE_HESSIAN_UX_COLS = INPUT_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_UX_ROWS = STATE_SIZE;
+
+  static constexpr std::size_t STATE_HESSIAN_UU_COLS = INPUT_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_UU_ROWS = INPUT_SIZE;
+
+  static constexpr std::size_t MEASUREMENT_HESSIAN_XX_COLS =
+      OUTPUT_SIZE * STATE_SIZE;
+  static constexpr std::size_t MEASUREMENT_HESSIAN_XX_ROWS = STATE_SIZE;
 
 public:
   /* Type */
@@ -47,26 +69,6 @@ public:
   static_assert(std::is_same<Y_Max_Type_In::Value_Type, T>::value,
                 "Y_Max_Type_In::Value_Type != T");
 
-  static_assert(std::is_same<State_Jacobian_X_Type_In::Value_Type, T>::value,
-                "State_Jacobian_X_Type_In::Value_Type != T");
-  static_assert(std::is_same<State_Jacobian_U_Type_In::Value_Type, T>::value,
-                "State_Jacobian_U_Type_In::Value_Type != T");
-  static_assert(
-      std::is_same<Measurement_Jacobian_X_Type_In::Value_Type, T>::value,
-      "Measurement_Jacobian_X_Type_In::Value_Type != T");
-
-  static_assert(std::is_same<State_Hessian_XX_Type_In::Value_Type, T>::value,
-                "State_Hessian_XX_Type_In::Value_Type != T");
-  static_assert(std::is_same<State_Hessian_XU_Type_In::Value_Type, T>::value,
-                "State_Hessian_XU_Type_In::Value_Type != T");
-  static_assert(std::is_same<State_Hessian_UX_Type_In::Value_Type, T>::value,
-                "State_Hessian_UX_Type_In::Value_Type != T");
-  static_assert(std::is_same<State_Hessian_UU_Type_In::Value_Type, T>::value,
-                "State_Hessian_UU_Type_In::Value_Type != T");
-  static_assert(
-      std::is_same<Measurement_Hessian_XX_Type_In::Value_Type, T>::value,
-      "Measurement_Hessian_XX_Type_In::Value_Type != T");
-
   static_assert(U_Min_Type_In::COLS == INPUT_SIZE,
                 "U_Min_Type_In::COLS != INPUT_SIZE");
   static_assert(U_Min_Type_In::ROWS == 1, "U_Min_Type_In::ROWS != 1");
@@ -82,47 +84,6 @@ public:
   static_assert(Y_Max_Type_In::COLS == OUTPUT_SIZE,
                 "Y_Max_Type_In::COLS != OUTPUT_SIZE");
   static_assert(Y_Max_Type_In::ROWS == 1, "Y_Max_Type_In::ROWS != 1");
-
-  static_assert(State_Jacobian_X_Type_In::COLS == STATE_SIZE,
-                "State_Jacobian_X_Type_In::COLS != STATE_SIZE");
-  static_assert(State_Jacobian_X_Type_In::ROWS == STATE_SIZE,
-                "State_Jacobian_X_Type_In::ROWS != STATE_SIZE");
-
-  static_assert(State_Jacobian_U_Type_In::COLS == STATE_SIZE,
-                "State_Jacobian_U_Type_In::COLS != STATE_SIZE");
-  static_assert(State_Jacobian_U_Type_In::ROWS == INPUT_SIZE,
-                "State_Jacobian_U_Type_In::ROWS != INPUT_SIZE");
-
-  static_assert(Measurement_Jacobian_X_Type_In::COLS == OUTPUT_SIZE,
-                "Measurement_Jacobian_X_Type_In::COLS != OUTPUT_SIZE");
-  static_assert(Measurement_Jacobian_X_Type_In::ROWS == STATE_SIZE,
-                "Measurement_Jacobian_X_Type_In::ROWS != STATE_SIZE");
-
-  static_assert(State_Hessian_XX_Type_In::COLS == STATE_SIZE * STATE_SIZE,
-                "State_Hessian_XX_Type_In::COLS != STATE_SIZE * STATE_SIZE");
-  static_assert(State_Hessian_XX_Type_In::ROWS == STATE_SIZE,
-                "State_Hessian_XX_Type_In::ROWS != STATE_SIZE");
-
-  static_assert(State_Hessian_XU_Type_In::COLS == STATE_SIZE * STATE_SIZE,
-                "State_Hessian_XU_Type_In::COLS != STATE_SIZE * INPUT_SIZE");
-  static_assert(State_Hessian_XU_Type_In::ROWS == INPUT_SIZE,
-                "State_Hessian_XU_Type_In::ROWS != INPUT_SIZE");
-
-  static_assert(State_Hessian_UX_Type_In::COLS == INPUT_SIZE * STATE_SIZE,
-                "State_Hessian_UX_Type_In::COLS != INPUT_SIZE * STATE_SIZE");
-  static_assert(State_Hessian_UX_Type_In::ROWS == STATE_SIZE,
-                "State_Hessian_UX_Type_In::ROWS != STATE_SIZE");
-
-  static_assert(State_Hessian_UU_Type_In::COLS == INPUT_SIZE * STATE_SIZE,
-                "State_Hessian_UU_Type_In::COLS != INPUT_SIZE * STATE_SIZE");
-  static_assert(State_Hessian_UU_Type_In::ROWS == INPUT_SIZE,
-                "State_Hessian_UU_Type_In::ROWS != INPUT_SIZE");
-
-  static_assert(
-      Measurement_Hessian_XX_Type_In::COLS == OUTPUT_SIZE * STATE_SIZE,
-      "Measurement_Hessian_XX_Type_In::COLS != OUTPUT_SIZE * STATE_SIZE");
-  static_assert(Measurement_Hessian_XX_Type_In::ROWS == STATE_SIZE,
-                "Measurement_Hessian_XX_Type_In::ROWS != STATE_SIZE");
 
 protected:
   /* Type */
@@ -142,16 +103,6 @@ protected:
   using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, U_Max_Type_In>;
   using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type_In>;
   using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type_In>;
-
-  using _State_Jacobian_X_Type = State_Jacobian_X_Type_In;
-  using _State_Jacobian_U_Type = State_Jacobian_U_Type_In;
-  using _Measurement_Jacobian_X_Type = Measurement_Jacobian_X_Type_In;
-
-  using _State_Hessian_XX_Type = State_Hessian_XX_Type_In;
-  using _State_Hessian_XU_Type = State_Hessian_XU_Type_In;
-  using _State_Hessian_UX_Type = State_Hessian_UX_Type_In;
-  using _State_Hessian_UU_Type = State_Hessian_UU_Type_In;
-  using _Measurement_Hessian_XX_Type = Measurement_Hessian_XX_Type_In;
 
 public:
   /* Constructor */
@@ -204,16 +155,6 @@ protected:
   _U_Max_Matrix_Type _U_max_matrix;
   _Y_Min_Matrix_Type _Y_min_matrix;
   _Y_Max_Matrix_Type _Y_max_matrix;
-
-  _State_Jacobian_X_Type _state_jacobian_x;
-  _State_Jacobian_U_Type _state_jacobian_u;
-  _Measurement_Jacobian_X_Type _measurement_jacobian_x;
-
-  _State_Hessian_XX_Type _state_hessian_xx;
-  _State_Hessian_XU_Type _state_hessian_xu;
-  _State_Hessian_UX_Type _state_hessian_ux;
-  _State_Hessian_UU_Type _state_hessian_uu;
-  _Measurement_Hessian_XX_Type _measurement_hessian_xx;
 };
 
 } // namespace PythonOptimization
