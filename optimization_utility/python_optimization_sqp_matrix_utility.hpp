@@ -40,9 +40,20 @@ public:
   static_assert(std::is_same<Y_Max_Type_In::Value_Type, T>::value,
                 "Y_Max_Type_In::Value_Type != T");
 
+  static_assert(U_Min_Type_In::COLS == INPUT_SIZE,
+                "U_Min_Type_In::COLS != INPUT_SIZE");
   static_assert(U_Min_Type_In::ROWS == 1, "U_Min_Type_In::ROWS != 1");
+
+  static_assert(U_Max_Type_In::COLS == INPUT_SIZE,
+                "U_Max_Type_In::COLS != INPUT_SIZE");
   static_assert(U_Max_Type_In::ROWS == 1, "U_Max_Type_In::ROWS != 1");
+
+  static_assert(Y_Min_Type_In::COLS == OUTPUT_SIZE,
+                "Y_Min_Type_In::COLS != OUTPUT_SIZE");
   static_assert(Y_Min_Type_In::ROWS == 1, "Y_Min_Type_In::ROWS != 1");
+
+  static_assert(Y_Max_Type_In::COLS == OUTPUT_SIZE,
+                "Y_Max_Type_In::COLS != OUTPUT_SIZE");
   static_assert(Y_Max_Type_In::ROWS == 1, "Y_Max_Type_In::ROWS != 1");
 
 protected:
