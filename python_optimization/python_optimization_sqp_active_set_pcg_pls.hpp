@@ -77,9 +77,22 @@ protected:
   using _R_Full_Size =
       PythonNumpy::DenseMatrix_Type<_T, INPUT_SIZE, INPUT_SIZE>;
 
-  using Mask_Type = U_Horizon_Type;
+  using _Mask_Type = U_Horizon_Type;
+  using _Gradient_Type = U_Horizon_Type;
+  using _V_Horizon_Type = U_Horizon_Type;
+  using _HVP_Type = U_Horizon_Type;
 
-  using ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
+  using _ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
+
+  using _Cost_Function_Type =
+      CostFunction_Object<X_Horizon_Type, U_Horizon_Type>;
+
+  using _Cost_And_Gradient_Function_Type =
+      CostAndGradientFunction_Object<X_Horizon_Type, U_Horizon_Type,
+                                     _Gradient_Type>;
+
+  using _HVP_Function_Type = HVP_Function_Object<X_Horizon_Type, U_Horizon_Type,
+                                                 _V_Horizon_Type, _HVP_Type>;
 
 public:
   /* Constructor */
