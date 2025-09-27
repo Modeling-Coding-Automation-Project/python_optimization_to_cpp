@@ -21,9 +21,10 @@ inline void set_row(Matrix_Out_Type &out_matrix,
 
   static_assert(Matrix_Out_Type::COLS == Matrix_In_Type::COLS,
                 "Matrix_Out_Type::COLS != Matrix_In_Type::COLS");
+  static_assert(Matrix_Out_Type::ROWS == 1, "Matrix_Out_Type::ROWS != 1");
 
   for (std::size_t i = 0; i < Matrix_In_Type::ROWS; i++) {
-    out_matrix(i, row_index) = in_matrix(i, row_index);
+    out_matrix(i, row_index) = in_matrix(i, 0);
   }
 }
 
@@ -690,9 +691,7 @@ public:
       auto Y_k =
           this->calculate_measurement_function(X, this->state_space_parameters);
 
-      for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
-        Y_horizon(i, k) += Y_k(i, 0);
-      }
+      MatrixOperation::set_row(Y_horizon, Y_k, k);
     }
 
     auto Y_limit_penalty = this->calculate_Y_limit_penalty(Y_horizon);
