@@ -457,6 +457,16 @@ class SQP_MatrixUtilityDeploy:
                 "State_Hessian_xu_Type",
                 type_name)
 
+        # state hessian ux function code
+        state_hessian_ux_file_name_without_ext = \
+            cost_matrices.state_hessian_ux_code_file_name.split(".")[0]
+
+        state_hessian_ux_cpp_file_name, state_hessian_ux_SparseAvailable_list = \
+            create_and_write_state_measurement_hessian_code(
+                state_hessian_ux_file_name_without_ext,
+                "State_Hessian_ux_Type",
+                type_name)
+
         # state hessian uu function code
         state_hessian_uu_file_name_without_ext = \
             cost_matrices.state_hessian_uu_code_file_name.split(".")[0]
