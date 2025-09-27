@@ -366,6 +366,16 @@ void test_SQP_CostMatrices_NMPC() {
         sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
         X_Type, U_Type, Parameter_Type, Y_Type>::function;
 
+    PythonOptimization::StateFunctionJacobian_X_Object<
+        State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionJacobian_U_Object<
+        State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+        Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<X_Type, U_Type, Parameter_Type>::function;
+
     using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
     using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
     using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;

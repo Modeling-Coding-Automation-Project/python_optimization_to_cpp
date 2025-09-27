@@ -104,6 +104,8 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> Y_Type {
+        static_cast<void>(U);
+        static_cast<void>(Parameters);
 
         double x1 = X.template get<0, 0>();
 
@@ -163,6 +165,8 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Jacobian_x_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
 
         double b3 = Parameters.b3;
 
@@ -223,6 +227,8 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Jacobian_u_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
 
         double m2 = Parameters.m2;
 
@@ -269,6 +275,10 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> Measurement_Jacobian_x_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
+        static_cast<void>(Parameters);
+
 
         return sympy_function();
     }
