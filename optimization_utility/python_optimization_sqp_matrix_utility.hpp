@@ -689,30 +689,6 @@ public:
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
         Y_horizon, this->_Y_offset);
 
-    /*
-            for k in range(self.Np + 1):
-                Y[:, k] += self.calculate_measurement_function(
-                    X[:, k], self.state_space_parameters).flatten()
-
-            Y_limit_penalty = self.calculate_Y_limit_penalty(Y)
-
-            J = 0.0
-            for k in range(self.Np):
-                e_y_r = Y[:, k] - self.reference_trajectory[:, k]
-                J += X[:, k].T @ self.Qx @ X[:, k] + \
-                    e_y_r.T @ self.Qy @ e_y_r + U[:, k].T @ self.R @ U[:, k] + \
-                    self.Y_min_max_rho * \
-                    (Y_limit_penalty[:, k].T @ Y_limit_penalty[:, k])
-
-            eN_y_r = Y[:, self.Np] - self.reference_trajectory[:, self.Np]
-            J += X[:, self.Np].T @ self.Px @ X[:, self.Np] + \
-                eN_y_r.T @ self.Py @ eN_y_r + \
-                self.Y_min_max_rho * \
-                (Y_limit_penalty[:, self.Np].T @ Y_limit_penalty[:, self.Np])
-
-            return J
-    */
-
     for (std::size_t k = 0; k < (NP + 1); k++) {
       auto Y_k =
           this->calculate_measurement_function(X, this->state_space_parameters);
