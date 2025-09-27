@@ -657,8 +657,7 @@ public:
   inline auto fu_xx_lambda_contract(const X_Type &X, const U_Type &U,
                                     const _Parameter_Type &parameter,
                                     const Lambda_Vector_Type &lam_next,
-                                    const X_Type &dX)
-      -> _StateFunctionHessian_UX_Out_Type {
+                                    const X_Type &dX) -> U_Type {
 
     static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
                   "Lambda_Vector_Type::COLS != STATE_SIZE");
@@ -667,19 +666,9 @@ public:
 
     auto Hf_ux = this->_state_function_hessian_ux(X, U, parameter);
 
-    _StateFunctionHessian_UX_Out_Type out;
+    U_Type out;
 
-    for (std::size_t i = 0; i < STATE_SIZE; i++) {
-
-      for (std::size_t k = 0; k < INPUT_SIZE; k++) {
-        _T acc = static_cast<_T>(0);
-
-        for (std::size_t j = 0; j < STATE_SIZE; j++) {
-          acc += Hf_ux(i * INPUT_SIZE + k, j) * dX(j, 0);
-        }
-        out(k, 0) += lam_next(i, 0) * acc;
-      }
-    }
+    MatrixOperation::compute_fu_xx_lambda_contract(Hf_ux, dX, lam_next, out);
 
     return out;
   }
@@ -1136,35 +1125,33 @@ public:
           MatrixOperation::get_row(lam, k + 1),
           MatrixOperation::get_row(V_horizon, k));
 
-      //   auto l_xx_dx = this->l_xx(MatrixOperation::get_row(X_horizon, k),
-      //                             MatrixOperation::get_row(U_horizon, k)) *
-      //                  MatrixOperation::get_row(dx, k);
+      auto l_xx_dx = this->l_xx(MatrixOperation::get_row(X_horizon, k),
+                                MatrixOperation::get_row(U_horizon, k)) *
+                     MatrixOperation::get_row(dx, k);
 
-      //   auto l_xu_V = this->l_xu(MatrixOperation::get_row(X_horizon, k),
-      //                            MatrixOperation::get_row(U_horizon, k)) *
-      //                 MatrixOperation::get_row(V_horizon, k);
+      auto l_xu_V = this->l_xu(MatrixOperation::get_row(X_horizon, k),
+                               MatrixOperation::get_row(U_horizon, k)) *
+                    MatrixOperation::get_row(V_horizon, k);
 
-      //   auto A_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
-      //       A_k, MatrixOperation::get_row(d_lambda, k + 1));
+      auto A_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
+          A_k, MatrixOperation::get_row(d_lambda, k + 1));
 
-      //   auto d_lambda_input = l_xx_dx + l_xu_V + A_k_T_d_lambda + term_Qy_GN
-      //   +
-      //                         term_Qy_hxx + term_penalty_GN +
-      //                         term_penalty_hxx
-      //                         + term_xx + term_xu;
+      auto d_lambda_input = l_xx_dx + l_xu_V + A_k_T_d_lambda + term_Qy_GN +
+                            term_Qy_hxx + term_penalty_GN + term_penalty_hxx +
+                            term_xx + term_xu;
 
-      //   MatrixOperation::set_row(d_lambda, d_lambda_input, k);
+      MatrixOperation::set_row(d_lambda, d_lambda_input, k);
 
-      //   /*
-      //    * (HV)_k:
-      //    * 2R V + B^T dlambda_{k+1} + second-order terms from dynamics
-      //    * (Cu=0 -> no direct contribution from output terms)
-      //    */
-      //   auto term_ux = this->fu_xx_lambda_contract(
-      //       MatrixOperation::get_row(X_horizon, k),
-      //       MatrixOperation::get_row(U_horizon, k),
-      //       this->state_space_parameters, MatrixOperation::get_row(lam, k +
-      //       1), MatrixOperation::get_row(dx, k));
+      /*
+       * (HV)_k:
+       * 2R V + B^T dlambda_{k+1} + second-order terms from dynamics
+       * (Cu=0 -> no direct contribution from output terms)
+       */
+      auto term_ux = this->fu_xx_lambda_contract(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters,
+          MatrixOperation::get_row(lam, k + 1),
+          MatrixOperation::get_row(dx, k));
 
       //   auto term_uu = this->fu_uu_lambda_contract(
       //       MatrixOperation::get_row(X_horizon, k),

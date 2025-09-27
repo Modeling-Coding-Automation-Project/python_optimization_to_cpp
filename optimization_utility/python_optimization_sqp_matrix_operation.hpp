@@ -633,6 +633,137 @@ compute_fx_xu_lambda_contract(const Fxu_Type &Hf_xu, const dU_Type &dU,
                                                                 lam_next, out);
 }
 
+/* fu xx lambda contract */
+
+namespace FuxxLambdaContract {
+
+// J-accumulation: recursively accumulate over j (STATE_SIZE dimension)
+template <typename Fuxx_Type, typename dX_Type, typename Value_Type,
+          std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
+          std::size_t K, std::size_t J_idx>
+struct AccumulateJ {
+  static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
+                      Value_Type &acc) {
+    acc += Hf_ux.template get<I * INPUT_SIZE + K, J_idx>() *
+           dX.template get<J_idx, 0>();
+    AccumulateJ<Fuxx_Type, dX_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, K,
+                (J_idx - 1)>::compute(Hf_ux, dX, acc);
+  }
+};
+
+// J-accumulation termination (J_idx == 0)
+template <typename Fuxx_Type, typename dX_Type, typename Value_Type,
+          std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
+          std::size_t K>
+struct AccumulateJ<Fuxx_Type, dX_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, K,
+                   0> {
+  static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
+                      Value_Type &acc) {
+    acc +=
+        Hf_ux.template get<I * INPUT_SIZE + K, 0>() * dX.template get<0, 0>();
+  }
+};
+
+// Column recursion over k (INPUT_SIZE): computes contribution to out(k,0)
+template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I, std::size_t K_idx>
+struct Column {
+  static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    using Value = typename Out_Type::Value_Type;
+    Value acc = static_cast<Value>(0);
+    AccumulateJ<Fuxx_Type, dX_Type, Value, STATE_SIZE, INPUT_SIZE, I, K_idx,
+                (STATE_SIZE - 1)>::compute(Hf_ux, dX, acc);
+
+    const auto w = lam_next.template get<I, 0>();
+    const auto updated = out.template get<K_idx, 0>() + w * acc;
+    out.template set<K_idx, 0>(updated);
+
+    Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
+           (K_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
+  }
+};
+
+// Column recursion termination for k == 0
+template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I>
+struct Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+              I, 0> {
+  static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    using Value = typename Out_Type::Value_Type;
+    Value acc = static_cast<Value>(0);
+    AccumulateJ<Fuxx_Type, dX_Type, Value, STATE_SIZE, INPUT_SIZE, I, 0,
+                (STATE_SIZE - 1)>::compute(Hf_ux, dX, acc);
+
+    const auto w = lam_next.template get<I, 0>();
+    const auto updated = out.template get<0, 0>() + w * acc;
+    out.template set<0, 0>(updated);
+  }
+};
+
+// Row recursion over i (STATE_SIZE): iterates the outer state index
+template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I_idx>
+struct Row {
+  static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+           I_idx, (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
+    Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+        (I_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
+  }
+};
+
+// Row recursion termination for i == 0
+template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
+struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+           0> {
+  static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
+           (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
+  }
+};
+
+} // namespace FuxxLambdaContract
+
+// Public wrapper to run the unrolled recursion.
+// Out_Type must be pre-initialized (e.g., zero) before calling, since this
+// performs accumulation with "+=" semantics.
+template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type>
+inline void
+compute_fu_xx_lambda_contract(const Fuxx_Type &Hf_ux, const dX_Type &dX,
+                              const Weight_Type &lam_next, Out_Type &out) {
+  static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
+  static_assert(Weight_Type::ROWS == 1,
+                "lam_next must be a (STATE_SIZE x 1) vector");
+  static_assert(Out_Type::ROWS == 1,
+                "out must be a (INPUT_SIZE x 1) vector (ROWS == 1)");
+
+  constexpr std::size_t STATE_SIZE = dX_Type::COLS;
+  constexpr std::size_t INPUT_SIZE = Out_Type::COLS;
+
+  static_assert(STATE_SIZE > 0 && INPUT_SIZE > 0,
+                "STATE_SIZE and INPUT_SIZE must be positive");
+  static_assert(Fuxx_Type::COLS == STATE_SIZE * INPUT_SIZE,
+                "Hf_ux ROWS must equal STATE_SIZE * INPUT_SIZE");
+  static_assert(Fuxx_Type::ROWS == STATE_SIZE,
+                "Hf_ux COLS must equal STATE_SIZE");
+  static_assert(Weight_Type::COLS == STATE_SIZE,
+                "lam_next COLS must equal STATE_SIZE");
+  static_assert(Out_Type::COLS == INPUT_SIZE, "out COLS must equal INPUT_SIZE");
+
+  FuxxLambdaContract::Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE,
+                          INPUT_SIZE, (STATE_SIZE - 1)>::compute(Hf_ux, dX,
+                                                                 lam_next, out);
+}
+
 /* hxx lambda contract */
 
 namespace HxxLambdaContract {
