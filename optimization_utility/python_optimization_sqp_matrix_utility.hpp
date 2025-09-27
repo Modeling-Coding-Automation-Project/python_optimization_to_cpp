@@ -409,6 +409,125 @@ public:
         this->_Y_max_matrix, Y_max);
   }
 
+  /* Copy Constructor */
+  SQP_CostMatrices_NMPC(const SQP_CostMatrices_NMPC &input)
+      : state_space_parameters(input.state_space_parameters),
+        reference_trajectory(input.reference_trajectory),
+        _Y_min_max_rho(input._Y_min_max_rho), _Y_offset(input._Y_offset),
+        _Qx(input._Qx), _R(input._R), _Qy(input._Qy),
+        _U_min_matrix(input._U_min_matrix), _U_max_matrix(input._U_max_matrix),
+        _Y_min_matrix(input._Y_min_matrix), _Y_max_matrix(input._Y_max_matrix),
+        _state_function(input._state_function),
+        _measurement_function(input._measurement_function),
+        _state_function_jacobian_x(input._state_function_jacobian_x),
+        _state_function_jacobian_u(input._state_function_jacobian_u),
+        _measurement_function_jacobian_x(
+            input._measurement_function_jacobian_x),
+        _state_function_hessian_xx(input._state_function_hessian_xx),
+        _state_function_hessian_xu(input._state_function_hessian_xu),
+        _state_function_hessian_ux(input._state_function_hessian_ux),
+        _state_function_hessian_uu(input._state_function_hessian_uu),
+        _measurement_function_hessian_xx(
+            input._measurement_function_hessian_xx) {}
+
+  SQP_CostMatrices_NMPC &operator=(const SQP_CostMatrices_NMPC &input) {
+    if (this != &input) {
+      this->state_space_parameters = input.state_space_parameters;
+      this->reference_trajectory = input.reference_trajectory;
+      this->_Y_min_max_rho = input._Y_min_max_rho;
+      this->_Y_offset = input._Y_offset;
+
+      this->_Qx = input._Qx;
+      this->_R = input._R;
+      this->_Qy = input._Qy;
+
+      this->_U_min_matrix = input._U_min_matrix;
+      this->_U_max_matrix = input._U_max_matrix;
+      this->_Y_min_matrix = input._Y_min_matrix;
+      this->_Y_max_matrix = input._Y_max_matrix;
+
+      this->_state_function = input._state_function;
+      this->_measurement_function = input._measurement_function;
+
+      this->_state_function_jacobian_x = input._state_function_jacobian_x;
+      this->_state_function_jacobian_u = input._state_function_jacobian_u;
+      this->_measurement_function_jacobian_x =
+          input._measurement_function_jacobian_x;
+
+      this->_state_function_hessian_xx = input._state_function_hessian_xx;
+      this->_state_function_hessian_xu = input._state_function_hessian_xu;
+      this->_state_function_hessian_ux = input._state_function_hessian_ux;
+      this->_state_function_hessian_uu = input._state_function_hessian_uu;
+      this->_measurement_function_hessian_xx =
+          input._measurement_function_hessian_xx;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  SQP_CostMatrices_NMPC(SQP_CostMatrices_NMPC &&input) noexcept
+      : state_space_parameters(std::move(input.state_space_parameters)),
+        reference_trajectory(std::move(input.reference_trajectory)),
+        _Y_min_max_rho(input._Y_min_max_rho),
+        _Y_offset(std::move(input._Y_offset)), _Qx(std::move(input._Qx)),
+        _R(std::move(input._R)), _Qy(std::move(input._Qy)),
+        _U_min_matrix(std::move(input._U_min_matrix)),
+        _U_max_matrix(std::move(input._U_max_matrix)),
+        _Y_min_matrix(std::move(input._Y_min_matrix)),
+        _Y_max_matrix(std::move(input._Y_max_matrix)),
+        _state_function(std::move(input._state_function)),
+        _measurement_function(std::move(input._measurement_function)),
+        _state_function_jacobian_x(std::move(input._state_function_jacobian_x)),
+        _state_function_jacobian_u(std::move(input._state_function_jacobian_u)),
+        _measurement_function_jacobian_x(
+            std::move(input._measurement_function_jacobian_x)),
+        _state_function_hessian_xx(std::move(input._state_function_hessian_xx)),
+        _state_function_hessian_xu(std::move(input._state_function_hessian_xu)),
+        _state_function_hessian_ux(std::move(input._state_function_hessian_ux)),
+        _state_function_hessian_uu(std::move(input._state_function_hessian_uu)),
+        _measurement_function_hessian_xx(
+            std::move(input._measurement_function_hessian_xx)) {}
+
+  SQP_CostMatrices_NMPC &operator=(SQP_CostMatrices_NMPC &&input) noexcept {
+    if (this != &input) {
+      this->state_space_parameters = std::move(input.state_space_parameters);
+      this->reference_trajectory = std::move(input.reference_trajectory);
+      this->_Y_min_max_rho = input._Y_min_max_rho;
+      this->_Y_offset = std::move(input._Y_offset);
+
+      this->_Qx = std::move(input._Qx);
+      this->_R = std::move(input._R);
+      this->_Qy = std::move(input._Qy);
+
+      this->_U_min_matrix = std::move(input._U_min_matrix);
+      this->_U_max_matrix = std::move(input._U_max_matrix);
+      this->_Y_min_matrix = std::move(input._Y_min_matrix);
+      this->_Y_max_matrix = std::move(input._Y_max_matrix);
+
+      this->_state_function = std::move(input._state_function);
+      this->_measurement_function = std::move(input._measurement_function);
+
+      this->_state_function_jacobian_x =
+          std::move(input._state_function_jacobian_x);
+      this->_state_function_jacobian_u =
+          std::move(input._state_function_jacobian_u);
+      this->_measurement_function_jacobian_x =
+          std::move(input._measurement_function_jacobian_x);
+
+      this->_state_function_hessian_xx =
+          std::move(input._state_function_hessian_xx);
+      this->_state_function_hessian_xu =
+          std::move(input._state_function_hessian_xu);
+      this->_state_function_hessian_ux =
+          std::move(input._state_function_hessian_ux);
+      this->_state_function_hessian_uu =
+          std::move(input._state_function_hessian_uu);
+      this->_measurement_function_hessian_xx =
+          std::move(input._measurement_function_hessian_xx);
+    }
+    return *this;
+  }
+
 public:
   /* Setters */
   inline void set_U_min(const _U_Min_Type &U_min) {
