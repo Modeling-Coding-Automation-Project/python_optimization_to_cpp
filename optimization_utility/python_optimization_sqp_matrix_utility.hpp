@@ -618,8 +618,7 @@ public:
   inline auto fx_xx_lambda_contract(const X_Type &X, const U_Type &U,
                                     const _Parameter_Type &parameter,
                                     const Lambda_Vector_Type &lam_next,
-                                    const X_Type &dX)
-      -> _StateFunctionHessian_XX_Out_Type {
+                                    const X_Type &dX) -> X_Type {
 
     static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
                   "Lambda_Vector_Type::COLS != STATE_SIZE");
@@ -628,19 +627,9 @@ public:
 
     auto Hf_xx = this->_state_function_hessian_xx(X, U, parameter);
 
-    _StateFunctionHessian_XX_Out_Type out;
+    X_Type out;
 
-    for (std::size_t i = 0; i < STATE_SIZE; i++) {
-
-      for (std::size_t j = 0; j < STATE_SIZE; j++) {
-        _T acc = static_cast<_T>(0);
-
-        for (std::size_t k = 0; k < STATE_SIZE; k++) {
-          acc += Hf_xx(i * STATE_SIZE + j, k) * dX(k, 0);
-        }
-        out(j, 0) += lam_next(i, 0) * acc;
-      }
-    }
+    MatrixOperation::compute_fxx_lambda_contract(Hf_xx, dX, lam_next, out);
 
     return out;
   }
@@ -1107,110 +1096,111 @@ public:
 
     _HVP_Type Hu;
 
-    // for (std::size_t k = NP; k-- > 0;) {
-    //   auto A_k = this->calculate_state_jacobian_x(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       MatrixOperation::get_row(U_horizon, k),
-    //       this->state_space_parameters);
+    for (std::size_t k = NP; k-- > 0;) {
+      auto A_k = this->calculate_state_jacobian_x(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
 
-    //   auto B_k = this->calculate_state_jacobian_u(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       MatrixOperation::get_row(U_horizon, k),
-    //       this->state_space_parameters);
+      auto B_k = this->calculate_state_jacobian_u(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
 
-    //   auto Cx_k = this->calculate_measurement_jacobian_x(
-    //       MatrixOperation::get_row(X_horizon, k), U_dummy,
-    //       this->state_space_parameters);
+      auto Cx_k = this->calculate_measurement_jacobian_x(
+          MatrixOperation::get_row(X_horizon, k), U_dummy,
+          this->state_space_parameters);
 
-    //   auto ek_y = MatrixOperation::get_row(Y_horizon, k) -
-    //               MatrixOperation::get_row(this->reference_trajectory, k);
+      auto ek_y = MatrixOperation::get_row(Y_horizon, k) -
+                  MatrixOperation::get_row(this->reference_trajectory, k);
 
-    //   auto Cx_dx_k = Cx_k * MatrixOperation::get_row(dx, k);
+      auto Cx_dx_k = Cx_k * MatrixOperation::get_row(dx, k);
 
-    //   auto term_Qy_GN = PythonNumpy::ATranspose_mul_B(
-    //       Cx_k, (static_cast<_T>(2) * this->_Py * Cx_dx_k));
+      auto term_Qy_GN = PythonNumpy::ATranspose_mul_B(
+          Cx_k, (static_cast<_T>(2) * this->_Py * Cx_dx_k));
 
-    //   auto term_Qy_hxx = this->hxx_lambda_contract(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       this->state_space_parameters, static_cast<_T>(2) * this->_Py *
-    //       ek_y, MatrixOperation::get_row(dx, k));
+      auto term_Qy_hxx = this->hxx_lambda_contract(
+          MatrixOperation::get_row(X_horizon, k), this->state_space_parameters,
+          static_cast<_T>(2) * this->_Py * ek_y,
+          MatrixOperation::get_row(dx, k));
 
-    //   auto Y_min_max_rho_Yk_limit_active_Cx_dx_k =
-    //       static_cast<_T>(2) * this->_Y_min_max_rho *
-    //       MatrixOperation::get_row(Y_limit_active, k) * Cx_dx_k;
+      auto YN_limit_active_CX_k_dx = MatrixOperation::element_wise_multiply(
+          MatrixOperation::get_row(Y_limit_active, k), Cx_dx_k);
 
-    //   auto term_penalty_GN = PythonNumpy::ATranspose_mul_B(
-    //       Cx_k, Y_min_max_rho_Yk_limit_active_Cx_dx_k);
+      auto Y_min_max_rho_Yk_limit_active_Cx_dx_k =
+          static_cast<_T>(2) * this->_Y_min_max_rho * YN_limit_active_CX_k_dx;
 
-    //   auto Y_min_max_rho_Yk_limit_penalty =
-    //       static_cast<_T>(2) * this->_Y_min_max_rho *
-    //       MatrixOperation::get_row(Y_limit_penalty, k);
+      auto term_penalty_GN = PythonNumpy::ATranspose_mul_B(
+          Cx_k, Y_min_max_rho_Yk_limit_active_Cx_dx_k);
 
-    //   auto term_penalty_hxx = this->hxx_lambda_contract(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       this->state_space_parameters, Y_min_max_rho_Yk_limit_penalty,
-    //       MatrixOperation::get_row(dx, k));
+      auto Y_min_max_rho_Yk_limit_penalty =
+          static_cast<_T>(2) * this->_Y_min_max_rho *
+          MatrixOperation::get_row(Y_limit_penalty, k);
 
-    //   auto term_xx = this->fx_xx_lambda_contract(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       MatrixOperation::get_row(U_horizon, k),
-    //       this->state_space_parameters, MatrixOperation::get_row(lam, k + 1),
-    //       MatrixOperation::get_row(dx, k));
+      auto term_penalty_hxx = this->hxx_lambda_contract(
+          MatrixOperation::get_row(X_horizon, k), this->state_space_parameters,
+          Y_min_max_rho_Yk_limit_penalty, MatrixOperation::get_row(dx, k));
 
-    //   auto term_xu = this->fx_xu_lambda_contract(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       MatrixOperation::get_row(U_horizon, k),
-    //       this->state_space_parameters, MatrixOperation::get_row(lam, k + 1),
-    //       MatrixOperation::get_row(V_horizon, k));
+      auto term_xx = this->fx_xx_lambda_contract(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters,
+          MatrixOperation::get_row(lam, k + 1),
+          MatrixOperation::get_row(dx, k));
 
-    //   auto l_xx_dx = this->l_xx(MatrixOperation::get_row(X_horizon, k),
-    //                             MatrixOperation::get_row(U_horizon, k)) *
-    //                  MatrixOperation::get_row(dx, k);
+      // auto term_xu = this->fx_xu_lambda_contract(
+      //     MatrixOperation::get_row(X_horizon, k),
+      //     MatrixOperation::get_row(U_horizon, k),
+      //     this->state_space_parameters, MatrixOperation::get_row(lam, k + 1),
+      //     MatrixOperation::get_row(V_horizon, k));
 
-    //   auto l_xu_V = this->l_xu(MatrixOperation::get_row(X_horizon, k),
-    //                            MatrixOperation::get_row(U_horizon, k)) *
-    //                 MatrixOperation::get_row(V_horizon, k);
+      //   auto l_xx_dx = this->l_xx(MatrixOperation::get_row(X_horizon, k),
+      //                             MatrixOperation::get_row(U_horizon, k)) *
+      //                  MatrixOperation::get_row(dx, k);
 
-    //   auto A_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
-    //       A_k, MatrixOperation::get_row(d_lambda, k + 1));
+      //   auto l_xu_V = this->l_xu(MatrixOperation::get_row(X_horizon, k),
+      //                            MatrixOperation::get_row(U_horizon, k)) *
+      //                 MatrixOperation::get_row(V_horizon, k);
 
-    //   auto d_lambda_input = l_xx_dx + l_xu_V + A_k_T_d_lambda + term_Qy_GN +
-    //                         term_Qy_hxx + term_penalty_GN + term_penalty_hxx
-    //                         + term_xx + term_xu;
+      //   auto A_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
+      //       A_k, MatrixOperation::get_row(d_lambda, k + 1));
 
-    //   MatrixOperation::set_row(d_lambda, d_lambda_input, k);
+      //   auto d_lambda_input = l_xx_dx + l_xu_V + A_k_T_d_lambda + term_Qy_GN
+      //   +
+      //                         term_Qy_hxx + term_penalty_GN +
+      //                         term_penalty_hxx
+      //                         + term_xx + term_xu;
 
-    //   /*
-    //    * (HV)_k:
-    //    * 2R V + B^T dlambda_{k+1} + second-order terms from dynamics
-    //    * (Cu=0 -> no direct contribution from output terms)
-    //    */
-    //   auto term_ux = this->fu_xx_lambda_contract(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       MatrixOperation::get_row(U_horizon, k),
-    //       this->state_space_parameters, MatrixOperation::get_row(lam, k + 1),
-    //       MatrixOperation::get_row(dx, k));
+      //   MatrixOperation::set_row(d_lambda, d_lambda_input, k);
 
-    //   auto term_uu = this->fu_uu_lambda_contract(
-    //       MatrixOperation::get_row(X_horizon, k),
-    //       MatrixOperation::get_row(U_horizon, k),
-    //       this->state_space_parameters, MatrixOperation::get_row(lam, k + 1),
-    //       MatrixOperation::get_row(V_horizon, k));
+      //   /*
+      //    * (HV)_k:
+      //    * 2R V + B^T dlambda_{k+1} + second-order terms from dynamics
+      //    * (Cu=0 -> no direct contribution from output terms)
+      //    */
+      //   auto term_ux = this->fu_xx_lambda_contract(
+      //       MatrixOperation::get_row(X_horizon, k),
+      //       MatrixOperation::get_row(U_horizon, k),
+      //       this->state_space_parameters, MatrixOperation::get_row(lam, k +
+      //       1), MatrixOperation::get_row(dx, k));
 
-    //   auto l_uu_V = this->l_uu(MatrixOperation::get_row(X_horizon, k),
-    //                            MatrixOperation::get_row(U_horizon, k)) *
-    //                 MatrixOperation::get_row(V_horizon, k);
+      //   auto term_uu = this->fu_uu_lambda_contract(
+      //       MatrixOperation::get_row(X_horizon, k),
+      //       MatrixOperation::get_row(U_horizon, k),
+      //       this->state_space_parameters, MatrixOperation::get_row(lam, k +
+      //       1), MatrixOperation::get_row(V_horizon, k));
 
-    //   auto l_ux_dx = this->l_ux(MatrixOperation::get_row(X_horizon, k),
-    //                             MatrixOperation::get_row(U_horizon, k)) *
-    //                  MatrixOperation::get_row(dx, k);
+      //   auto l_uu_V = this->l_uu(MatrixOperation::get_row(X_horizon, k),
+      //                            MatrixOperation::get_row(U_horizon, k)) *
+      //                 MatrixOperation::get_row(V_horizon, k);
 
-    //   auto B_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
-    //       B_k, MatrixOperation::get_row(d_lambda, k + 1));
+      //   auto l_ux_dx = this->l_ux(MatrixOperation::get_row(X_horizon, k),
+      //                             MatrixOperation::get_row(U_horizon, k)) *
+      //                  MatrixOperation::get_row(dx, k);
 
-    //   auto Hu_input = l_uu_V + l_ux_dx + B_k_T_d_lambda + term_ux + term_uu;
-    //   MatrixOperation::set_row(Hu, Hu_input, k);
-    // }
+      //   auto B_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
+      //       B_k, MatrixOperation::get_row(d_lambda, k + 1));
+
+      //   auto Hu_input = l_uu_V + l_ux_dx + B_k_T_d_lambda + term_ux +
+      //   term_uu; MatrixOperation::set_row(Hu, Hu_input, k);
+    }
 
     return Hu;
   }
