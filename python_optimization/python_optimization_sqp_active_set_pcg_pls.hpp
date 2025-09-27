@@ -390,20 +390,8 @@ public:
     _At_Lower_Upper_Type at_lower;
     _At_Lower_Upper_Type at_upper;
 
-    for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-      for (std::size_t j = 0; j < NP; ++j) {
-
-        if ((U_horizon_in(i, j) >= (U_min_matrix(i, j) - atol)) &&
-            (U_horizon_in(i, j) <= (U_min_matrix(i, j) + atol))) {
-          at_lower(i, j) = true;
-        }
-
-        if ((U_horizon_in(i, j) >= (U_max_matrix(i, j) - atol)) &&
-            (U_horizon_in(i, j) <= (U_max_matrix(i, j) + atol))) {
-          at_upper(i, j) = true;
-        }
-      }
-    }
+    MatrixOperation::free_mask_at_check(U_horizon_in, U_min_matrix,
+                                        U_max_matrix, atol, at_lower, at_upper);
 
     for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
       for (std::size_t j = 0; j < NP; ++j) {
