@@ -785,7 +785,8 @@ public:
     X_Type X = X_initial;
 
     for (std::size_t k = 0; k < NP; k++) {
-      X = this->calculate_state_function(X, U_horizon, parameter);
+      auto U = MatrixOperation::get_row(U_horizon, k);
+      X = this->calculate_state_function(X, U, parameter);
 
       MatrixOperation::set_row(X_horizon, X, k + 1);
     }
@@ -797,17 +798,8 @@ public:
       -> Y_Horizon_Type {
     Y_Horizon_Type Y_limit_penalty;
 
-    for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
-      for (std::size_t j = 0; j < (NP + 1); j++) {
-        if (Y_horizon(i, j) < this->_Y_min_matrix(i, j)) {
-          Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_min_matrix(i, j);
-        } else if (Y_horizon(i, j) > this->_Y_max_matrix(i, j)) {
-          Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_max_matrix(i, j);
-        } else {
-          /* Do Nothing. */
-        }
-      }
-    }
+    MatrixOperation::calculate_Y_limit_penalty(
+        Y_horizon, this->_Y_min_matrix, this->_Y_max_matrix, Y_limit_penalty);
 
     return Y_limit_penalty;
   }
