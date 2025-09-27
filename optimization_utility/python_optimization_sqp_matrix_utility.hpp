@@ -1017,6 +1017,99 @@ public:
 
     /* --- 2) first-order adjoint (costate lambda) with output terms */
     _X_horizon_Type lam;
+    auto Cx_N = this->calculate_measurement_jacobian_x(
+        MatrixOperation::get_row(X_horizon, NP), U_dummy,
+        this->state_space_parameters);
+
+    auto Px_XN = this->_Px * MatrixOperation::get_row(X_horizon, NP);
+    auto Py_eN_y = this->_Py * eN_y;
+    auto Y_min_max_rho_YN_limit_penalty =
+        this->_Y_min_max_rho * MatrixOperation::get_row(Y_limit_penalty, NP);
+
+    auto lam_input =
+        2.0 * (Px_XN + PythonNumpy::ATranspose_mul_B(
+                           Cx_N, (Py_eN_y + Y_min_max_rho_YN_limit_penalty)));
+    MatrixOperation::set_row(lam, lam_input, NP);
+
+    for (std::size_t k = NP; k-- > 0;) {
+      auto A_k = this->calculate_state_jacobian_x(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
+
+      auto Cx_k = this->calculate_measurement_jacobian_x(
+          MatrixOperation::get_row(X_horizon, k), U_dummy,
+          this->state_space_parameters);
+
+      auto ek_y = MatrixOperation::get_row(Y_horizon, k) -
+                  MatrixOperation::get_row(this->reference_trajectory, k);
+
+      auto Qx_X = this->_Qx * MatrixOperation::get_row(X_horizon, k);
+      auto Qy_ek_y = this->_Qy * ek_y;
+      auto Y_min_max_rho_Yk_limit_penalty =
+          this->_Y_min_max_rho * MatrixOperation::get_row(Y_limit_penalty, k);
+      auto A_k_T_lam =
+          PythonNumpy::ATranspose_mul_B(A_k, MatrixOperation::get_row(lam, k));
+
+      auto lam_input =
+          2.0 * (Qx_X + PythonNumpy::ATranspose_mul_B(
+                            Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
+          A_k_T_lam;
+      MatrixOperation::set_row(lam, lam_input, k);
+    }
+
+    /* --- 3) forward directional state: delta_x --- */
+    _X_horizon_Type dx;
+    for (std::size_t k = 0; k < NP; k++) {
+      auto A_k = this->calculate_state_jacobian_x(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
+      auto B_k = this->calculate_state_jacobian_u(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
+
+      auto dx_input = A_k * MatrixOperation::get_row(dx, k) +
+                      B_k * MatrixOperation::get_row(V_horizon, k);
+      MatrixOperation::set_row(dx, dx_input, k + 1);
+    }
+
+    /* --- 4) backward second-order adjoint --- */
+    _X_horizon_Type d_lambda;
+
+    /*
+     * Match the treatment of the terminal term phi_xx = l_xx(X_N,·) (currently
+     * 2P) Additionally, contributions from pure second-order output and second
+     * derivatives of output
+     */
+    auto l_xx_dx =
+        this->l_xx(MatrixOperation::get_row(X_horizon, NP), U_dummy) *
+        MatrixOperation::get_row(dx, NP);
+    auto Cx_N_dx = Cx_N * MatrixOperation::get_row(dx, NP);
+
+    auto CX_N_T_Py_Cx_N_dx =
+        PythonNumpy::ATranspose_mul_B(Cx_N * (2.0 * this->_Py * Cx_N_dx));
+
+    auto Y_min_max_rho_YN_limit_active_CX_N_dx =
+        2.0 * this->_Y_min_max_rho *
+        MatrixOperation::get_row(Y_limit_active, NP) * Cx_N_dx;
+
+    auto CX_N_T_penalty_CX_N_dx = PythonNumpy::ATranspose_mul_B(
+        Cx_N * Y_min_max_rho_YN_limit_active_CX_N_dx);
+
+    auto Y_min_max_rho_YN_limit_penalty =
+        2.0 * this->_Y_min_max_rho *
+        MatrixOperation::get_row(Y_limit_penalty, NP);
+
+    auto Hxx_penalty_term_N = this->hxx_lambda_contract(
+        MatrixOperation::get_row(X_horizon, NP), this->state_space_parameters,
+        Y_min_max_rho_YN_limit_penalty, MatrixOperation::get_row(dx, NP));
+
+    auto d_lambda_input = l_xx_dx + CX_N_T_Py_Cx_N_dx + Hxx_penalty_term_N +
+                          CX_N_T_penalty_CX_N_dx;
+    MatrixOperation::set_row(d_lambda, d_lambda_input, NP);
+
+    _HVP_Type Hu;
+
+    return Hu;
   }
 
 public:
