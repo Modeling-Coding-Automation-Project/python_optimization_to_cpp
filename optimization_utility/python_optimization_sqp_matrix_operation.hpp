@@ -12,6 +12,59 @@ namespace PythonOptimization {
 
 namespace MatrixOperation {
 
+namespace SetRow {
+
+// Row recursion when I_idx > 0
+template <typename Matrix_Out_Type, typename Matrix_In_Type, std::size_t I_idx>
+struct Row {
+  /**
+   * @brief Recursively assigns out_matrix(I_idx, row_index) = in_matrix(I_idx,
+   * 0).
+   *
+   * @tparam Matrix_Out_Type Output matrix type.
+   * @tparam Matrix_In_Type  Input matrix type (expected ROWS == 1).
+   * @tparam I_idx           Current column index in the recursion (0-based).
+   * @param out_matrix The destination matrix.
+   * @param in_matrix  The source 1-row matrix.
+   * @param row_index  The destination row index (runtime parameter).
+   */
+  static inline void compute(Matrix_Out_Type &out_matrix,
+                             const Matrix_In_Type &in_matrix,
+                             const std::size_t &row_index) {
+
+    out_matrix.access(I_idx, row_index) = in_matrix.template get<I_idx, 0>();
+
+    Row<Matrix_Out_Type, Matrix_In_Type, I_idx - 1>::compute(
+        out_matrix, in_matrix, row_index);
+  }
+};
+
+// Row recursion termination for I_idx == 0
+template <typename Matrix_Out_Type, typename Matrix_In_Type>
+struct Row<Matrix_Out_Type, Matrix_In_Type, 0> {
+  /**
+   * @brief Base case assignment for I_idx == 0.
+   */
+  static inline void compute(Matrix_Out_Type &out_matrix,
+                             const Matrix_In_Type &in_matrix,
+                             const std::size_t &row_index) {
+
+    out_matrix.access(0, row_index) = in_matrix.template get<0, 0>();
+  }
+};
+
+template <typename Matrix_Out_Type, typename Matrix_In_Type>
+inline void compute(Matrix_Out_Type &out_matrix,
+                    const Matrix_In_Type &in_matrix,
+                    const std::size_t &row_index) {
+  static_assert(Matrix_In_Type::ROWS > 0,
+                "Matrix_In_Type::ROWS must be positive");
+  Row<Matrix_Out_Type, Matrix_In_Type, (Matrix_In_Type::ROWS - 1)>::compute(
+      out_matrix, in_matrix, row_index);
+}
+
+} // namespace SetRow
+
 template <typename Matrix_Out_Type, typename Matrix_In_Type>
 inline void set_row(Matrix_Out_Type &out_matrix,
                     const Matrix_In_Type &in_matrix,
@@ -21,9 +74,7 @@ inline void set_row(Matrix_Out_Type &out_matrix,
                 "Matrix_Out_Type::COLS != Matrix_In_Type::COLS");
   static_assert(Matrix_In_Type::ROWS == 1, "Matrix_In_Type::ROWS != 1");
 
-  for (std::size_t i = 0; i < Matrix_In_Type::ROWS; i++) {
-    out_matrix(i, row_index) = in_matrix(i, 0);
-  }
+  SetRow::compute(out_matrix, in_matrix, row_index);
 }
 
 template <typename Matrix_In_Type>
