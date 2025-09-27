@@ -41,5 +41,8 @@
     <ClInclude Include="sqp_test_data.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\optimization_utility\python_optimization_sqp_matrix_operation.hpp">
+      <Filter>リソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
