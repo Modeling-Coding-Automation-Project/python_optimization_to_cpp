@@ -677,8 +677,7 @@ public:
   inline auto fu_uu_lambda_contract(const X_Type &X, const U_Type &U,
                                     const _Parameter_Type &parameter,
                                     const Lambda_Vector_Type &lam_next,
-                                    const U_Type &dU)
-      -> _StateFunctionHessian_UU_Out_Type {
+                                    const U_Type &dU) -> U_Type {
 
     static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
                   "Lambda_Vector_Type::COLS != STATE_SIZE");
@@ -687,23 +686,9 @@ public:
 
     auto Hf_uu = this->_state_function_hessian_uu(X, U, parameter);
 
-    _StateFunctionHessian_UU_Out_Type out;
+    U_Type out;
 
-    if (0 == INPUT_SIZE) {
-      /* Do Nothing. */
-    } else {
-      for (std::size_t i = 0; i < STATE_SIZE; i++) {
-
-        for (std::size_t j = 0; j < INPUT_SIZE; j++) {
-          _T acc = static_cast<_T>(0);
-
-          for (std::size_t k = 0; k < INPUT_SIZE; k++) {
-            acc += Hf_uu(i * INPUT_SIZE + j, k) * dU(k, 0);
-          }
-          out(j, 0) += lam_next(i, 0) * acc;
-        }
-      }
-    }
+    MatrixOperation::compute_fu_uu_lambda_contract(Hf_uu, dU, lam_next, out);
 
     return out;
   }
@@ -1153,11 +1138,11 @@ public:
           MatrixOperation::get_row(lam, k + 1),
           MatrixOperation::get_row(dx, k));
 
-      //   auto term_uu = this->fu_uu_lambda_contract(
-      //       MatrixOperation::get_row(X_horizon, k),
-      //       MatrixOperation::get_row(U_horizon, k),
-      //       this->state_space_parameters, MatrixOperation::get_row(lam, k +
-      //       1), MatrixOperation::get_row(V_horizon, k));
+      auto term_uu = this->fu_uu_lambda_contract(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters,
+          MatrixOperation::get_row(lam, k + 1),
+          MatrixOperation::get_row(V_horizon, k));
 
       //   auto l_uu_V = this->l_uu(MatrixOperation::get_row(X_horizon, k),
       //                            MatrixOperation::get_row(U_horizon, k)) *

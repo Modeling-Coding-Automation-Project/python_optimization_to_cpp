@@ -764,6 +764,170 @@ compute_fu_xx_lambda_contract(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                                                                  lam_next, out);
 }
 
+/* fu uu lambda contract */
+
+namespace FuuuLambdaContract {
+
+// K-accumulation: recursively accumulate over k (INPUT_SIZE dimension)
+template <typename Fuu_Type, typename dU_Type, typename Value_Type,
+          std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
+          std::size_t J, std::size_t K_idx>
+struct AccumulateK {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      Value_Type &acc) {
+    acc += Hf_uu.template get<I * INPUT_SIZE + J, K_idx>() *
+           dU.template get<K_idx, 0>();
+    AccumulateK<Fuu_Type, dU_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, J,
+                (K_idx - 1)>::compute(Hf_uu, dU, acc);
+  }
+};
+
+// K-accumulation termination (K_idx == 0)
+template <typename Fuu_Type, typename dU_Type, typename Value_Type,
+          std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
+          std::size_t J>
+struct AccumulateK<Fuu_Type, dU_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, J,
+                   0> {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      Value_Type &acc) {
+    acc +=
+        Hf_uu.template get<I * INPUT_SIZE + J, 0>() * dU.template get<0, 0>();
+  }
+};
+
+// Column recursion over j (INPUT_SIZE): computes contribution to out(j,0)
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I, std::size_t J_idx>
+struct Column {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    using Value = typename Out_Type::Value_Type;
+    Value acc = static_cast<Value>(0);
+    AccumulateK<Fuu_Type, dU_Type, Value, STATE_SIZE, INPUT_SIZE, I, J_idx,
+                (INPUT_SIZE - 1)>::compute(Hf_uu, dU, acc);
+
+    const auto w = lam_next.template get<I, 0>();
+    const auto updated = out.template get<J_idx, 0>() + w * acc;
+    out.template set<J_idx, 0>(updated);
+
+    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
+           (J_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
+  }
+};
+
+// Column recursion termination for j == 0
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I>
+struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+              I, 0> {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    using Value = typename Out_Type::Value_Type;
+    Value acc = static_cast<Value>(0);
+    AccumulateK<Fuu_Type, dU_Type, Value, STATE_SIZE, INPUT_SIZE, I, 0,
+                (INPUT_SIZE - 1)>::compute(Hf_uu, dU, acc);
+
+    const auto w = lam_next.template get<I, 0>();
+    const auto updated = out.template get<0, 0>() + w * acc;
+    out.template set<0, 0>(updated);
+  }
+};
+
+// Row recursion over i (STATE_SIZE): iterates the outer state index
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I_idx>
+struct Row {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+           I_idx, (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
+    Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+        (I_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
+  }
+};
+
+// Row recursion termination for i == 0
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
+struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+           0> {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
+           (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
+  }
+};
+
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I_idx, bool Activate>
+struct Conditional {};
+
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I_idx>
+struct Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE,
+                   INPUT_SIZE, I_idx, true> {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+
+    Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+        (STATE_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
+  }
+};
+
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
+          std::size_t I_idx>
+struct Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE,
+                   INPUT_SIZE, I_idx, false> {
+  static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+
+    static_cast<void>(Hf_uu);
+    static_cast<void>(dU);
+    static_cast<void>(lam_next);
+    static_cast<void>(out);
+    /* Do Nothing */
+  }
+};
+
+} // namespace FuuuLambdaContract
+
+// Public wrapper to run the unrolled recursion.
+// Out_Type must be pre-initialized (e.g., zero) before calling, since this
+// performs accumulation with "+=" semantics.
+template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type>
+inline void
+compute_fu_uu_lambda_contract(const Fuu_Type &Hf_uu, const dU_Type &dU,
+                              const Weight_Type &lam_next, Out_Type &out) {
+  static_assert(dU_Type::ROWS == 1, "dU must be a (INPUT_SIZE x 1) vector");
+  static_assert(Weight_Type::ROWS == 1,
+                "lam_next must be a (STATE_SIZE x 1) vector");
+  static_assert(Out_Type::ROWS == 1,
+                "out must be a (INPUT_SIZE x 1) vector (ROWS == 1)");
+
+  constexpr std::size_t INPUT_SIZE = dU_Type::COLS;
+  constexpr std::size_t STATE_SIZE = Weight_Type::COLS;
+
+  static_assert(STATE_SIZE > 0 && INPUT_SIZE > 0,
+                "STATE_SIZE and INPUT_SIZE must be positive");
+  static_assert(Fuu_Type::COLS == STATE_SIZE * INPUT_SIZE,
+                "Hf_uu ROWS must equal STATE_SIZE * INPUT_SIZE");
+  static_assert(Fuu_Type::ROWS == INPUT_SIZE,
+                "Hf_uu COLS must equal INPUT_SIZE");
+  static_assert(Out_Type::COLS == INPUT_SIZE, "out COLS must equal INPUT_SIZE");
+
+  FuuuLambdaContract::Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type,
+                                  STATE_SIZE, INPUT_SIZE, (STATE_SIZE - 1),
+                                  (INPUT_SIZE > 0)>::compute(Hf_uu, dU,
+                                                             lam_next, out);
+}
+
 /* hxx lambda contract */
 
 namespace HxxLambdaContract {
