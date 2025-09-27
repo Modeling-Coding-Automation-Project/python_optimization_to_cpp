@@ -12,6 +12,8 @@
 
 namespace PythonOptimization {
 
+static constexpr double AVOID_ZERO_DIVIDE_LIMIT = 1e-12;
+
 static constexpr double RHS_NORM_ZERO_LIMIT_DEFAULT = 1e-12;
 
 static constexpr double GRADIENT_NORM_ZERO_LIMIT_DEFAULT = 1e-6;
@@ -275,6 +277,192 @@ public:
     }
 
     return m;
+  }
+
+  /*
+      def solve(
+        self,
+        U_horizon_initial: np.ndarray,
+        cost_and_gradient_function: callable,
+        cost_function: callable,
+        hvp_function: callable,
+        X_initial: np.ndarray,
+        U_min_matrix: np.ndarray,
+        U_max_matrix: np.ndarray,
+    ):
+        """
+        Solves a constrained optimization problem using
+          Sequential Quadratic Programming (SQP)
+        with an active set method and preconditioned conjugate gradient (PCG)
+          for the search direction.
+        Args:
+            U_horizon_initial (np.ndarray): Initial guess for the
+              control horizon variables.
+            cost_and_gradient_function (callable): Function that computes
+              the cost and its gradient given state and control variables.
+            cost_function (callable): Function that computes the cost
+              given state and control variables.
+            hvp_function (callable): Function that computes Hessian-vector
+    products for the optimization. X_initial (np.ndarray): Initial state
+    variables. U_min_matrix (np.ndarray): Lower bounds for the control
+    variables. U_max_matrix (np.ndarray): Upper bounds for the control
+    variables. Returns: np.ndarray: Optimized control horizon variables that
+    minimize the cost function subject to bounds.
+        """
+        self.X_initial = X_initial
+        U_horizon = U_horizon_initial.copy()
+
+        for solver_iteration in range(self._solver_max_iteration):
+            # Calculate cost and gradient
+            J, gradient = cost_and_gradient_function(X_initial, U_horizon)
+
+            self._solver_step_iterated_number = solver_iteration + 1
+            if np.linalg.norm(gradient) < self._gradient_norm_zero_limit:
+                break
+
+            self._mask = self.free_mask(
+                U_horizon, gradient, U_min_matrix, U_max_matrix)
+
+            rhs = -gradient
+            M_inv = 1.0 / (self._diag_R_full + self._lambda_factor)
+
+            self.U_horizon = U_horizon
+            self.hvp_function = hvp_function
+
+            d = self.preconditioned_conjugate_gradient(
+                rhs=rhs,
+                M_inv=M_inv)
+
+            # line search and projection
+            # (No distinction between fixed/free is needed here,
+            #  project the whole)
+            alpha = 1.0
+            U_horizon_new = U_horizon.copy()
+
+            U_updated_flag = False
+            for line_search_iteration in range(self._line_search_max_iteration):
+                U_candidate = U_horizon + alpha * d
+
+                for i in range(U_candidate.shape[0]):
+                    for j in range(U_candidate.shape[1]):
+                        if U_candidate[i, j] < U_min_matrix[i, j]:
+                            U_candidate[i, j] = U_min_matrix[i, j]
+                        elif U_candidate[i, j] > U_max_matrix[i, j]:
+                            U_candidate[i, j] = U_max_matrix[i, j]
+
+                J_candidate = cost_function(X_initial, U_candidate)
+
+                self._line_search_step_iterated_number = line_search_iteration +
+    1 if J_candidate <= J or alpha < self._alpha_small_limit: U_horizon_new =
+    U_candidate J = J_candidate U_updated_flag = True break
+
+                alpha *= self._alpha_decay_rate
+
+            if True == U_updated_flag:
+                U_horizon = U_horizon_new
+            else:
+                break
+
+        self.J_opt = J
+
+        return U_horizon
+  */
+  inline auto solve(
+      const U_Horizon_Type &U_horizon_initial,
+      const _Cost_And_Gradient_Function_Object_Type &cost_and_gradient_function,
+      const _Cost_Function_Object_Type &cost_function,
+      const _HVP_Function_Object_Type &hvp_function, const X_Type &X_initial,
+      const _U_Min_Matrix_Type &U_min_matrix,
+      const _U_Max_Matrix_Type &U_max_matrix) -> U_Horizon_Type {
+
+    this->X_initial = X_initial;
+    auto U_horizon = U_horizon_initial;
+
+    _T J;
+
+    for (std::size_t solver_iteration = 0;
+         solver_iteration < this->_solver_max_iteration; ++solver_iteration) {
+      /* Calculate cost and gradient */
+      _Gradient_Type gradient;
+      cost_and_gradient_function(X_initial, U_horizon, J, gradient);
+
+      this->_solver_step_iterated_number = solver_iteration + 1;
+      if (PythonNumpy::norm(gradient) < this->_gradient_norm_zero_limit) {
+        break;
+      }
+
+      this->_mask =
+          this->free_mask(U_horizon, gradient, U_min_matrix, U_max_matrix,
+                          static_cast<_T>(U_NEAR_LIMIT_DEFAULT),
+                          static_cast<_T>(GRADIENT_ZERO_LIMIT_DEFAULT));
+
+      _RHS_Type rhs = -gradient;
+
+      auto _diag_R_full_lambda_factor =
+          this->_diag_R_full + this->_lambda_factor;
+
+      _M_Inv_Type M_inv;
+      for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
+        for (std::size_t j = 0; j < NP; ++j) {
+          M_inv(i, j) = static_cast<_T>(1) /
+                        Base::Utility::avoid_zero_divide(
+                            _diag_R_full_lambda_factor(i, j),
+                            static_cast<_T>(AVOID_ZERO_DIVIDE_LIMIT));
+        }
+      }
+
+      this->U_horizon = U_horizon;
+      this->hvp_function = hvp_function;
+
+      auto d = this->preconditioned_conjugate_gradient(rhs, M_inv);
+
+      /*
+       * line search and projection
+       * (No distinction between fixed/free is needed here,
+       *  project the whole)
+       */
+      _T alpha = static_cast<_T>(1);
+      U_Horizon_Type U_horizon_new = U_horizon;
+
+      bool U_updated_flag = false;
+      for (std::size_t line_search_iteration = 0;
+           line_search_iteration < this->_line_search_max_iteration;
+           ++line_search_iteration) {
+        auto U_candidate = U_horizon + alpha * d;
+
+        for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
+          for (std::size_t j = 0; j < NP; ++j) {
+            if (U_candidate(i, j) < U_min_matrix(i, j)) {
+              U_candidate(i, j) = U_min_matrix(i, j);
+            } else if (U_candidate(i, j) > U_max_matrix(i, j)) {
+              U_candidate(i, j) = U_max_matrix(i, j);
+            }
+          }
+        }
+
+        auto J_candidate = cost_function(X_initial, U_candidate);
+
+        this->_line_search_step_iterated_number = line_search_iteration + 1;
+        if (J_candidate <= J || alpha < this->_alpha_small_limit) {
+          U_horizon_new = U_candidate;
+          J = J_candidate;
+          U_updated_flag = true;
+          break;
+        }
+
+        alpha *= this->_alpha_decay_rate;
+      }
+
+      if (true == U_updated_flag) {
+        U_horizon = U_horizon_new;
+      } else {
+        break;
+      }
+    }
+
+    this->_J_optimal = J;
+
+    return U_horizon;
   }
 
 public:
