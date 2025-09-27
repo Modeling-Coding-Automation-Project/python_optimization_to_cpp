@@ -28,12 +28,15 @@ inline void set_row(Matrix_Out_Type &out_matrix,
   }
 }
 
-template <typename T, typename Matrix_In_Type>
+template <typename Matrix_In_Type>
 inline auto get_row(const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index)
-    -> PythonNumpy::DenseMatrix_Type<T, Matrix_In_Type::COLS, 1> {
+    -> PythonNumpy::DenseMatrix_Type<typename Matrix_In_Type::Value_Type,
+                                     Matrix_In_Type::COLS, 1> {
 
-  PythonNumpy::DenseMatrix_Type<T, Matrix_In_Type::COLS, 1> out;
+  PythonNumpy::DenseMatrix_Type<typename Matrix_In_Type::Value_Type,
+                                Matrix_In_Type::COLS, 1>
+      out;
 
   for (std::size_t i = 0; i < Matrix_In_Type::COLS; i++) {
     out(i, 0) = in_matrix(i, row_index);
