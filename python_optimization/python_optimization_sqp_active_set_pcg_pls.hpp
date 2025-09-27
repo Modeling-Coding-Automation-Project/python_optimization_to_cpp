@@ -70,8 +70,6 @@ public:
   using U_Horizon_Type = typename CostMatrices_Type_In::U_Horizon_Type;
   using Y_Horizon_Type = typename CostMatrices_Type_In::Y_Horizon_Type;
 
-  /* Check Compatibility */
-
 protected:
   /* Type */
   using _CostMatrices_Type = CostMatrices_Type_In;
@@ -367,6 +365,34 @@ public:
     this->_active_set.clear();
     _At_Lower_Upper_Type at_lower;
     _At_Lower_Upper_Type at_upper;
+
+    for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
+      for (std::size_t j = 0; j < NP; ++j) {
+
+        if ((U_horizon(i, j) >= (U_min_matrix(i, j) - atol)) &&
+            (U_horizon(i, j) <= (U_min_matrix(i, j) + atol))) {
+          at_lower(i, j) = true;
+        }
+
+        if ((U_horizon(i, j) >= (U_max_matrix(i, j) - atol)) &&
+            (U_horizon(i, j) <= (U_max_matrix(i, j) + atol))) {
+          at_upper(i, j) = true;
+        }
+      }
+    }
+
+    for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
+      for (std::size_t j = 0; j < NP; ++j) {
+        if ((at_lower(i, j) && (gradient(i, j) > gtol)) ||
+            (at_upper(i, j) && (gradient(i, j) < -gtol))) {
+          m(i, j) = false;
+        } else {
+          this->_active_set.push_active(i, j);
+        }
+      }
+    }
+
+    return m;
   }
 
 public:
