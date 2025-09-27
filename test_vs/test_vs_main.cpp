@@ -6,6 +6,8 @@
 
 #include "MCAP_tester.hpp"
 
+#include "sqp_test_data.hpp"
+
 using namespace Tester;
 
 
