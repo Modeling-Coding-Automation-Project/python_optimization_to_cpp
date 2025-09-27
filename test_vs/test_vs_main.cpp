@@ -339,6 +339,23 @@ void test_SQP_CostMatrices_NMPC() {
 
     using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter;
 
+    using State_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::State_Jacobian_x_Type;
+    using State_Jacobian_U_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::State_Jacobian_u_Type;
+    using Measurement_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Measurement_Jacobian_x_Type;
+    using State_Hessian_XX_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::State_Hessian_xx_Type;
+    using State_Hessian_XU_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::State_Hessian_xu_Type;
+    using State_Hessian_UX_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::State_Hessian_ux_Type;
+    using State_Hessian_UU_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::State_Hessian_uu_Type;
+    using Measurement_Hessian_XX_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Measurement_Hessian_xx_Type;
+
     using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
     using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
     using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
@@ -376,6 +393,17 @@ void test_SQP_CostMatrices_NMPC() {
 
     Reference_Trajectory_Type reference_trajectory;
 
+    /* コンストラクタ */
+    SQP_CostMatrices_NMPC_Type<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type,
+        State_Hessian_XX_Matrix_Type,
+        State_Hessian_XU_Matrix_Type,
+        State_Hessian_UX_Matrix_Type,
+        State_Hessian_UU_Matrix_Type,
+        Measurement_Hessian_XX_Matrix_Type> cost_matrices;
 
 
 

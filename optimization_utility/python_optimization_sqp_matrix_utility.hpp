@@ -378,7 +378,36 @@ protected:
 
 public:
   /* Constructor */
-  SQP_CostMatrices_NMPC() {}
+  SQP_CostMatrices_NMPC()
+      : _Y_min_max_rho(), _Y_offset(), _Qx(), _R(), _Qy(), _U_min_matrix(),
+        _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(), _state_function(),
+        _measurement_function(), _state_function_jacobian_x(),
+        _state_function_jacobian_u(), _measurement_function_jacobian_x(),
+        _state_function_hessian_xx(), _state_function_hessian_xu(),
+        _state_function_hessian_ux(), _state_function_hessian_uu(),
+        _measurement_function_hessian_xx() {}
+
+  SQP_CostMatrices_NMPC(const _Qx_Type &Qx, const _R_Type &R,
+                        const _Qy_Type &Qy, const U_Min_Type &U_min,
+                        const U_Max_Type &U_max, const Y_Min_Type &Y_min,
+                        const Y_Max_Type &Y_max)
+      : _Y_min_max_rho(), _Y_offset(), _Qx(Qx), _R(R), _Qy(Qy), _U_min_matrix(),
+        _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(), _state_function(),
+        _measurement_function(), _state_function_jacobian_x(),
+        _state_function_jacobian_u(), _measurement_function_jacobian_x(),
+        _state_function_hessian_xx(), _state_function_hessian_xu(),
+        _state_function_hessian_ux(), _state_function_hessian_uu(),
+        _measurement_function_hessian_xx() {
+
+    PythonNumpy::update_tile_concatenated_matrix<1, NP, U_Min_Type>(
+        this->_U_min_matrix, U_min);
+    PythonNumpy::update_tile_concatenated_matrix<1, NP, U_Max_Type>(
+        this->_U_max_matrix, U_max);
+    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Min_Type>(
+        this->_Y_min_matrix, Y_min);
+    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Max_Type>(
+        this->_Y_max_matrix, Y_max);
+  }
 
 public:
   /* Setters */
@@ -1131,6 +1160,22 @@ protected:
 /* make SQP_CostMatrices_NMPC */
 
 /* SQP_CostMatrices_NMPC type */
+template <typename T, std::size_t Np, typename Parameter_Type,
+          typename U_Min_Type, typename U_Max_Type, typename Y_Min_Type,
+          typename Y_Max_Type, typename State_Jacobian_X_Matrix_Type,
+          typename State_Jacobian_U_Matrix_Type,
+          typename Measurement_Jacobian_X_Matrix_Type,
+          typename State_Hessian_XX_Matrix_Type,
+          typename State_Hessian_XU_Matrix_Type,
+          typename State_Hessian_UX_Matrix_Type,
+          typename State_Hessian_UU_Matrix_Type,
+          typename Measurement_Hessian_XX_Matrix_Type>
+using SQP_CostMatrices_NMPC_Type = SQP_CostMatrices_NMPC<
+    T, Np, Parameter_Type, U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+    State_Jacobian_X_Matrix_Type, State_Jacobian_U_Matrix_Type,
+    Measurement_Jacobian_X_Matrix_Type, State_Hessian_XX_Matrix_Type,
+    State_Hessian_XU_Matrix_Type, State_Hessian_UX_Matrix_Type,
+    State_Hessian_UU_Matrix_Type, Measurement_Hessian_XX_Matrix_Type>;
 
 } // namespace PythonOptimization
 
