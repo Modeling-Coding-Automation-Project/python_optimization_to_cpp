@@ -62,6 +62,10 @@ public:
   /* Type */
   using Value_Type = typename CostMatrices_Type_In::Value_Type;
 
+  using X_Type = typename CostMatrices_Type_In::X_Type;
+  using U_Type = typename CostMatrices_Type_In::U_Type;
+  using Y_Type = typename CostMatrices_Type_In::Y_Type;
+
   using X_Horizon_Type = typename CostMatrices_Type_In::X_Horizon_Type;
   using U_Horizon_Type = typename CostMatrices_Type_In::U_Horizon_Type;
   using Y_Horizon_Type = typename CostMatrices_Type_In::Y_Horizon_Type;
@@ -84,15 +88,16 @@ protected:
 
   using _ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
 
-  using _Cost_Function_Type =
+  using _Cost_Function_Object_Type =
       CostFunction_Object<X_Horizon_Type, U_Horizon_Type>;
 
-  using _Cost_And_Gradient_Function_Type =
+  using _Cost_And_Gradient_Function_Object_Type =
       CostAndGradientFunction_Object<X_Horizon_Type, U_Horizon_Type,
                                      _Gradient_Type>;
 
-  using _HVP_Function_Type = HVP_Function_Object<X_Horizon_Type, U_Horizon_Type,
-                                                 _V_Horizon_Type, _HVP_Type>;
+  using _HVP_Function_Object_Type =
+      HVP_Function_Object<X_Horizon_Type, U_Horizon_Type, _V_Horizon_Type,
+                          _HVP_Type>;
 
 public:
   /* Constructor */
@@ -100,6 +105,9 @@ public:
 
 public:
   /* Function */
+  U_Horizon_Type U_horizon;
+  X_Type X_initial;
+  _HVP_Function_Object_Type hvp_function;
 
 public:
   /* Variable */
@@ -119,6 +127,15 @@ protected:
   _T _lambda_factor;
 
   _R_Full_Size _R_full_size;
+
+  _Mask_Type _mask;
+  _ActiveSet_Type _active_set;
+
+  std::size_t _solver_step_iterated_number;
+  std::size_t _pcg_step_iterated_number;
+  std::size_t _line_search_step_iterated_number;
+
+  _T _J_optimal;
 };
 
 } // namespace PythonOptimization
