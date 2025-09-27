@@ -744,7 +744,7 @@ public:
                                         const _U_horizon_Type &U_horizon, _T &J,
                                         _Gradient_Type &gradient) {
 
-    auto U_dummy = U_Type();
+    U_Type U_dummy;
 
     auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
                                                this->state_space_parameters);
@@ -989,9 +989,34 @@ public:
             return Hu
     */
 
+    U_Type U_dummy;
+
     /* --- 1) forward states */
     auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
                                                this->state_space_parameters);
+
+    _Y_horizon_Type Y_horizon;
+    for (std::size_t k = 0; k < (NP + 1); k++) {
+      auto Y_k = this->calculate_measurement_function(
+          MatrixOperation::get_row(X_horizon, k), U_dummy,
+          this->state_space_parameters);
+
+      MatrixOperation::set_row(Y_horizon, Y_k, k);
+    }
+
+    auto yN = this->calculate_measurement_function(
+        MatrixOperation::get_row(X_horizon, NP), U_dummy,
+        this->state_space_parameters);
+
+    auto eN_y = yN - MatrixOperation::get_row(this->reference_trajectory, NP);
+
+    _Y_horizon_Type Y_limit_penalty;
+    _Y_horizon_Type Y_limit_active;
+    this->calculate_Y_limit_penalty_and_active(Y_horizon, Y_limit_penalty,
+                                               Y_limit_active);
+
+    /* --- 2) first-order adjoint (costate lambda) with output terms */
+    _X_horizon_Type lam;
   }
 
 public:
