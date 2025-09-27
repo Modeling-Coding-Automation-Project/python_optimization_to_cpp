@@ -740,7 +740,19 @@ void test_sqp_active_set_pcg_pls() {
         cost_matrices.get_U_max_matrix()
     );
 
+    auto U_horizon_opt_answer = Matrix<DefDense, T, INPUT_SIZE, NP>({
+        {static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(0.88495493), static_cast<T>(-0.04190774) },
+        {static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1), 
+         static_cast<T>(0.88495493), static_cast<T>(-0.04190774) }
+    });
 
+    tester.expect_near(U_horizon_opt.matrix.data, U_horizon_opt_answer.matrix.data, NEAR_LIMIT_STRICT,
+        "check U_horizon_opt.");
 
 
     tester.throw_error_if_test_failed();
