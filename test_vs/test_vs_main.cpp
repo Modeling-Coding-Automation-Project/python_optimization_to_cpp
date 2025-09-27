@@ -639,7 +639,7 @@ void test_sqp_active_set_pcg_pls() {
 
     Reference_Trajectory_Type reference_trajectory;
 
-    SQP_CostMatrices_NMPC_Type<T, NP, Parameter_Type,
+    using Cost_Matrices_Type = SQP_CostMatrices_NMPC_Type<T, NP, Parameter_Type,
         U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
         State_Jacobian_X_Matrix_Type,
         State_Jacobian_U_Matrix_Type,
@@ -648,7 +648,9 @@ void test_sqp_active_set_pcg_pls() {
         State_Hessian_XU_Matrix_Type,
         State_Hessian_UX_Matrix_Type,
         State_Hessian_UU_Matrix_Type,
-        Measurement_Hessian_XX_Matrix_Type> cost_matrices =
+        Measurement_Hessian_XX_Matrix_Type>;
+
+    Cost_Matrices_Type cost_matrices =
         make_SQP_CostMatrices_NMPC<T, NP, Parameter_Type,
         U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
         State_Jacobian_X_Matrix_Type,
@@ -673,7 +675,8 @@ void test_sqp_active_set_pcg_pls() {
     DenseMatrix_Type<T, INPUT_SIZE, NP> U_horizon_initial;
 
     /* SQP Active Set PCG PLS 定義 */
-
+    SQP_ActiveSet_PCG_PLS_Type<Cost_Matrices_Type> solver =
+        make_SQP_ActiveSet_PCG_PLS<Cost_Matrices_Type>();
 
 
 

@@ -117,7 +117,21 @@ protected:
 
 public:
   /* Constructor */
-  SQP_ActiveSet_PCG_PLS();
+  SQP_ActiveSet_PCG_PLS()
+      : U_horizon(), X_initial(), hvp_function(nullptr),
+        _gradient_norm_zero_limit(
+            static_cast<_T>(GRADIENT_NORM_ZERO_LIMIT_DEFAULT)),
+        _alpha_small_limit(static_cast<_T>(ALPHA_SMALL_LIMIT_DEFAULT)),
+        _alpha_decay_rate(static_cast<_T>(ALPHA_DECAY_RATE_DEFAULT)),
+        _pcg_php_minus_limit(static_cast<_T>(PCG_PHP_MINUS_LIMIT_DEFAULT)),
+        _solver_max_iteration(SOLVER_MAX_ITERATION_DEFAULT),
+        _pcg_max_iteration(PCG_MAX_ITERATION_DEFAULT),
+        _line_search_max_iteration(LINE_SEARCH_MAX_ITERATION_DEFAULT),
+        _pcg_tol(static_cast<_T>(PCG_TOL_DEFAULT)),
+        _lambda_factor(static_cast<_T>(LAMBDA_FACTOR_DEFAULT)), _diag_R_full(),
+        _mask(), _active_set(), _solver_step_iterated_number(0),
+        _pcg_step_iterated_number(0), _line_search_step_iterated_number(0),
+        _J_optimal(static_cast<_T>(0)) {}
 
   /* Copy constructor */
   SQP_ActiveSet_PCG_PLS(const SQP_ActiveSet_PCG_PLS &input)
@@ -519,6 +533,17 @@ protected:
 
   _T _J_optimal;
 };
+
+/* make SQP_ActiveSetPCG_PLS */
+template <typename CostMatrices_Type>
+inline auto make_SQP_ActiveSet_PCG_PLS(void)
+    -> SQP_ActiveSet_PCG_PLS<CostMatrices_Type> {
+  return SQP_ActiveSet_PCG_PLS<CostMatrices_Type>();
+}
+
+/* SQP_ActiveSetPCG_PLS Type */
+template <typename CostMatrices_Type>
+using SQP_ActiveSet_PCG_PLS_Type = SQP_ActiveSet_PCG_PLS<CostMatrices_Type>;
 
 } // namespace PythonOptimization
 
