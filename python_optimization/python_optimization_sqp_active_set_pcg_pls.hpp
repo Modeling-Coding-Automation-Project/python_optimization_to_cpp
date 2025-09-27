@@ -104,6 +104,60 @@ public:
   SQP_ActiveSet_PCG_PLS();
 
 public:
+  /* Setter */
+  inline void set_gradient_norm_zero_limit(const _T &limit) {
+    this->_gradient_norm_zero_limit = limit;
+  }
+
+  inline void set_alpha_small_limit(const _T &limit) {
+    this->_alpha_small_limit = limit;
+  }
+
+  inline void set_alpha_decay_rate(const _T &rate) {
+    this->_alpha_decay_rate = rate;
+  }
+
+  inline void set_pcg_php_minus_limit(const _T &limit) {
+    this->_pcg_php_minus_limit = limit;
+  }
+
+  inline void set_solver_max_iteration(const std::size_t &max_iteration) {
+    this->_solver_max_iteration = max_iteration;
+  }
+
+  inline void set_pcg_max_iteration(const std::size_t &max_iteration) {
+    this->_pcg_max_iteration = max_iteration;
+  }
+
+  inline void set_line_search_max_iteration(const std::size_t &max_iteration) {
+    this->_line_search_max_iteration = max_iteration;
+  }
+
+  inline void set_pcg_tol(const _T &tol) { this->_pcg_tol = tol; }
+
+  inline void set_lambda_factor(const _T &factor) {
+    this->_lambda_factor = factor;
+  }
+
+  inline void set_diag_R_full(const _R_Full_Size &diag_R_full) {
+    this->_diag_R_full = diag_R_full;
+  }
+
+  /* Getter */
+  inline auto get_solver_step_iterated_number(void) const
+      -> const std::size_t & {
+    return this->_solver_step_iterated_number;
+  }
+
+  inline auto get_pcg_step_iterated_number(void) const -> const std::size_t & {
+    return this->_pcg_step_iterated_number;
+  }
+
+  inline auto get_line_search_step_iterated_number(void) const
+      -> const std::size_t & {
+    return this->_line_search_step_iterated_number;
+  }
+
   /* Function */
   U_Horizon_Type U_horizon;
   X_Type X_initial;
@@ -126,7 +180,7 @@ protected:
   _T _pcg_tol;
   _T _lambda_factor;
 
-  _R_Full_Size _R_full_size;
+  _R_Full_Size _diag_R_full;
 
   _Mask_Type _mask;
   _ActiveSet_Type _active_set;
