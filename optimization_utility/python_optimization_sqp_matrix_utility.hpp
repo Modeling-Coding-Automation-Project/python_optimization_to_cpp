@@ -359,6 +359,8 @@ protected:
 
   using _Reference_Trajectory_Type = _Y_horizon_Type;
 
+  using _Gradient_Type = _U_horizon_Type;
+
 public:
   /* Constructor */
   SQP_CostMatrices_NMPC() {}
@@ -734,6 +736,114 @@ public:
          this->_Y_min_max_rho * YN_limit_penalty_T_YN_limit_penalty;
 
     return J;
+  }
+
+  inline void compute_cost_and_gradient(const X_Type X_initial,
+                                        const _U_horizon_Type &U_horizon, _T &J,
+                                        _Gradient_Type &gradient) {
+
+    auto U_dummy = U_Type();
+
+    auto X = this->simulate_trajectory(X_initial, U_horizon,
+                                       this->state_space_parameters);
+
+    _Y_horizon_Type Y_horizon;
+    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
+        Y_horizon, this->_Y_offset);
+
+    for (std::size_t k = 0; k < (NP + 1); k++) {
+      auto Y_k =
+          this->calculate_measurement_function(X, this->state_space_parameters);
+
+      MatrixOperation::set_row(Y_horizon, Y_k, k);
+    }
+
+    auto Y_limit_penalty = this->calculate_Y_limit_penalty(Y_horizon);
+
+    for (std::size_t k = 0; k < NP; k++) {
+      auto e_y_r = MatrixOperation::get_row(Y_horizon, k) -
+                   MatrixOperation::get_row(this->reference_trajectory, k);
+
+      auto X_T_Qx_X = MatrixOperation::calculate_quadratic_form(
+          MatrixOperation::get_row(X, k), this->_Qx);
+      auto e_y_r_T_Qy_e_y_r =
+          MatrixOperation::calculate_quadratic_form(e_y_r, this->_Qy);
+
+      auto U_T_R_U = MatrixOperation::calculate_quadratic_form(
+          MatrixOperation::get_row(U_horizon, k), this->_R);
+
+      auto Y_limit_penalty_T_Y_limit_penalty =
+          MatrixOperation::calculate_quadratic_no_weighted(
+              MatrixOperation::get_row(Y_limit_penalty, k));
+
+      J += X_T_Qx_X + e_y_r_T_Qy_e_y_r + U_T_R_U +
+           this->_Y_min_max_rho * Y_limit_penalty_T_Y_limit_penalty;
+    }
+
+    auto eN_y_r = MatrixOperation::get_row(Y_horizon, NP) -
+                  MatrixOperation::get_row(this->reference_trajectory, NP);
+
+    auto XN_T_Qx_XN = MatrixOperation::calculate_quadratic_form(
+        MatrixOperation::get_row(X, NP), this->_Qx);
+    auto eN_y_r_T_Qy_eN_y_r =
+        MatrixOperation::calculate_quadratic_form(eN_y_r, this->_Qy);
+    auto YN_limit_penalty_T_YN_limit_penalty =
+        MatrixOperation::calculate_quadratic_no_weighted(
+            MatrixOperation::get_row(Y_limit_penalty, NP));
+
+    J += XN_T_Qx_XN + eN_y_r_T_Qy_eN_y_r +
+         this->_Y_min_max_rho * YN_limit_penalty_T_YN_limit_penalty;
+
+    // terminal adjoint
+    auto C_N = this->calculate_measurement_jacobian_x(
+        MatrixOperation::get_row(X, NP), U_dummy, this->state_space_parameters);
+
+    auto Px_X = this->_Px * MatrixOperation::get_row(X, NP);
+    auto Py_eN_y_r = this->_Py * eN_y_r;
+    auto Y_min_max_rho_YN_limit_penalty =
+        this->_Y_min_max_rho * MatrixOperation::get_row(Y_limit_penalty, NP);
+
+    auto lam_next =
+        2.0 * (Px_X + PythonNumpy::ATranspose_mul_B(
+                          C_N, (Py_eN_y_r + Y_min_max_rho_YN_limit_penalty)));
+
+    gradient = _Gradient_Type();
+
+    for (std::size_t k = NP; k-- > 0;) {
+
+      auto Cx_k = this->calculate_measurement_jacobian_x(
+          MatrixOperation::get_row(X, k), U_dummy,
+          this->state_space_parameters);
+
+      auto ek_y = MatrixOperation::get_row(Y_horizon, k) -
+                  MatrixOperation::get_row(this->reference_trajectory, k);
+
+      auto A_k = this->calculate_state_jacobian_x(
+          MatrixOperation::get_row(X, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
+
+      auto B_k = this->calculate_state_jacobian_u(
+          MatrixOperation::get_row(X, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
+
+      auto _2_R_U = 2.0 * this->_R * MatrixOperation::get_row(U_horizon, k);
+      auto B_k_T_lam_next = PythonNumpy::ATranspose_mul_B(B_k, lam_next);
+
+      MatrixOperation::set_row(gradient, _2_R_U + B_k_T_lam_next, k);
+
+      auto Qx_X = this->_Qx * MatrixOperation::get_row(X, k);
+      auto Qy_ek_y = this->_Qy * ek_y;
+      auto Y_min_max_rho_Yk_limit_penalty =
+          2.0 * this->_Y_min_max_rho *
+          MatrixOperation::get_row(Y_limit_penalty, k);
+
+      auto A_k_T_lam_next = PythonNumpy::ATranspose_mul_B(A_k, lam_next);
+
+      lam_next =
+          2.0 * (Qx_X + PythonNumpy::ATranspose_mul_B(
+                            Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
+          A_k_T_lam_next;
+    }
   }
 
 public:
