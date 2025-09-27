@@ -45,6 +45,8 @@ public:
   /* Type */
   using Value_Type = typename CostMatrices_Type_In::Value_Type;
 
+  using U_Horizon_Type = typename CostMatrices_Type_In::U_Horizon_Type;
+
   /* Check Compatibility */
 
 protected:

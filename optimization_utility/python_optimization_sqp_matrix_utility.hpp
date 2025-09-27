@@ -186,6 +186,10 @@ public:
   using U_Type = PythonControl::StateSpaceInput_Type<T, INPUT_SIZE>;
   using Y_Type = PythonControl::StateSpaceOutput_Type<T, OUTPUT_SIZE>;
 
+  using X_Horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), X_Type>;
+  using U_Horizon_Type = PythonNumpy::Tile_Type<1, NP, U_Type>;
+  using Y_Horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Type>;
+
   /* Check Compatibility */
   static_assert(std::is_same<U_Min_Type_In::Value_Type, T>::value,
                 "U_Min_Type_In::Value_Type != T");
@@ -353,15 +357,11 @@ protected:
           _MeasurementFunctionHessian_XX_Out_Type, X_Type, U_Type,
           _Parameter_Type>;
 
-  using _X_horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), X_Type>;
-  using _U_horizon_Type = PythonNumpy::Tile_Type<1, NP, U_Type>;
-  using _Y_horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Type>;
+  using _Reference_Trajectory_Type = Y_Horizon_Type;
 
-  using _Reference_Trajectory_Type = _Y_horizon_Type;
-
-  using _Gradient_Type = _U_horizon_Type;
-  using _V_horizon_Type = _U_horizon_Type;
-  using _HVP_Type = _U_horizon_Type;
+  using _Gradient_Type = U_Horizon_Type;
+  using _V_horizon_Type = U_Horizon_Type;
+  using _HVP_Type = U_Horizon_Type;
 
 public:
   /* Constructor */
@@ -624,11 +624,11 @@ public:
   }
 
   inline auto simulate_trajectory(const X_Type &X_initial,
-                                  const _U_horizon_Type &U_horizon,
+                                  const U_Horizon_Type &U_horizon,
                                   const _Parameter_Type &parameter)
-      -> _X_horizon_Type {
+      -> X_Horizon_Type {
 
-    _X_horizon_Type X_horizon;
+    X_Horizon_Type X_horizon;
     X_Type X = X_initial;
 
     for (std::size_t k = 0; k < NP; k++) {
@@ -640,9 +640,9 @@ public:
     return X_horizon;
   }
 
-  inline auto calculate_Y_limit_penalty(const _Y_horizon_Type &Y_horizon)
-      -> _Y_horizon_Type {
-    _Y_horizon_Type Y_limit_penalty;
+  inline auto calculate_Y_limit_penalty(const Y_Horizon_Type &Y_horizon)
+      -> Y_Horizon_Type {
+    Y_Horizon_Type Y_limit_penalty;
 
     for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
       for (std::size_t j = 0; j < (NP + 1); j++) {
@@ -660,11 +660,11 @@ public:
   }
 
   inline void
-  calculate_Y_limit_penalty_and_active(const _Y_horizon_Type &Y_horizon,
-                                       _Y_horizon_Type &Y_limit_penalty,
-                                       _Y_horizon_Type &Y_limit_active) {
-    Y_limit_penalty = _Y_horizon_Type();
-    Y_limit_active = _Y_horizon_Type();
+  calculate_Y_limit_penalty_and_active(const Y_Horizon_Type &Y_horizon,
+                                       Y_Horizon_Type &Y_limit_penalty,
+                                       Y_Horizon_Type &Y_limit_active) {
+    Y_limit_penalty = Y_Horizon_Type();
+    Y_limit_active = Y_Horizon_Type();
 
     for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
       for (std::size_t j = 0; j < (NP + 1); j++) {
@@ -684,12 +684,12 @@ public:
   }
 
   inline auto compute_cost(const X_Type X_initial,
-                           const _U_horizon_Type &U_horizon) -> _T {
+                           const U_Horizon_Type &U_horizon) -> _T {
 
     auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
                                                this->state_space_parameters);
 
-    _Y_horizon_Type Y_horizon;
+    Y_Horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
         Y_horizon, this->_Y_offset);
 
@@ -741,7 +741,7 @@ public:
   }
 
   inline void compute_cost_and_gradient(const X_Type X_initial,
-                                        const _U_horizon_Type &U_horizon, _T &J,
+                                        const U_Horizon_Type &U_horizon, _T &J,
                                         _Gradient_Type &gradient) {
 
     U_Type U_dummy;
@@ -749,7 +749,7 @@ public:
     auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
                                                this->state_space_parameters);
 
-    _Y_horizon_Type Y_horizon;
+    Y_Horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
         Y_horizon, this->_Y_offset);
 
@@ -853,7 +853,7 @@ public:
   }
 
   inline auto hvp_analytic(const X_Type &X_initial,
-                           const _U_horizon_Type &U_horizon,
+                           const U_Horizon_Type &U_horizon,
                            const _V_horizon_Type &V_horizon) -> _HVP_Type {
 
     /*
@@ -998,7 +998,7 @@ public:
     auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
                                                this->state_space_parameters);
 
-    _Y_horizon_Type Y_horizon;
+    Y_Horizon_Type Y_horizon;
     for (std::size_t k = 0; k < (NP + 1); k++) {
       auto Y_k = this->calculate_measurement_function(
           MatrixOperation::get_row(X_horizon, k), U_dummy,
@@ -1013,13 +1013,13 @@ public:
 
     auto eN_y = yN - MatrixOperation::get_row(this->reference_trajectory, NP);
 
-    _Y_horizon_Type Y_limit_penalty;
-    _Y_horizon_Type Y_limit_active;
+    Y_Horizon_Type Y_limit_penalty;
+    Y_Horizon_Type Y_limit_active;
     this->calculate_Y_limit_penalty_and_active(Y_horizon, Y_limit_penalty,
                                                Y_limit_active);
 
     /* --- 2) first-order adjoint (costate lambda) with output terms */
-    _X_horizon_Type lam;
+    X_Horizon_Type lam;
     auto Cx_N = this->calculate_measurement_jacobian_x(
         MatrixOperation::get_row(X_horizon, NP), U_dummy,
         this->state_space_parameters);
@@ -1063,7 +1063,7 @@ public:
     }
 
     /* --- 3) forward directional state: delta_x --- */
-    _X_horizon_Type dx;
+    X_Horizon_Type dx;
     for (std::size_t k = 0; k < NP; k++) {
       auto A_k = this->calculate_state_jacobian_x(
           MatrixOperation::get_row(X_horizon, k),
@@ -1078,7 +1078,7 @@ public:
     }
 
     /* --- 4) backward second-order adjoint --- */
-    _X_horizon_Type d_lambda;
+    X_Horizon_Type d_lambda;
 
     /*
      * Match the treatment of the terminal term phi_xx = l_xx(X_N,·) (currently
