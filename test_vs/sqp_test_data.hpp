@@ -389,6 +389,9 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_xx_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
+        static_cast<void>(Parameters);
 
         return sympy_function();
     }
@@ -467,6 +470,9 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_xu_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
+        static_cast<void>(Parameters);
 
         return sympy_function();
     }
@@ -537,6 +543,9 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_ux_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
+        static_cast<void>(Parameters);
 
         return sympy_function();
     }
@@ -591,6 +600,9 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_uu_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
+        static_cast<void>(Parameters);
 
         return sympy_function();
     }
@@ -661,6 +673,9 @@ public:
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> Measurement_Hessian_xx_Type {
+        static_cast<void>(X);
+        static_cast<void>(U);
+        static_cast<void>(Parameters);
 
         return sympy_function();
     }

@@ -376,6 +376,22 @@ void test_SQP_CostMatrices_NMPC() {
         Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<X_Type, U_Type, Parameter_Type>::function;
 
+    PythonOptimization::StateFunctionHessian_XX_Object<
+        State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xx_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::Function<X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionHessian_XU_Object<
+        State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xu_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::Function<X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionHessian_UX_Object<
+        State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_ux_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::Function<X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionHessian_UU_Object<
+        State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_uu_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::Function<X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunctionHessian_XX_Object<
+        Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_hessian_xx_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Function<X_Type, U_Type, Parameter_Type>::function;
+
     using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
     using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
     using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
@@ -446,9 +462,18 @@ void test_SQP_CostMatrices_NMPC() {
     tester.expect_near(u_min_value, static_cast<T>(10), NEAR_LIMIT_STRICT,
         "check u_min value.");
 
-    //cost_matrices.set_function_objects(
-
-    //);
+    cost_matrices.set_function_objects(
+        state_function,
+        measurement_function,
+        state_jacobian_x_function,
+        state_jacobian_u_function,
+        measurement_jacobian_x_function,
+        state_hessian_xx_function,
+        state_hessian_xu_function,
+        state_hessian_ux_function,
+        state_hessian_uu_function,
+        measurement_hessian_xx_function
+    );
 
 
 
