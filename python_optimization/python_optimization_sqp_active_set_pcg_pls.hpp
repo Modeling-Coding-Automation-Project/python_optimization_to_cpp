@@ -101,13 +101,13 @@ protected:
 
   using _R_Full_Type =
       PythonNumpy::DenseMatrix_Type<_T, INPUT_SIZE, INPUT_SIZE>;
-  using _M_Inv_Type = _R_Full_Type;
 
   using _Mask_Type = U_Horizon_Type;
   using _Gradient_Type = U_Horizon_Type;
   using _V_Horizon_Type = U_Horizon_Type;
   using _HVP_Type = U_Horizon_Type;
   using _RHS_Type = U_Horizon_Type;
+  using _M_Inv_Type = U_Horizon_Type;
 
   using _ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
 
@@ -330,8 +330,8 @@ public:
       _RHS_Type r = rhs;
 
       /* Preconditioning */
-      auto z = ActiveSet2D_MatrixOperator::element_wise_product(
-          r, M_inv, this->_active_set);
+      auto z = ActiveSet2D_MatrixOperator::element_wise_product<
+          _T, INPUT_SIZE, NP, INPUT_SIZE, NP>(r, M_inv, this->_active_set);
 
       _RHS_Type p = z;
 
@@ -433,7 +433,7 @@ public:
     this->X_initial = X_initial_in;
     U_Horizon_Type U_horizon_store = U_horizon_initial;
 
-    _T J;
+    _T J = static_cast<_T>(0);
 
     for (std::size_t solver_iteration = 0;
          solver_iteration < this->_solver_max_iteration; ++solver_iteration) {
