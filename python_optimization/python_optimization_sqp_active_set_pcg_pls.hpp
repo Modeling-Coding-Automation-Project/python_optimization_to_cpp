@@ -260,6 +260,23 @@ public:
 
         r = r - ActiveSet2D_MatrixOperator::matrix_multiply_scalar(
                     Hp, alpha, this->_active_set);
+
+        if (ActiveSet2D_MatrixOperator::norm(r, this->_active_set) <=
+            this->_pcg_tol * rhs_norm) {
+          break;
+        }
+
+        z = ActiveSet2D_MatrixOperator::element_wise_product(r, M_inv,
+                                                             this->_active_set);
+
+        _T rz_new = ActiveSet2D_MatrixOperator::vdot(r, z, this->_active_set);
+
+        _T beta = rz_new / rz;
+
+        p = z + ActiveSet2D_MatrixOperator::matrix_multiply_scalar(
+                    p, beta, this->_active_set);
+
+        rz = rz_new;
       }
     }
 
