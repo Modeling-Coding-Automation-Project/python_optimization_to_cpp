@@ -811,21 +811,9 @@ public:
     Y_limit_penalty = Y_Horizon_Type();
     Y_limit_active = Y_Horizon_Type();
 
-    for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
-      for (std::size_t j = 0; j < (NP + 1); j++) {
-
-        if (Y_horizon(i, j) < this->_Y_min_matrix(i, j)) {
-          Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_min_matrix(i, j);
-          Y_limit_active(i, j) = static_cast<_T>(1);
-
-        } else if (Y_horizon(i, j) > this->_Y_max_matrix(i, j)) {
-          Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_max_matrix(i, j);
-          Y_limit_active(i, j) = static_cast<_T>(1);
-        } else {
-          /* Do Nothing. */
-        }
-      }
-    }
+    MatrixOperation::calculate_Y_limit_penalty_and_active(
+        Y_horizon, this->_Y_min_matrix, this->_Y_max_matrix, Y_limit_penalty,
+        Y_limit_active);
   }
 
   inline auto compute_cost(const X_Type X_initial,
@@ -902,7 +890,8 @@ public:
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
       auto Y_k = this->calculate_measurement_function(
-          MatrixOperation::get_row(X_horizon, k), this->state_space_parameters);
+          MatrixOperation::get_row(X_horizon, k), U_dummy,
+          this->state_space_parameters);
 
       MatrixOperation::set_row(Y_horizon, Y_k, k);
     }
