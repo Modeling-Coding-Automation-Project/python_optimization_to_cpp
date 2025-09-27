@@ -32,6 +32,21 @@ static constexpr std::size_t SOLVER_MAX_ITERATION_DEFAULT = 100;
 
 static constexpr double LAMBDA_FACTOR_DEFAULT = 1e-6;
 
+/* Cost Function Objects */
+template <typename X_Type, typename U_Horizon_Type>
+using CostFunction_Object = std::function<typename X_Type::Value_Type(
+    const X_Type &, const U_Horizon_Type &)>;
+
+template <typename X_Type, typename U_Horizon_Type, typename Gradient_Type>
+using CostAndGradientFunction_Object =
+    std::function<void(const X_Type &, const U_Horizon_Type &,
+                       typename X_Type::Value_Type &, Gradient_Type &)>;
+
+template <typename X_Type, typename U_Horizon_Type, typename V_Horizon_Type,
+          typename HVP_Type>
+using HVP_Function_Object = std::function<HVP_Type(
+    const X_Type &, const U_Horizon_Type &, const V_Horizon_Type &)>;
+
 /* SQP Active Set with PCG and PLS */
 
 template <typename CostMatrices_Type_In> class SQP_ActiveSet_PCG_PLS {

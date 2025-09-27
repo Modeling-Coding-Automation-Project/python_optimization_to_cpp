@@ -360,7 +360,7 @@ protected:
   using _Reference_Trajectory_Type = Y_Horizon_Type;
 
   using _Gradient_Type = U_Horizon_Type;
-  using _V_horizon_Type = U_Horizon_Type;
+  using _V_Horizon_Type = U_Horizon_Type;
   using _HVP_Type = U_Horizon_Type;
 
 public:
@@ -854,7 +854,7 @@ public:
 
   inline auto hvp_analytic(const X_Type &X_initial,
                            const U_Horizon_Type &U_horizon,
-                           const _V_horizon_Type &V_horizon) -> _HVP_Type {
+                           const _V_Horizon_Type &V_horizon) -> _HVP_Type {
     U_Type U_dummy;
 
     /* --- 1) forward states */
