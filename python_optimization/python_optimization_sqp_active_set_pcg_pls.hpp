@@ -146,10 +146,10 @@ public:
         _pcg_max_iteration(PCG_MAX_ITERATION_DEFAULT),
         _line_search_max_iteration(LINE_SEARCH_MAX_ITERATION_DEFAULT),
         _pcg_tol(static_cast<_T>(PCG_TOL_DEFAULT)),
-        _lambda_factor(static_cast<_T>(LAMBDA_FACTOR_DEFAULT)), _diag_R_full(),
-        _mask(), _active_set(), _solver_step_iterated_number(0),
-        _pcg_step_iterated_number(0), _line_search_step_iterated_number(0),
-        _J_optimal(static_cast<_T>(0)) {}
+        _lambda_factor(static_cast<_T>(LAMBDA_FACTOR_DEFAULT)),
+        _diag_R_full(_R_Full_Type::ones()), _mask(), _active_set(),
+        _solver_step_iterated_number(0), _pcg_step_iterated_number(0),
+        _line_search_step_iterated_number(0), _J_optimal(static_cast<_T>(0)) {}
 
   /* Copy constructor */
   SQP_ActiveSet_PCG_PLS(const SQP_ActiveSet_PCG_PLS &input)
@@ -453,7 +453,7 @@ public:
 
       _RHS_Type rhs = -gradient;
 
-      auto _diag_R_full_lambda_factor = MatrixOperation::add_scalar_to_matrix(
+      auto diag_R_full_lambda_factor = MatrixOperation::add_scalar_to_matrix(
           this->_diag_R_full, this->_lambda_factor);
 
       _M_Inv_Type M_inv;
@@ -461,7 +461,7 @@ public:
         for (std::size_t j = 0; j < NP; ++j) {
           M_inv(i, j) = static_cast<_T>(1) /
                         Base::Utility::avoid_zero_divide(
-                            _diag_R_full_lambda_factor(i, j),
+                            diag_R_full_lambda_factor(i, j),
                             static_cast<_T>(AVOID_ZERO_DIVIDE_LIMIT));
         }
       }
