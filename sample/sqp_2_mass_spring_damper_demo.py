@@ -78,8 +78,6 @@ state_space_parameters = Parameters()
 Qx = np.diag([0.5, 0.1, 0.5, 0.1])
 Qy = np.diag([0.5, 0.5])
 R = np.diag([0.1, 0.1])
-Px = Qx.copy()
-Py = Qy.copy()
 
 u_min = np.array([[-1.0], [-1.0]])
 u_max = np.array([[1.0], [1.0]])
