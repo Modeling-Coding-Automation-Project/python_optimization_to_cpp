@@ -424,7 +424,6 @@ void test_SQP_CostMatrices_NMPC() {
     Y_Min_Type y_min;
     Y_Max_Type y_max;
 
-    using Reference_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
     using Reference_Trajectory_Type = DenseMatrix_Type<T, OUTPUT_SIZE, (NP + 1)>;
 
     Reference_Trajectory_Type reference_trajectory;
@@ -474,6 +473,8 @@ void test_SQP_CostMatrices_NMPC() {
         state_hessian_uu_function,
         measurement_hessian_xx_function
     );
+
+    cost_matrices.reference_trajectory = reference_trajectory;
 
 
 
