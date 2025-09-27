@@ -247,37 +247,52 @@ protected:
   using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type_In>;
   using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type_In>;
 
+  using _StateFunction_Out_Type = X_Type;
+  using _MeasurementFunction_Out_Type = Y_Type;
+
+  using _StateFunctionJacobian_X_Out_Type = State_Jacobian_X_Matrix_Type_In;
+  using _StateFunctionJacobian_U_Out_Type = State_Jacobian_U_Matrix_Type_In;
+  using _MeasurementFunctionJacobian_X_Out_Type =
+      Measurement_Jacobian_X_Matrix_Type_In;
+
+  using _StateFunctionHessian_XX_Out_Type = State_Hessian_XX_Matrix_Type_In;
+  using _StateFunctionHessian_XU_Out_Type = State_Hessian_XU_Matrix_Type_In;
+  using _StateFunctionHessian_UX_Out_Type = State_Hessian_UX_Matrix_Type_In;
+  using _StateFunctionHessian_UU_Out_Type = State_Hessian_UU_Matrix_Type_In;
+  using _MeasurementFunctionHessian_XX_Out_Type =
+      Measurement_Hessian_XX_Matrix_Type_In;
+
   using _StateFunction_Object =
       StateFunction_Object<X_Type, U_Type, _Parameter_Type>;
   using _MeasurementFunction_Object =
       MeasurementFunction_Object<Y_Type, X_Type, _Parameter_Type>;
 
   using _StateFunctionJacobian_X_Object =
-      StateFunctionJacobian_X_Object<State_Jacobian_X_Matrix_Type_In, X_Type,
+      StateFunctionJacobian_X_Object<_StateFunctionJacobian_X_Out_Type, X_Type,
                                      U_Type, _Parameter_Type>;
   using _StateFunctionJacobian_U_Object =
-      StateFunctionJacobian_U_Object<State_Jacobian_U_Matrix_Type_In, X_Type,
+      StateFunctionJacobian_U_Object<_StateFunctionJacobian_U_Out_Type, X_Type,
                                      U_Type, _Parameter_Type>;
   using _MeasurementFunctionJacobian_X_Object =
       MeasurementFunctionJacobian_X_Object<
-          Measurement_Jacobian_X_Matrix_Type_In, X_Type, U_Type,
+          _MeasurementFunctionJacobian_X_Out_Type, X_Type, U_Type,
           _Parameter_Type>;
 
   using _StateFunctionHessian_XX_Object =
-      StateFunctionHessian_XX_Object<State_Hessian_XX_Matrix_Type_In, X_Type,
+      StateFunctionHessian_XX_Object<_StateFunctionHessian_XX_Out_Type, X_Type,
                                      U_Type, _Parameter_Type>;
   using _StateFunctionHessian_XU_Object =
-      StateFunctionHessian_XU_Object<State_Hessian_XU_Matrix_Type_In, X_Type,
+      StateFunctionHessian_XU_Object<_StateFunctionHessian_XU_Out_Type, X_Type,
                                      U_Type, _Parameter_Type>;
   using _StateFunctionHessian_UX_Object =
-      StateFunctionHessian_UX_Object<State_Hessian_UX_Matrix_Type_In, X_Type,
+      StateFunctionHessian_UX_Object<_StateFunctionHessian_UX_Out_Type, X_Type,
                                      U_Type, _Parameter_Type>;
   using _StateFunctionHessian_UU_Object =
-      StateFunctionHessian_UU_Object<State_Hessian_UU_Matrix_Type_In, X_Type,
+      StateFunctionHessian_UU_Object<_StateFunctionHessian_UU_Out_Type, X_Type,
                                      U_Type, _Parameter_Type>;
   using _MeasurementFunctionHessian_XX_Object =
       MeasurementFunctionHessian_XX_Object<
-          Measurement_Hessian_XX_Matrix_Type_In, X_Type, U_Type,
+          _MeasurementFunctionHessian_XX_Out_Type, X_Type, U_Type,
           _Parameter_Type>;
 
 public:
