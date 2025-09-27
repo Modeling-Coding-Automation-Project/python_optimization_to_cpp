@@ -1110,9 +1110,9 @@ public:
           MatrixOperation::get_row(lam, k + 1),
           MatrixOperation::get_row(V_horizon, k));
 
-      auto l_xx_dx = this->l_xx(MatrixOperation::get_row(X_horizon, k),
-                                MatrixOperation::get_row(U_horizon, k)) *
-                     MatrixOperation::get_row(dx, k);
+      auto l_xx_dx_ = this->l_xx(MatrixOperation::get_row(X_horizon, k),
+                                 MatrixOperation::get_row(U_horizon, k)) *
+                      MatrixOperation::get_row(dx, k);
 
       auto l_xu_V = this->l_xu(MatrixOperation::get_row(X_horizon, k),
                                MatrixOperation::get_row(U_horizon, k)) *
@@ -1121,11 +1121,11 @@ public:
       auto A_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
           A_k, MatrixOperation::get_row(d_lambda, k + 1));
 
-      auto d_lambda_input = l_xx_dx + l_xu_V + A_k_T_d_lambda + term_Qy_GN +
-                            term_Qy_hxx + term_penalty_GN + term_penalty_hxx +
-                            term_xx + term_xu;
+      auto d_lambda_input_ = l_xx_dx_ + l_xu_V + A_k_T_d_lambda + term_Qy_GN +
+                             term_Qy_hxx + term_penalty_GN + term_penalty_hxx +
+                             term_xx + term_xu;
 
-      MatrixOperation::set_row(d_lambda, d_lambda_input, k);
+      MatrixOperation::set_row(d_lambda, d_lambda_input_, k);
 
       /*
        * (HV)_k:
@@ -1144,19 +1144,19 @@ public:
           MatrixOperation::get_row(lam, k + 1),
           MatrixOperation::get_row(V_horizon, k));
 
-      //   auto l_uu_V = this->l_uu(MatrixOperation::get_row(X_horizon, k),
-      //                            MatrixOperation::get_row(U_horizon, k)) *
-      //                 MatrixOperation::get_row(V_horizon, k);
+      auto l_uu_V = this->l_uu(MatrixOperation::get_row(X_horizon, k),
+                               MatrixOperation::get_row(U_horizon, k)) *
+                    MatrixOperation::get_row(V_horizon, k);
 
-      //   auto l_ux_dx = this->l_ux(MatrixOperation::get_row(X_horizon, k),
-      //                             MatrixOperation::get_row(U_horizon, k)) *
-      //                  MatrixOperation::get_row(dx, k);
+      auto l_ux_dx = this->l_ux(MatrixOperation::get_row(X_horizon, k),
+                                MatrixOperation::get_row(U_horizon, k)) *
+                     MatrixOperation::get_row(dx, k);
 
-      //   auto B_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
-      //       B_k, MatrixOperation::get_row(d_lambda, k + 1));
+      auto B_k_T_d_lambda = PythonNumpy::ATranspose_mul_B(
+          B_k, MatrixOperation::get_row(d_lambda, k + 1));
 
-      //   auto Hu_input = l_uu_V + l_ux_dx + B_k_T_d_lambda + term_ux +
-      //   term_uu; MatrixOperation::set_row(Hu, Hu_input, k);
+      auto Hu_input = l_uu_V + l_ux_dx + B_k_T_d_lambda + term_ux + term_uu;
+      MatrixOperation::set_row(Hu, Hu_input, k);
     }
 
     return Hu;
