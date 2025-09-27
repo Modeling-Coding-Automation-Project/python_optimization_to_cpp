@@ -458,6 +458,103 @@ public:
     return out;
   }
 
+  template <typename Lambda_Vector_Type>
+  inline auto fu_xx_lambda_contract(const X_Type &X, const U_Type &U,
+                                    const _Parameter_Type &parameter,
+                                    const Lambda_Vector_Type &lam_next,
+                                    const X_Type &dX)
+      -> _StateFunctionHessian_UX_Out_Type {
+
+    static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
+                  "Lambda_Vector_Type::COLS != STATE_SIZE");
+    static_assert(Lambda_Vector_Type::ROWS == 1,
+                  "Lambda_Vector_Type::ROWS != 1");
+
+    auto Hf_ux = this->_state_function_hessian_ux(X, U, parameter);
+
+    _StateFunctionHessian_UX_Out_Type out;
+
+    for (std::size_t i = 0; i < STATE_SIZE; i++) {
+
+      for (std::size_t k = 0; k < INPUT_SIZE; k++) {
+        _T acc = static_cast<_T>(0);
+
+        for (std::size_t j = 0; j < STATE_SIZE; j++) {
+          acc += Hf_ux(i * INPUT_SIZE + k, j) * dX(j, 0);
+        }
+        out(k, 0) += lam_next(i, 0) * acc;
+      }
+    }
+
+    return out;
+  }
+
+  template <typename Lambda_Vector_Type>
+  inline auto fu_uu_lambda_contract(const X_Type &X, const U_Type &U,
+                                    const _Parameter_Type &parameter,
+                                    const Lambda_Vector_Type &lam_next,
+                                    const U_Type &dU)
+      -> _StateFunctionHessian_UU_Out_Type {
+
+    static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
+                  "Lambda_Vector_Type::COLS != STATE_SIZE");
+    static_assert(Lambda_Vector_Type::ROWS == 1,
+                  "Lambda_Vector_Type::ROWS != 1");
+
+    auto Hf_uu = this->_state_function_hessian_uu(X, U, parameter);
+
+    _StateFunctionHessian_UU_Out_Type out;
+
+    if (0 == INPUT_SIZE) {
+      // Do Nothing.
+    } else {
+      for (std::size_t i = 0; i < STATE_SIZE; i++) {
+
+        for (std::size_t j = 0; j < INPUT_SIZE; j++) {
+          _T acc = static_cast<_T>(0);
+
+          for (std::size_t k = 0; k < INPUT_SIZE; k++) {
+            acc += Hf_uu(i * INPUT_SIZE + j, k) * dU(k, 0);
+          }
+          out(j, 0) += lam_next(i, 0) * acc;
+        }
+      }
+    }
+
+    return out;
+  }
+
+  template <typename Weight_Vector_Type>
+  inline auto
+  hxx_lambda_contract(const X_Type &X, const _Parameter_Type &parameter,
+                      const Weight_Vector_Type &weight, const X_Type &dX)
+      -> _MeasurementFunctionHessian_XX_Out_Type {
+
+    static_assert(Weight_Vector_Type::COLS == OUTPUT_SIZE,
+                  "Weight_Vector_Type::COLS != OUTPUT_SIZE");
+    static_assert(Weight_Vector_Type::ROWS == 1,
+                  "Weight_Vector_Type::ROWS != 1");
+
+    U_Type U;
+    auto Hh_xx = this->_measurement_function_hessian_xx(X, U, parameter);
+
+    _MeasurementFunctionHessian_XX_Out_Type out;
+
+    for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
+
+      for (std::size_t j = 0; j < STATE_SIZE; j++) {
+        _T acc = static_cast<_T>(0);
+
+        for (std::size_t k = 0; k < STATE_SIZE; k++) {
+          acc += Hh_xx(i * STATE_SIZE + j, k) * dX(k, 0);
+        }
+        out(j, 0) += weight(i, 0) * acc;
+      }
+    }
+
+    return out;
+  }
+
 public:
   /* Variable */
   _Parameter_Type state_space_parameters;
