@@ -382,7 +382,7 @@ public:
     return d;
   }
 
-  inline auto free_mask(U_Horizon_Type &U_horizon, _Gradient_Type &gradient,
+  inline auto free_mask(U_Horizon_Type &U_horizon_in, _Gradient_Type &gradient,
                         const _U_Min_Matrix_Type &U_min_matrix,
                         const _U_Max_Matrix_Type &U_max_matrix, const _T &atol,
                         const _T &gtol) -> _Mask_Type {
@@ -396,13 +396,13 @@ public:
     for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
       for (std::size_t j = 0; j < NP; ++j) {
 
-        if ((U_horizon(i, j) >= (U_min_matrix(i, j) - atol)) &&
-            (U_horizon(i, j) <= (U_min_matrix(i, j) + atol))) {
+        if ((U_horizon_in(i, j) >= (U_min_matrix(i, j) - atol)) &&
+            (U_horizon_in(i, j) <= (U_min_matrix(i, j) + atol))) {
           at_lower(i, j) = true;
         }
 
-        if ((U_horizon(i, j) >= (U_max_matrix(i, j) - atol)) &&
-            (U_horizon(i, j) <= (U_max_matrix(i, j) + atol))) {
+        if ((U_horizon_in(i, j) >= (U_max_matrix(i, j) - atol)) &&
+            (U_horizon_in(i, j) <= (U_max_matrix(i, j) + atol))) {
           at_upper(i, j) = true;
         }
       }
@@ -426,12 +426,12 @@ public:
       const U_Horizon_Type &U_horizon_initial,
       const _Cost_And_Gradient_Function_Object_Type &cost_and_gradient_function,
       const _Cost_Function_Object_Type &cost_function,
-      const _HVP_Function_Object_Type &hvp_function, const X_Type &X_initial,
-      const _U_Min_Matrix_Type &U_min_matrix,
+      const _HVP_Function_Object_Type &hvp_function_in,
+      const X_Type &X_initial_in, const _U_Min_Matrix_Type &U_min_matrix,
       const _U_Max_Matrix_Type &U_max_matrix) -> U_Horizon_Type {
 
-    this->X_initial = X_initial;
-    auto U_horizon = U_horizon_initial;
+    this->X_initial = X_initial_in;
+    U_Horizon_Type U_horizon_store = U_horizon_initial;
 
     _T J;
 
@@ -439,7 +439,7 @@ public:
          solver_iteration < this->_solver_max_iteration; ++solver_iteration) {
       /* Calculate cost and gradient */
       _Gradient_Type gradient;
-      cost_and_gradient_function(X_initial, U_horizon, J, gradient);
+      cost_and_gradient_function(X_initial, U_horizon_store, J, gradient);
 
       this->_solver_step_iterated_number = solver_iteration + 1;
       if (PythonNumpy::norm(gradient) < this->_gradient_norm_zero_limit) {
@@ -447,7 +447,7 @@ public:
       }
 
       this->_mask =
-          this->free_mask(U_horizon, gradient, U_min_matrix, U_max_matrix,
+          this->free_mask(U_horizon_store, gradient, U_min_matrix, U_max_matrix,
                           static_cast<_T>(U_NEAR_LIMIT_DEFAULT),
                           static_cast<_T>(GRADIENT_ZERO_LIMIT_DEFAULT));
 
@@ -466,8 +466,8 @@ public:
         }
       }
 
-      this->U_horizon = U_horizon;
-      this->hvp_function = hvp_function;
+      this->U_horizon = U_horizon_store;
+      this->hvp_function = hvp_function_in;
 
       auto d = this->preconditioned_conjugate_gradient(rhs, M_inv);
 

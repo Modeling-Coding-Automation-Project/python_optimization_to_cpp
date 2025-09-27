@@ -717,15 +717,15 @@ void test_sqp_active_set_pcg_pls() {
     /* solve */
     solver.set_solver_max_iteration(20);
 
-    //auto U_horizon_opt = solver.solve(
-    //    U_horizon_initial,
-    //    cost_and_gradient_function,
-    //    cost_function,
-    //    hvp_function,
-    //    X_initial,
-    //    cost_matrices.get_U_min_matrix(),
-    //    cost_matrices.get_U_max_matrix()
-    //);
+    auto U_horizon_opt = solver.solve(
+        U_horizon_initial,
+        cost_and_gradient_function,
+        cost_function,
+        hvp_function,
+        X_initial,
+        cost_matrices.get_U_min_matrix(),
+        cost_matrices.get_U_max_matrix()
+    );
 
 
 
