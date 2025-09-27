@@ -136,7 +136,7 @@ protected:
 public:
   /* Constructor */
   SQP_ActiveSet_PCG_PLS()
-      : U_horizon(), X_initial(), hvp_function(nullptr),
+      : X_initial(), hvp_function(nullptr),
         _gradient_norm_zero_limit(
             static_cast<_T>(GRADIENT_NORM_ZERO_LIMIT_DEFAULT)),
         _alpha_small_limit(static_cast<_T>(ALPHA_SMALL_LIMIT_DEFAULT)),
@@ -153,8 +153,7 @@ public:
 
   /* Copy constructor */
   SQP_ActiveSet_PCG_PLS(const SQP_ActiveSet_PCG_PLS &input)
-      : U_horizon(input.U_horizon), X_initial(input.X_initial),
-        hvp_function(input.hvp_function),
+      : X_initial(input.X_initial), hvp_function(input.hvp_function),
         _gradient_norm_zero_limit(input._gradient_norm_zero_limit),
         _alpha_small_limit(input._alpha_small_limit),
         _alpha_decay_rate(input._alpha_decay_rate),
@@ -174,7 +173,6 @@ public:
   /* Copy assignment */
   SQP_ActiveSet_PCG_PLS &operator=(const SQP_ActiveSet_PCG_PLS &input) {
     if (this != &input) {
-      this->U_horizon = input.U_horizon;
       this->X_initial = input.X_initial;
       this->hvp_function = input.hvp_function;
 
@@ -207,8 +205,7 @@ public:
 
   /* Move constructor */
   SQP_ActiveSet_PCG_PLS(SQP_ActiveSet_PCG_PLS &&input) noexcept
-      : U_horizon(std::move(input.U_horizon)),
-        X_initial(std::move(input.X_initial)),
+      : X_initial(std::move(input.X_initial)),
         hvp_function(std::move(input.hvp_function)),
         _gradient_norm_zero_limit(input._gradient_norm_zero_limit),
         _alpha_small_limit(input._alpha_small_limit),
@@ -230,7 +227,6 @@ public:
   /* Move assignment */
   SQP_ActiveSet_PCG_PLS &operator=(SQP_ActiveSet_PCG_PLS &&input) noexcept {
     if (this != &input) {
-      this->U_horizon = std::move(input.U_horizon);
       this->X_initial = std::move(input.X_initial);
       this->hvp_function = std::move(input.hvp_function);
 
@@ -517,14 +513,12 @@ public:
     }
 
     this->_J_optimal = J;
-    this->U_horizon = U_horizon_store;
 
-    return this->U_horizon;
+    return U_horizon_store;
   }
 
 public:
   /* Variable */
-  U_Horizon_Type U_horizon;
   X_Type X_initial;
   _HVP_Function_Object_Type hvp_function;
 
