@@ -12,6 +12,37 @@ namespace PythonOptimization {
 
 static constexpr double Y_MIN_MAX_RHO_FACTOR_DEFAULT = 1.0e2;
 
+namespace MatrixOperation {
+
+template <typename Matrix_Out_Type, typename Matrix_In_Type>
+inline void set_row(Matrix_Out_Type &out_matrix,
+                    const Matrix_In_Type &in_matrix,
+                    const std::size_t &row_index) {
+
+  static_assert(Matrix_Out_Type::COLS == Matrix_In_Type::COLS,
+                "Matrix_Out_Type::COLS != Matrix_In_Type::COLS");
+
+  for (std::size_t i = 0; i < Matrix_In_Type::ROWS; i++) {
+    out_matrix(i, row_index) = in_matrix(i, row_index);
+  }
+}
+
+template <typename T, typename Matrix_In_Type>
+inline auto get_row(const Matrix_In_Type &in_matrix,
+                    const std::size_t &row_index)
+    -> PythonNumpy::DenseMatrix_Type<T, Matrix_In_Type::COLS, 1> {
+
+  PythonNumpy::DenseMatrix_Type<T, Matrix_In_Type::COLS, 1> out;
+
+  for (std::size_t i = 0; i < Matrix_In_Type::COLS; i++) {
+    out(i, 0) = in_matrix(i, row_index);
+  }
+
+  return out;
+}
+
+} // namespace MatrixOperation
+
 /* State Space Function Objects */
 
 template <typename State_Type, typename Input_Type, typename Parameter_Type>
@@ -572,9 +603,7 @@ public:
     for (std::size_t k = 0; k < NP; k++) {
       X = this->calculate_state_function(X, U_horizon, parameter);
 
-      for (std::size_t i = 0; i < STATE_SIZE; i++) {
-        X_horizon(i, k + 1) = X(i, 0);
-      }
+      MatrixOperation::set_row(X_horizon, X, k + 1);
     }
 
     return X_horizon;
