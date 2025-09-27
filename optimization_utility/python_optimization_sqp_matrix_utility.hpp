@@ -409,13 +409,13 @@ public:
 
     _StateFunctionHessian_XX_Out_Type out;
 
-    for (std::size_t j = 0; j < STATE_SIZE; j++) {
+    for (std::size_t i = 0; i < STATE_SIZE; i++) {
 
-      for (std::size_t i = 0; i < STATE_SIZE; i++) {
+      for (std::size_t j = 0; j < STATE_SIZE; j++) {
         _T acc = static_cast<_T>(0);
 
         for (std::size_t k = 0; k < STATE_SIZE; k++) {
-          acc += Hf_xx(i, j * STATE_SIZE + k) * dX(k, 0);
+          acc += Hf_xx(i * STATE_SIZE + j, k) * dX(k, 0);
         }
         out(j, 0) += lam_next(i, 0) * acc;
       }
@@ -439,15 +439,19 @@ public:
 
     _StateFunctionHessian_XU_Out_Type out;
 
-    for (std::size_t j = 0; j < INPUT_SIZE; j++) {
-
+    if (0 == INPUT_SIZE) {
+      // Do Nothing.
+    } else {
       for (std::size_t i = 0; i < STATE_SIZE; i++) {
-        _T acc = static_cast<_T>(0);
 
-        for (std::size_t k = 0; k < STATE_SIZE; k++) {
-          acc += Hf_xu(i, j * STATE_SIZE + k) * dU(k, 0);
+        for (std::size_t j = 0; j < STATE_SIZE; j++) {
+          _T acc = static_cast<_T>(0);
+
+          for (std::size_t k = 0; k < INPUT_SIZE; k++) {
+            acc += Hf_xu(i * STATE_SIZE + j, k) * dU(k, 0);
+          }
+          out(j, 0) += lam_next(i, 0) * acc;
         }
-        out(j, 0) += lam_next(i, 0) * acc;
       }
     }
 
