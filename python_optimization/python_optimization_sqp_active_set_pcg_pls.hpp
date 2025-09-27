@@ -9,6 +9,7 @@
 #include <array>
 #include <functional>
 #include <type_traits>
+#include <utility>
 
 namespace PythonOptimization {
 
@@ -117,6 +118,116 @@ protected:
 public:
   /* Constructor */
   SQP_ActiveSet_PCG_PLS();
+
+  /* Copy constructor */
+  SQP_ActiveSet_PCG_PLS(const SQP_ActiveSet_PCG_PLS &input)
+      : U_horizon(input.U_horizon), X_initial(input.X_initial),
+        hvp_function(input.hvp_function),
+        _gradient_norm_zero_limit(input._gradient_norm_zero_limit),
+        _alpha_small_limit(input._alpha_small_limit),
+        _alpha_decay_rate(input._alpha_decay_rate),
+        _pcg_php_minus_limit(input._pcg_php_minus_limit),
+        _solver_max_iteration(input._solver_max_iteration),
+        _pcg_max_iteration(input._pcg_max_iteration),
+        _line_search_max_iteration(input._line_search_max_iteration),
+        _pcg_tol(input._pcg_tol), _lambda_factor(input._lambda_factor),
+        _diag_R_full(input._diag_R_full), _mask(input._mask),
+        _active_set(input._active_set),
+        _solver_step_iterated_number(input._solver_step_iterated_number),
+        _pcg_step_iterated_number(input._pcg_step_iterated_number),
+        _line_search_step_iterated_number(
+            input._line_search_step_iterated_number),
+        _J_optimal(input._J_optimal) {}
+
+  /* Copy assignment */
+  SQP_ActiveSet_PCG_PLS &operator=(const SQP_ActiveSet_PCG_PLS &input) {
+    if (this != &input) {
+      this->U_horizon = input.U_horizon;
+      this->X_initial = input.X_initial;
+      this->hvp_function = input.hvp_function;
+
+      this->_gradient_norm_zero_limit = input._gradient_norm_zero_limit;
+      this->_alpha_small_limit = input._alpha_small_limit;
+      this->_alpha_decay_rate = input._alpha_decay_rate;
+      this->_pcg_php_minus_limit = input._pcg_php_minus_limit;
+
+      this->_solver_max_iteration = input._solver_max_iteration;
+      this->_pcg_max_iteration = input._pcg_max_iteration;
+      this->_line_search_max_iteration = input._line_search_max_iteration;
+
+      this->_pcg_tol = input._pcg_tol;
+      this->_lambda_factor = input._lambda_factor;
+
+      this->_diag_R_full = input._diag_R_full;
+
+      this->_mask = input._mask;
+      this->_active_set = input._active_set;
+
+      this->_solver_step_iterated_number = input._solver_step_iterated_number;
+      this->_pcg_step_iterated_number = input._pcg_step_iterated_number;
+      this->_line_search_step_iterated_number =
+          input._line_search_step_iterated_number;
+
+      this->_J_optimal = input._J_optimal;
+    }
+    return *this;
+  }
+
+  /* Move constructor */
+  SQP_ActiveSet_PCG_PLS(SQP_ActiveSet_PCG_PLS &&input) noexcept
+      : U_horizon(std::move(input.U_horizon)),
+        X_initial(std::move(input.X_initial)),
+        hvp_function(std::move(input.hvp_function)),
+        _gradient_norm_zero_limit(input._gradient_norm_zero_limit),
+        _alpha_small_limit(input._alpha_small_limit),
+        _alpha_decay_rate(input._alpha_decay_rate),
+        _pcg_php_minus_limit(input._pcg_php_minus_limit),
+        _solver_max_iteration(input._solver_max_iteration),
+        _pcg_max_iteration(input._pcg_max_iteration),
+        _line_search_max_iteration(input._line_search_max_iteration),
+        _pcg_tol(input._pcg_tol), _lambda_factor(input._lambda_factor),
+        _diag_R_full(std::move(input._diag_R_full)),
+        _mask(std::move(input._mask)),
+        _active_set(std::move(input._active_set)),
+        _solver_step_iterated_number(input._solver_step_iterated_number),
+        _pcg_step_iterated_number(input._pcg_step_iterated_number),
+        _line_search_step_iterated_number(
+            input._line_search_step_iterated_number),
+        _J_optimal(input._J_optimal) {}
+
+  /* Move assignment */
+  SQP_ActiveSet_PCG_PLS &operator=(SQP_ActiveSet_PCG_PLS &&input) noexcept {
+    if (this != &input) {
+      this->U_horizon = std::move(input.U_horizon);
+      this->X_initial = std::move(input.X_initial);
+      this->hvp_function = std::move(input.hvp_function);
+
+      this->_gradient_norm_zero_limit = input._gradient_norm_zero_limit;
+      this->_alpha_small_limit = input._alpha_small_limit;
+      this->_alpha_decay_rate = input._alpha_decay_rate;
+      this->_pcg_php_minus_limit = input._pcg_php_minus_limit;
+
+      this->_solver_max_iteration = input._solver_max_iteration;
+      this->_pcg_max_iteration = input._pcg_max_iteration;
+      this->_line_search_max_iteration = input._line_search_max_iteration;
+
+      this->_pcg_tol = input._pcg_tol;
+      this->_lambda_factor = input._lambda_factor;
+
+      this->_diag_R_full = std::move(input._diag_R_full);
+
+      this->_mask = std::move(input._mask);
+      this->_active_set = std::move(input._active_set);
+
+      this->_solver_step_iterated_number = input._solver_step_iterated_number;
+      this->_pcg_step_iterated_number = input._pcg_step_iterated_number;
+      this->_line_search_step_iterated_number =
+          input._line_search_step_iterated_number;
+
+      this->_J_optimal = input._J_optimal;
+    }
+    return *this;
+  }
 
 public:
   /* Setter */
