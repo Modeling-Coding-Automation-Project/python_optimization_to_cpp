@@ -416,6 +416,16 @@ void test_SQP_CostMatrices_NMPC() {
         Measurement_Hessian_XX_Matrix_Type>(
             Qx, R, Qy, u_min, u_max, y_min, y_max);
 
+    /* コピー、ムーブ */
+    auto cost_matrices_copy = cost_matrices;
+    auto cost_matrices_move = std::move(cost_matrices_copy);
+    cost_matrices = std::move(cost_matrices_move);
+
+    T u_min_value = cost_matrices.state_space_parameters.k1;
+
+    tester.expect_near(u_min_value, static_cast<T>(10), NEAR_LIMIT_STRICT,
+        "check u_min value.");
+
 
 
     tester.throw_error_if_test_failed();
