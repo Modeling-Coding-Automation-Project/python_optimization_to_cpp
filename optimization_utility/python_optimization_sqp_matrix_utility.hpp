@@ -1101,9 +1101,9 @@ public:
         MatrixOperation::get_row(X_horizon, NP), this->state_space_parameters,
         Y_min_max_rho_YN_limit_penalty, MatrixOperation::get_row(dx, NP));
 
-    // auto d_lambda_input = l_xx_dx + CX_N_T_Py_Cx_N_dx + Hxx_penalty_term_N +
-    //                       CX_N_T_penalty_CX_N_dx;
-    // MatrixOperation::set_row(d_lambda, d_lambda_input, NP);
+    auto d_lambda_input = l_xx_dx + CX_N_T_Py_Cx_N_dx + Hxx_penalty_term_N +
+                          CX_N_T_penalty_CX_N_dx;
+    MatrixOperation::set_row(d_lambda, d_lambda_input, NP);
 
     _HVP_Type Hu;
 

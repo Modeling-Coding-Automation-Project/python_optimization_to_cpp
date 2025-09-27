@@ -99,10 +99,10 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I, std::size_t J_idx>
 struct Column {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Type &Y_limit_penalty) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Type &Y_limit_penalty) {
 
     const auto y = Y_horizon.template get<I, J_idx>();
     const auto y_min = Y_min_matrix.template get<I, J_idx>();
@@ -128,10 +128,10 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           std::size_t N, std::size_t I>
 struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
               I, 0> {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Type &Y_limit_penalty) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Type &Y_limit_penalty) {
 
     const auto y = Y_horizon.template get<I, 0>();
     const auto y_min = Y_min_matrix.template get<I, 0>();
@@ -152,10 +152,10 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I_idx>
 struct Row {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Type &Y_limit_penalty) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Type &Y_limit_penalty) {
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
            I_idx, (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
                                     Y_limit_penalty);
@@ -171,10 +171,10 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           std::size_t N>
 struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
            0> {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Type &Y_limit_penalty) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Type &Y_limit_penalty) {
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, 0,
            (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
                              Y_limit_penalty);
@@ -210,11 +210,11 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I,
           std::size_t J_idx>
 struct Column {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Penalty_Type &Y_limit_penalty,
-                             Active_Type &Y_limit_active) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Penalty_Type &Y_limit_penalty,
+                      Active_Type &Y_limit_active) {
 
     const auto y = Y_horizon.template get<I, J_idx>();
     const auto y_min = Y_min_matrix.template get<I, J_idx>();
@@ -246,11 +246,11 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I>
 struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
               Out_Penalty_Type, Active_Type, M, N, I, 0> {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Penalty_Type &Y_limit_penalty,
-                             Active_Type &Y_limit_active) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Penalty_Type &Y_limit_penalty,
+                      Active_Type &Y_limit_active) {
 
     const auto y = Y_horizon.template get<I, 0>();
     const auto y_min = Y_min_matrix.template get<I, 0>();
@@ -275,11 +275,11 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I_idx>
 struct Row {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Penalty_Type &Y_limit_penalty,
-                             Active_Type &Y_limit_active) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Penalty_Type &Y_limit_penalty,
+                      Active_Type &Y_limit_active) {
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, I_idx, (N - 1)>::compute(Y_horizon, Y_min_matrix,
                                                        Y_max_matrix,
@@ -298,11 +298,11 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Active_Type, std::size_t M, std::size_t N>
 struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, 0> {
-  static inline void compute(const Y_Mat_Type &Y_horizon,
-                             const Y_Min_Matrix_Type &Y_min_matrix,
-                             const Y_Max_Matrix_Type &Y_max_matrix,
-                             Out_Penalty_Type &Y_limit_penalty,
-                             Active_Type &Y_limit_active) {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Penalty_Type &Y_limit_penalty,
+                      Active_Type &Y_limit_active) {
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, 0, (N - 1)>::compute(Y_horizon, Y_min_matrix,
                                                    Y_max_matrix,
@@ -345,8 +345,8 @@ template <typename Hxx_Type, typename dX_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
           std::size_t J, std::size_t K_idx>
 struct AccumulateK {
-  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
-                             Value_Type &acc) {
+  static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                      Value_Type &acc) {
     acc += Hh_xx.template get<I * STATE_SIZE + J, K_idx>() *
            dX.template get<K_idx, 0>();
     AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
@@ -360,8 +360,8 @@ template <typename Hxx_Type, typename dX_Type, typename Value_Type,
           std::size_t J>
 struct AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
                    0> {
-  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
-                             Value_Type &acc) {
+  static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                      Value_Type &acc) {
     acc +=
         Hh_xx.template get<I * STATE_SIZE + J, 0>() * dX.template get<0, 0>();
   }
@@ -372,8 +372,8 @@ template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I, std::size_t J_idx>
 struct Column {
-  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
-                             const Weight_Type &weight, Out_Type &out) {
+  static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                      const Weight_Type &weight, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
     Value acc = static_cast<Value>(0);
     AccumulateK<Hxx_Type, dX_Type, Value, OUTPUT_SIZE, STATE_SIZE, I, J_idx,
@@ -394,8 +394,8 @@ template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           std::size_t I>
 struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
               I, 0> {
-  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
-                             const Weight_Type &weight, Out_Type &out) {
+  static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                      const Weight_Type &weight, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
     Value acc = static_cast<Value>(0);
     AccumulateK<Hxx_Type, dX_Type, Value, OUTPUT_SIZE, STATE_SIZE, I, 0,
@@ -412,8 +412,8 @@ template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I_idx>
 struct Row {
-  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
-                             const Weight_Type &weight, Out_Type &out) {
+  static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                      const Weight_Type &weight, Out_Type &out) {
     Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            I_idx, (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
     Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
@@ -426,8 +426,8 @@ template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
 struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            0> {
-  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
-                             const Weight_Type &weight, Out_Type &out) {
+  static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                      const Weight_Type &weight, Out_Type &out) {
     Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
            (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
   }
