@@ -356,6 +356,16 @@ void test_SQP_CostMatrices_NMPC() {
     using Measurement_Hessian_XX_Matrix_Type =
         sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Measurement_Hessian_xx_Type;
 
+    using X_Type = StateSpaceState_Type<T, STATE_SIZE>;
+    using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
+
+    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+        X_Type, U_Type, Parameter_Type, Y_Type>::function;
+
     using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
     using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
     using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
@@ -425,6 +435,10 @@ void test_SQP_CostMatrices_NMPC() {
 
     tester.expect_near(u_min_value, static_cast<T>(10), NEAR_LIMIT_STRICT,
         "check u_min value.");
+
+    //cost_matrices.set_function_objects(
+
+    //);
 
 
 

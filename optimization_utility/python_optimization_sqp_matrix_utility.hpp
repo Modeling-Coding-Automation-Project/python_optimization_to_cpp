@@ -76,9 +76,10 @@ template <typename State_Type, typename Input_Type, typename Parameter_Type>
 using StateFunction_Object = std::function<State_Type(
     const State_Type &, const Input_Type &, const Parameter_Type &)>;
 
-template <typename Output_Type, typename State_Type, typename Parameter_Type>
-using MeasurementFunction_Object =
-    std::function<Output_Type(const State_Type &, const Parameter_Type &)>;
+template <typename Output_Type, typename State_Type, typename Input_Type,
+          typename Parameter_Type>
+using MeasurementFunction_Object = std::function<Output_Type(
+    const State_Type &, const Input_Type &, const Parameter_Type &)>;
 
 template <typename State_Jacobian_X_Matrix_Type, typename State_Type,
           typename Input_Type, typename Parameter_Type>
@@ -340,7 +341,7 @@ protected:
   using _StateFunction_Object =
       StateFunction_Object<X_Type, U_Type, _Parameter_Type>;
   using _MeasurementFunction_Object =
-      MeasurementFunction_Object<Y_Type, X_Type, _Parameter_Type>;
+      MeasurementFunction_Object<Y_Type, X_Type, U_Type, _Parameter_Type>;
 
   using _StateFunctionJacobian_X_Object =
       StateFunctionJacobian_X_Object<_StateFunctionJacobian_X_Out_Type, X_Type,
@@ -530,6 +531,34 @@ public:
 
 public:
   /* Setters */
+  inline void set_function_objects(
+      const _StateFunction_Object &state_function,
+      const _MeasurementFunction_Object &measurement_function,
+      const _StateFunctionJacobian_X_Object &state_function_jacobian_x,
+      const _StateFunctionJacobian_U_Object &state_function_jacobian_u,
+      const _MeasurementFunctionJacobian_X_Object
+          &measurement_function_jacobian_x,
+      const _StateFunctionHessian_XX_Object &state_function_hessian_xx,
+      const _StateFunctionHessian_XU_Object &state_function_hessian_xu,
+      const _StateFunctionHessian_UX_Object &state_function_hessian_ux,
+      const _StateFunctionHessian_UU_Object &state_function_hessian_uu,
+      const _MeasurementFunctionHessian_XX_Object
+          &measurement_function_hessian_xx) {
+
+    this->_state_function = state_function;
+    this->_measurement_function = measurement_function;
+
+    this->_state_function_jacobian_x = state_function_jacobian_x;
+    this->_state_function_jacobian_u = state_function_jacobian_u;
+    this->_measurement_function_jacobian_x = measurement_function_jacobian_x;
+
+    this->_state_function_hessian_xx = state_function_hessian_xx;
+    this->_state_function_hessian_xu = state_function_hessian_xu;
+    this->_state_function_hessian_ux = state_function_hessian_ux;
+    this->_state_function_hessian_uu = state_function_hessian_uu;
+    this->_measurement_function_hessian_xx = measurement_function_hessian_xx;
+  }
+
   inline void set_U_min(const _U_Min_Type &U_min) {
 
     PythonNumpy::update_tile_concatenated_matrix<1, NP, _U_Min_Type>(
