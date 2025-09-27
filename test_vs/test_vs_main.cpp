@@ -403,7 +403,18 @@ void test_SQP_CostMatrices_NMPC() {
         State_Hessian_XU_Matrix_Type,
         State_Hessian_UX_Matrix_Type,
         State_Hessian_UU_Matrix_Type,
-        Measurement_Hessian_XX_Matrix_Type> cost_matrices;
+        Measurement_Hessian_XX_Matrix_Type> cost_matrices =
+        make_SQP_CostMatrices_NMPC<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type,
+        State_Hessian_XX_Matrix_Type,
+        State_Hessian_XU_Matrix_Type,
+        State_Hessian_UX_Matrix_Type,
+        State_Hessian_UU_Matrix_Type,
+        Measurement_Hessian_XX_Matrix_Type>(
+            Qx, R, Qy, u_min, u_max, y_min, y_max);
 
 
 

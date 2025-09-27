@@ -1277,6 +1277,39 @@ protected:
 };
 
 /* make SQP_CostMatrices_NMPC */
+template <typename T, std::size_t Np, typename Parameter_Type,
+          typename U_Min_Type, typename U_Max_Type, typename Y_Min_Type,
+          typename Y_Max_Type, typename State_Jacobian_X_Matrix_Type,
+          typename State_Jacobian_U_Matrix_Type,
+          typename Measurement_Jacobian_X_Matrix_Type,
+          typename State_Hessian_XX_Matrix_Type,
+          typename State_Hessian_XU_Matrix_Type,
+          typename State_Hessian_UX_Matrix_Type,
+          typename State_Hessian_UU_Matrix_Type,
+          typename Measurement_Hessian_XX_Matrix_Type>
+inline auto make_SQP_CostMatrices_NMPC(
+    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_X_Matrix_Type::ROWS>
+        &Qx,
+    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_U_Matrix_Type::ROWS>
+        &R,
+    const PythonNumpy::DiagMatrix_Type<
+        T, Measurement_Jacobian_X_Matrix_Type::COLS> &Qy,
+    U_Min_Type U_min, U_Max_Type U_max, Y_Min_Type Y_min, Y_Max_Type Y_max)
+    -> SQP_CostMatrices_NMPC<
+        T, Np, Parameter_Type, U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type, State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type, State_Hessian_XX_Matrix_Type,
+        State_Hessian_XU_Matrix_Type, State_Hessian_UX_Matrix_Type,
+        State_Hessian_UU_Matrix_Type, Measurement_Hessian_XX_Matrix_Type> {
+
+  return SQP_CostMatrices_NMPC<
+      T, Np, Parameter_Type, U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+      State_Jacobian_X_Matrix_Type, State_Jacobian_U_Matrix_Type,
+      Measurement_Jacobian_X_Matrix_Type, State_Hessian_XX_Matrix_Type,
+      State_Hessian_XU_Matrix_Type, State_Hessian_UX_Matrix_Type,
+      State_Hessian_UU_Matrix_Type, Measurement_Hessian_XX_Matrix_Type>(
+      Qx, R, Qy, U_min, U_max, Y_min, Y_max);
+}
 
 /* SQP_CostMatrices_NMPC type */
 template <typename T, std::size_t Np, typename Parameter_Type,
