@@ -77,7 +77,7 @@ inline void set_row(Matrix_Out_Type &out_matrix,
   SetRow::compute(out_matrix, in_matrix, row_index);
 }
 
-namespace GetRow_Unrolled {
+namespace GetRow {
 
 // Column recursion when I_idx > 0
 template <typename Matrix_In_Type, typename Out_Type, std::size_t I_idx>
@@ -124,7 +124,7 @@ inline void compute(const Matrix_In_Type &in_matrix,
       in_matrix, row_index, out);
 }
 
-} // namespace GetRow_Unrolled
+} // namespace GetRow
 
 template <typename Matrix_In_Type>
 inline auto get_row(const Matrix_In_Type &in_matrix,
@@ -137,7 +137,7 @@ inline auto get_row(const Matrix_In_Type &in_matrix,
                                     Matrix_In_Type::COLS, 1>;
   Out_Type out;
 
-  GetRow_Unrolled::compute<Matrix_In_Type, Out_Type>(in_matrix, row_index, out);
+  GetRow::compute<Matrix_In_Type, Out_Type>(in_matrix, row_index, out);
 
   return out;
 }
