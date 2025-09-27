@@ -45,6 +45,29 @@ inline auto get_row(const Matrix_In_Type &in_matrix,
   return out;
 }
 
+template <typename X_Type, typename W_Type>
+inline auto calculate_quadratic_form(const X_Type &X, const W_Type &W) ->
+    typename X_Type::Value_Type {
+
+  static_assert(W_Type::ROWS == X_Type::COLS, "W_Type::ROWS != X_Type::COLS");
+  static_assert(X_Type::ROWS == 1, "X_Type::ROWS != 1");
+
+  auto result = PythonNumpy::ATranspose_mul_B(X, W) * X;
+
+  return result.template get<0, 0>();
+}
+
+template <typename X_Type>
+inline auto calculate_quadratic_no_weighted(const X_Type &X) ->
+    typename X_Type::Value_Type {
+
+  static_assert(X_Type::ROWS == 1, "X_Type::ROWS != 1");
+
+  auto result = PythonNumpy::ATranspose_mul_B(X, X);
+
+  return result.template get<0, 0>();
+}
+
 } // namespace MatrixOperation
 
 /* State Space Function Objects */
@@ -703,6 +726,21 @@ public:
     for (std::size_t k = 0; k < NP; k++) {
       auto e_y_r = MatrixOperation::get_row(Y_horizon, k) -
                    MatrixOperation::get_row(this->reference_trajectory, k);
+
+      auto X_T_Qx_X = MatrixOperation::calculate_quadratic_form(
+          MatrixOperation::get_row(X, k), this->_Qx);
+      auto e_y_r_T_Qy_e_y_r =
+          MatrixOperation::calculate_quadratic_form(e_y_r, this->_Qy);
+
+      auto U_T_R_U = MatrixOperation::calculate_quadratic_form(
+          MatrixOperation::get_row(U_horizon, k), this->_R);
+
+      auto Y_limit_penalty_T_Y_limit_penalty =
+          MatrixOperation::calculate_quadratic_no_weighted(
+              MatrixOperation::get_row(Y_limit_penalty, k));
+
+      J += X_T_Qx_X + e_y_r_T_Qy_e_y_r + U_T_R_U +
+           this->_Y_min_max_rho * Y_limit_penalty_T_Y_limit_penalty;
     }
   }
 
