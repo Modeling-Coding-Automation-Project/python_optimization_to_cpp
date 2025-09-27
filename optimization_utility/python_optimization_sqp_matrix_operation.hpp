@@ -1156,6 +1156,155 @@ compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
                                                                  weight, out);
 }
 
+/* free_mask at check */
+
+namespace FreeMaskAtCheck {
+
+// Column recursion for J (0..N-1), when J_idx > 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t M,
+          std::size_t N, std::size_t I, std::size_t J_idx>
+struct Column {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower,
+                             AtUpper_Type &at_upper) {
+
+    const auto u = U_horizon_in.template get<I, J_idx>();
+    const auto u_min = U_min_matrix.template get<I, J_idx>();
+    const auto u_max = U_max_matrix.template get<I, J_idx>();
+
+    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
+      at_lower.template set<I, J_idx>(true);
+    }
+
+    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
+      at_upper.template set<I, J_idx>(true);
+    }
+
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+           AtUpper_Type, Value_Type, M, N, I,
+           (J_idx - 1)>::compute(U_horizon_in, U_min_matrix, U_max_matrix, atol,
+                                 at_lower, at_upper);
+  }
+};
+
+// Column recursion termination for J_idx == 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t M,
+          std::size_t N, std::size_t I>
+struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+              AtUpper_Type, Value_Type, M, N, I, 0> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower,
+                             AtUpper_Type &at_upper) {
+
+    const auto u = U_horizon_in.template get<I, 0>();
+    const auto u_min = U_min_matrix.template get<I, 0>();
+    const auto u_max = U_max_matrix.template get<I, 0>();
+
+    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
+      at_lower.template set<I, 0>(true);
+    }
+
+    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
+      at_upper.template set<I, 0>(true);
+    }
+  }
+};
+
+// Row recursion for I (0..M-1), when I_idx > 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t M,
+          std::size_t N, std::size_t I_idx>
+struct Row {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower,
+                             AtUpper_Type &at_upper) {
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+           AtUpper_Type, Value_Type, M, N, I_idx,
+           (N - 1)>::compute(U_horizon_in, U_min_matrix, U_max_matrix, atol,
+                             at_lower, at_upper);
+
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+        AtUpper_Type, Value_Type, M, N, (I_idx - 1)>::compute(U_horizon_in,
+                                                              U_min_matrix,
+                                                              U_max_matrix,
+                                                              atol, at_lower,
+                                                              at_upper);
+  }
+};
+
+// Row recursion termination for I_idx == 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t M,
+          std::size_t N>
+struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+           AtUpper_Type, Value_Type, M, N, 0> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower,
+                             AtUpper_Type &at_upper) {
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+           AtUpper_Type, Value_Type, M, N, 0, (N - 1)>::compute(U_horizon_in,
+                                                                U_min_matrix,
+                                                                U_max_matrix,
+                                                                atol, at_lower,
+                                                                at_upper);
+  }
+};
+
+} // namespace FreeMaskAtCheck
+
+// Public wrapper to run the unrolled recursion for setting at_lower/at_upper.
+// Note: at_lower and at_upper should be pre-initialized (e.g., false) before
+// calling. This function only sets true where conditions are met.
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename Value_Type>
+inline void free_mask_at_check(const U_Mat_Type &U_horizon_in,
+                               const U_Min_Matrix_Type &U_min_matrix,
+                               const U_Max_Matrix_Type &U_max_matrix,
+                               const Value_Type &atol, AtLower_Type &at_lower,
+                               AtUpper_Type &at_upper) {
+  constexpr std::size_t M = U_Mat_Type::COLS; // INPUT_SIZE
+  constexpr std::size_t N = U_Mat_Type::ROWS; // NP
+
+  static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
+  static_assert(U_Min_Matrix_Type::COLS == M,
+                "U_min_matrix COLS mismatch with U_horizon_in");
+  static_assert(U_Min_Matrix_Type::ROWS == N,
+                "U_min_matrix ROWS mismatch with U_horizon_in");
+  static_assert(U_Max_Matrix_Type::COLS == M,
+                "U_max_matrix COLS mismatch with U_horizon_in");
+  static_assert(U_Max_Matrix_Type::ROWS == N,
+                "U_max_matrix ROWS mismatch with U_horizon_in");
+  static_assert(AtLower_Type::COLS == M,
+                "at_lower COLS mismatch with U_horizon_in");
+  static_assert(AtLower_Type::ROWS == N,
+                "at_lower ROWS mismatch with U_horizon_in");
+  static_assert(AtUpper_Type::COLS == M,
+                "at_upper COLS mismatch with U_horizon_in");
+  static_assert(AtUpper_Type::ROWS == N,
+                "at_upper ROWS mismatch with U_horizon_in");
+
+  FreeMaskAtCheck::Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type,
+                       AtLower_Type, AtUpper_Type, Value_Type, M, N,
+                       (M - 1)>::compute(U_horizon_in, U_min_matrix,
+                                         U_max_matrix, atol, at_lower,
+                                         at_upper);
+}
+
 } // namespace MatrixOperation
 
 } // namespace PythonOptimization
