@@ -111,6 +111,9 @@ protected:
   using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), _Y_min_Type>;
   using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), _Y_max_Type>;
 
+  using _At_Lower_Upper_Type =
+      PythonNumpy::DenseMatrix_Type<bool, INPUT_SIZE, NP>;
+
 public:
   /* Constructor */
   SQP_ActiveSet_PCG_PLS();
@@ -357,7 +360,14 @@ public:
   inline auto free_mask(U_Horizon_Type &U_horizon, _Gradient_Type &gradient,
                         const _U_Min_Matrix_Type &U_min_matrix,
                         const _U_Max_Matrix_Type &U_max_matrix, const _T &atol,
-                        const _T &gtol) -> _Mask_Type {}
+                        const _T &gtol) -> _Mask_Type {
+
+    auto m = _Mask_Type::ones();
+
+    this->_active_set.clear();
+    _At_Lower_Upper_Type at_lower;
+    _At_Lower_Upper_Type at_upper;
+  }
 
 public:
   /* Variable */
