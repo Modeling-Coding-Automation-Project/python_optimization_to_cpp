@@ -400,14 +400,10 @@ public:
         _state_function_hessian_ux(), _state_function_hessian_uu(),
         _measurement_function_hessian_xx() {
 
-    PythonNumpy::update_tile_concatenated_matrix<1, NP, U_Min_Type>(
-        this->_U_min_matrix, U_min);
-    PythonNumpy::update_tile_concatenated_matrix<1, NP, U_Max_Type>(
-        this->_U_max_matrix, U_max);
-    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Min_Type>(
-        this->_Y_min_matrix, Y_min);
-    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Max_Type>(
-        this->_Y_max_matrix, Y_max);
+    this->set_U_min(U_min);
+    this->set_U_max(U_max);
+    this->set_Y_min(Y_min);
+    this->set_Y_max(Y_max);
   }
 
   /* Copy Constructor */
