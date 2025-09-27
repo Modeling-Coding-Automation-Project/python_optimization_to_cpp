@@ -526,9 +526,160 @@ void test_SQP_CostMatrices_NMPC() {
         "check l_ux.");
 
 
+    tester.throw_error_if_test_failed();
+}
+
+template <typename T>
+void test_sqp_active_set_pcg_pls() {
+    using namespace PythonNumpy;
+    using namespace PythonControl;
+    using namespace PythonOptimization;
+    using namespace SQP_TestData;
+
+    MCAPTester<T> tester;
+
+    constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-4);
+    //const T NEAR_LIMIT_SOFT = 1.0e-2F;
+
+    /* Cost Matrices 定義 */
+    constexpr std::size_t STATE_SIZE = 4;
+    constexpr std::size_t INPUT_SIZE = 2;
+    constexpr std::size_t OUTPUT_SIZE = 2;
+
+    constexpr std::size_t NP = 10;
+
+    using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter<T>;
+
+    using State_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::State_Jacobian_x_Type<T>;
+    using State_Jacobian_U_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::State_Jacobian_u_Type<T>;
+    using Measurement_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Measurement_Jacobian_x_Type<T>;
+    using State_Hessian_XX_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::State_Hessian_xx_Type<T>;
+    using State_Hessian_XU_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::State_Hessian_xu_Type<T>;
+    using State_Hessian_UX_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::State_Hessian_ux_Type<T>;
+    using State_Hessian_UU_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::State_Hessian_uu_Type<T>;
+    using Measurement_Hessian_XX_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Measurement_Hessian_xx_Type<T>;
+
+    using X_Type = StateSpaceState_Type<T, STATE_SIZE>;
+    using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
+
+    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+        T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
+
+    PythonOptimization::StateFunctionJacobian_X_Object<
+        State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionJacobian_U_Object<
+        State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+        Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+
+    PythonOptimization::StateFunctionHessian_XX_Object<
+        State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xx_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionHessian_XU_Object<
+        State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xu_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionHessian_UX_Object<
+        State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_ux_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionHessian_UU_Object<
+        State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_uu_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunctionHessian_XX_Object<
+        Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_hessian_xx_function =
+        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
+
+    using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
+    using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
+    using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
+
+    Qx_Type Qx = make_DiagMatrix<STATE_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.1), static_cast<T>(0.5), static_cast<T>(0.1)
+    );
+    R_Type R = make_DiagMatrix<INPUT_SIZE>(
+        static_cast<T>(0.1), static_cast<T>(0.1)
+    );
+    Qy_Type Qy = make_DiagMatrix<OUTPUT_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.5)
+    );
+
+    using U_Min_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using U_Max_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+
+    U_Min_Type u_min = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(-1),
+        static_cast<T>(-1)
+    );
+    U_Max_Type u_max = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(1),
+        static_cast<T>(1)
+    );
+
+    using Y_Min_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+    using Y_Max_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+
+    Y_Min_Type y_min;
+    Y_Max_Type y_max;
+
+    using Reference_Trajectory_Type = DenseMatrix_Type<T, OUTPUT_SIZE, (NP + 1)>;
+
+    Reference_Trajectory_Type reference_trajectory;
+
+    SQP_CostMatrices_NMPC_Type<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type,
+        State_Hessian_XX_Matrix_Type,
+        State_Hessian_XU_Matrix_Type,
+        State_Hessian_UX_Matrix_Type,
+        State_Hessian_UU_Matrix_Type,
+        Measurement_Hessian_XX_Matrix_Type> cost_matrices =
+        make_SQP_CostMatrices_NMPC<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type,
+        State_Hessian_XX_Matrix_Type,
+        State_Hessian_XU_Matrix_Type,
+        State_Hessian_UX_Matrix_Type,
+        State_Hessian_UU_Matrix_Type,
+        Measurement_Hessian_XX_Matrix_Type>(
+            Qx, R, Qy, u_min, u_max, y_min, y_max);
+
+    cost_matrices.reference_trajectory = reference_trajectory;
+
+    auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
+        static_cast<T>(5),
+        static_cast<T>(0),
+        static_cast<T>(5),
+        static_cast<T>(0)
+    );
+
+    DenseMatrix_Type<T, INPUT_SIZE, NP> U_horizon_initial;
+
+    /* SQP Active Set PCG PLS 定義 */
+
+
+
 
     tester.throw_error_if_test_failed();
 }
+
 
 
 int main() {
@@ -548,6 +699,8 @@ int main() {
     test_SQP_CostMatrices_NMPC<double>();
 
     test_SQP_CostMatrices_NMPC<float>();
+
+    test_sqp_active_set_pcg_pls<double>();
 
 
     return 0;
