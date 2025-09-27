@@ -137,6 +137,35 @@ public:
   inline void set_Y_offset(Y_Type Y_offset) { this->_Y_offset = Y_offset; }
 
   /* Function */
+  inline auto l_xx(const X_Type &X, const U_Type &U) -> _Qx_Type & {
+    static_cast<void>(X);
+    static_cast<void>(U);
+
+    return 2.0 * this->_Qx;
+  }
+
+  inline auto l_uu(const X_Type &X, const U_Type &U) -> _R_Type & {
+    static_cast<void>(X);
+    static_cast<void>(U);
+
+    return 2.0 * this->_R;
+  }
+
+  inline auto l_xu(const X_Type &X, const U_Type &U)
+      -> PythonNumpy::SparseMatrixEmpty_Type<_T, STATE_SIZE, INPUT_SIZE> {
+    static_cast<void>(X);
+    static_cast<void>(U);
+
+    return PythonNumpy::make_SparseMatrixEmpty<_T, STATE_SIZE, INPUT_SIZE>();
+  }
+
+  inline auto l_ux(const X_Type &X, const U_Type &U)
+      -> PythonNumpy::SparseMatrixEmpty_Type<_T, INPUT_SIZE, STATE_SIZE> {
+    static_cast<void>(X);
+    static_cast<void>(U);
+
+    return PythonNumpy::make_SparseMatrixEmpty<_T, INPUT_SIZE, STATE_SIZE>();
+  }
 
 public:
   /* Variable */
