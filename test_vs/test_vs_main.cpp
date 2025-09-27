@@ -315,6 +315,29 @@ void test_qp_active_set_solver() {
     tester.throw_error_if_test_failed();
 }
 
+
+template <typename T>
+void test_SQP_CostMatrices_NMPC() {
+    using namespace PythonNumpy;
+    using namespace PythonControl;
+    using namespace PythonOptimization;
+
+    MCAPTester<T> tester;
+
+    constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-4);
+    //const T NEAR_LIMIT_SOFT = 1.0e-2F;
+
+    constexpr std::size_t STATE_SIZE = 4;
+    constexpr std::size_t INPUT_SIZE = 2;
+    constexpr std::size_t OUTPUT_SIZE = 2;
+
+    constexpr std::size_t NP = 10;
+
+
+    tester.throw_error_if_test_failed();
+}
+
+
 int main() {
 
     test_active_set<double>();
@@ -328,6 +351,8 @@ int main() {
     test_qp_active_set_solver<double>();
 
     test_qp_active_set_solver<float>();
+
+    test_SQP_CostMatrices_NMPC<double>();
 
 
     return 0;

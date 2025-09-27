@@ -1128,6 +1128,10 @@ protected:
   _MeasurementFunctionHessian_XX_Object _measurement_function_hessian_xx;
 };
 
+/* make SQP_CostMatrices_NMPC */
+
+/* SQP_CostMatrices_NMPC type */
+
 } // namespace PythonOptimization
 
 #endif // __PYTHON_OPTIMIZATION_SQP_MATRIX_UTILITY_HPP__
