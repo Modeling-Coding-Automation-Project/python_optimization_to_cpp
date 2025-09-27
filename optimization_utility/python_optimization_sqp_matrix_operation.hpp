@@ -57,9 +57,9 @@ template <typename Matrix_Out_Type, typename Matrix_In_Type>
 inline void compute(Matrix_Out_Type &out_matrix,
                     const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index) {
-  static_assert(Matrix_In_Type::ROWS > 0,
-                "Matrix_In_Type::ROWS must be positive");
-  Row<Matrix_Out_Type, Matrix_In_Type, (Matrix_In_Type::ROWS - 1)>::compute(
+  static_assert(Matrix_In_Type::COLS > 0,
+                "Matrix_In_Type::COLS must be positive");
+  Row<Matrix_Out_Type, Matrix_In_Type, (Matrix_In_Type::COLS - 1)>::compute(
       out_matrix, in_matrix, row_index);
 }
 

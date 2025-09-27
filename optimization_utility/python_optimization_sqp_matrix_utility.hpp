@@ -722,6 +722,8 @@ public:
     X_Horizon_Type X_horizon;
     X_Type X = X_initial;
 
+    MatrixOperation::set_row(X_horizon, X, 0);
+
     for (std::size_t k = 0; k < NP; k++) {
       auto U = MatrixOperation::get_row(U_horizon, k);
       X = this->calculate_state_function(X, U, parameter);
