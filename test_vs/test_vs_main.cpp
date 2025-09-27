@@ -330,6 +330,7 @@ void test_SQP_CostMatrices_NMPC() {
     constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-4);
     //const T NEAR_LIMIT_SOFT = 1.0e-2F;
 
+    /* 定義 */
     constexpr std::size_t STATE_SIZE = 4;
     constexpr std::size_t INPUT_SIZE = 2;
     constexpr std::size_t OUTPUT_SIZE = 2;
@@ -337,6 +338,13 @@ void test_SQP_CostMatrices_NMPC() {
     constexpr std::size_t NP = 10;
 
     using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter;
+
+    using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
+    using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
+    using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
+
+    using Px_Type = DiagMatrix_Type<T, STATE_SIZE>;
+    using Py_Type = DiagMatrix_Type<T, STATE_SIZE>;
 
     using U_Min_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
     using U_Max_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
@@ -349,6 +357,12 @@ void test_SQP_CostMatrices_NMPC() {
         static_cast<T>(1),
         static_cast<T>(1)
     );
+
+    using Y_Min_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+    using Y_Max_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+
+    Y_Min_Type y_min;
+    Y_Max_Type y_max;
 
     using Reference_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
     using Reference_Trajectory_Type = DenseMatrix_Type<T, OUTPUT_SIZE, (NP + 1)>;
