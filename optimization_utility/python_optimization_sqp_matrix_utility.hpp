@@ -297,6 +297,7 @@ protected:
 
   using _X_horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), X_Type>;
   using _U_horizon_Type = PythonNumpy::Tile_Type<1, NP, U_Type>;
+  using _Y_horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Type>;
 
 public:
   /* Constructor */
@@ -558,32 +559,6 @@ public:
     return out;
   }
 
-  /*
-    def simulate_trajectory(
-        self,
-        X_initial: np.ndarray,
-        U: np.ndarray,
-        Parameters
-    ):
-        """
-        Simulates the trajectory of the system over a prediction horizon.
-        Args:
-            X_initial (np.ndarray): Initial state vector of the system (shape:
-    [nx,]). U (np.ndarray): Control input sequence over the prediction horizon
-              (shape: [nu, Np]).
-            Parameters: Additional parameters required by the state function.
-        Returns:
-            np.ndarray: Simulated state trajectory over the prediction horizon
-              (shape: [nx, Np + 1]).
-        """
-        X = np.zeros((self.nx, self.Np + 1))
-        X[:, 0] = X_initial.flatten()
-        for k in range(self.Np):
-            X[:, k + 1] = self.calculate_state_function(
-                X[:, k], U[:, k], Parameters).flatten()
-
-        return X
-    */
   inline auto simulate_trajectory(const X_Type &X_initial,
                                   const _U_horizon_Type &U_horizon,
                                   const _Parameter_Type &parameter)
@@ -601,6 +576,57 @@ public:
     }
 
     return X_horizon;
+  }
+
+  /*
+      def calculate_Y_limit_penalty(self, Y: np.ndarray):
+        """
+        Calculates the penalty matrix Y_limit_penalty for the given output
+     matrix Y based on minimum and maximum constraints. For each element in Y,
+     the penalty is computed as follows:
+            - If Y[i, j] is less than the corresponding minimum constraint
+              (self.Y_min_matrix[i, j]),
+              the penalty is Y[i, j] - self.Y_min_matrix[i, j].
+            - If Y[i, j] is greater than the corresponding maximum constraint
+              (self.Y_max_matrix[i, j]),
+              the penalty is Y[i, j] - self.Y_max_matrix[i, j].
+            - Otherwise, the penalty is 0.
+        Args:
+            Y (np.ndarray): Output matrix of shape (self.ny, self.Np + 1)
+              to be checked against constraints.
+        Returns:
+            np.ndarray: Penalty matrix of the same shape as Y,
+              containing the calculated penalties.
+        """
+        Y_limit_penalty = np.zeros((self.ny, self.Np + 1))
+        for i in range(self.ny):
+            for j in range(self.Np + 1):
+                if Y[i, j] < self.Y_min_matrix[i, j]:
+                    Y_limit_penalty[i, j] = Y[i, j] - self.Y_min_matrix[i, j]
+                elif Y[i, j] > self.Y_max_matrix[i, j]:
+                    Y_limit_penalty[i, j] = Y[i, j] - self.Y_max_matrix[i, j]
+
+        return Y_limit_penalty
+
+  */
+
+  inline auto calculate_Y_limit_penalty(const _Y_horizon_Type &Y_horizon)
+      -> _Y_horizon_Type {
+    _Y_horizon_Type Y_limit_penalty;
+
+    for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
+      for (std::size_t j = 0; j < (NP + 1); j++) {
+        if (Y_horizon(i, j) < this->_Y_min_matrix(i, j)) {
+          Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_min_matrix(i, j);
+        } else if (Y_horizon(i, j) > this->_Y_max_matrix(i, j)) {
+          Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_max_matrix(i, j);
+        } else {
+          // Do Nothing.
+        }
+      }
+    }
+
+    return Y_limit_penalty;
   }
 
 public:
