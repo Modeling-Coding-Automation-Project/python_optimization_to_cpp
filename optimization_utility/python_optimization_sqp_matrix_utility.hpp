@@ -21,7 +21,7 @@ inline void set_row(Matrix_Out_Type &out_matrix,
 
   static_assert(Matrix_Out_Type::COLS == Matrix_In_Type::COLS,
                 "Matrix_Out_Type::COLS != Matrix_In_Type::COLS");
-  static_assert(Matrix_Out_Type::ROWS == 1, "Matrix_Out_Type::ROWS != 1");
+  static_assert(Matrix_In_Type::ROWS == 1, "Matrix_In_Type::ROWS != 1");
 
   for (std::size_t i = 0; i < Matrix_In_Type::ROWS; i++) {
     out_matrix(i, row_index) = in_matrix(i, 0);
@@ -901,10 +901,12 @@ public:
     Y_Horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
         Y_horizon, this->_Y_offset);
+    U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
       auto Y_k = this->calculate_measurement_function(
-          MatrixOperation::get_row(X_horizon, k), this->state_space_parameters);
+          MatrixOperation::get_row(X_horizon, k), U_dummy,
+          this->state_space_parameters);
 
       MatrixOperation::set_row(Y_horizon, Y_k, k);
     }
