@@ -476,6 +476,15 @@ void test_SQP_CostMatrices_NMPC() {
 
     cost_matrices.reference_trajectory = reference_trajectory;
 
+    auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
+        static_cast<T>(5),
+        static_cast<T>(0),
+        static_cast<T>(5),
+        static_cast<T>(0)
+    );
+
+    DenseMatrix_Type<T, INPUT_SIZE, NP> U_initial;
+
 
 
     tester.throw_error_if_test_failed();
