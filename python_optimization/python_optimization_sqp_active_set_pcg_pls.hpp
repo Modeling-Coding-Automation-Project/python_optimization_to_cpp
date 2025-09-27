@@ -35,6 +35,26 @@ static constexpr std::size_t SOLVER_MAX_ITERATION_DEFAULT = 100;
 
 static constexpr double LAMBDA_FACTOR_DEFAULT = 1e-6;
 
+namespace MatrixOperation {
+
+template <typename Matrix_Type>
+inline auto add_scalar_to_matrix(Matrix_Type &matrix,
+                                 typename Matrix_Type::Value_Type scalar)
+    -> Matrix_Type {
+
+  Matrix_Type out = matrix;
+
+  for (std::size_t i = 0; i < Matrix_Type::COLS; i++) {
+    for (std::size_t j = 0; j < Matrix_Type::ROWS; j++) {
+      out(i, j) += scalar;
+    }
+  }
+
+  return out;
+}
+
+} // namespace MatrixOperation
+
 /* Cost Function Objects */
 template <typename X_Type, typename U_Horizon_Type>
 using CostFunction_Object = std::function<typename X_Type::Value_Type(
@@ -433,8 +453,8 @@ public:
 
       _RHS_Type rhs = -gradient;
 
-      auto _diag_R_full_lambda_factor =
-          this->_diag_R_full + this->_lambda_factor;
+      auto _diag_R_full_lambda_factor = MatrixOperation::add_scalar_to_matrix(
+          this->_diag_R_full, this->_lambda_factor);
 
       _M_Inv_Type M_inv;
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
