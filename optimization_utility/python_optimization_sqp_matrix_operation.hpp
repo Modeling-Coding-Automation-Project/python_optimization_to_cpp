@@ -77,19 +77,67 @@ inline void set_row(Matrix_Out_Type &out_matrix,
   SetRow::compute(out_matrix, in_matrix, row_index);
 }
 
+namespace GetRow_Unrolled {
+
+// Column recursion when I_idx > 0
+template <typename Matrix_In_Type, typename Out_Type, std::size_t I_idx>
+struct Column {
+  /**
+   * @brief Recursively copies elements from a given row into a column vector.
+   *
+   * out(I_idx, 0) = in_matrix(I_idx, row_index)
+   * then recurses for the next lower column index.
+   */
+  static inline void compute(const Matrix_In_Type &in_matrix,
+                             const std::size_t &row_index, Out_Type &out) {
+
+    out.template set<I_idx, 0>(in_matrix.access(I_idx, row_index));
+
+    Column<Matrix_In_Type, Out_Type, I_idx - 1>::compute(in_matrix, row_index,
+                                                         out);
+  }
+};
+
+// Column recursion termination for I_idx == 0
+template <typename Matrix_In_Type, typename Out_Type>
+struct Column<Matrix_In_Type, Out_Type, 0> {
+  /**
+   * @brief Base case: copy the element at column 0.
+   */
+  static inline void compute(const Matrix_In_Type &in_matrix,
+                             const std::size_t &row_index, Out_Type &out) {
+
+    out.template set<0, 0>(in_matrix.access(0, row_index));
+  }
+};
+
+// Public wrapper to start the unrolled recursion
+template <typename Matrix_In_Type, typename Out_Type>
+inline void compute(const Matrix_In_Type &in_matrix,
+                    const std::size_t &row_index, Out_Type &out) {
+
+  static_assert(Out_Type::ROWS == 1, "Out_Type must be a (COLS x 1) vector");
+  static_assert(Out_Type::COLS == Matrix_In_Type::COLS,
+                "Output COLS must equal input COLS");
+
+  Column<Matrix_In_Type, Out_Type, (Out_Type::COLS - 1)>::compute(
+      in_matrix, row_index, out);
+}
+
+} // namespace GetRow_Unrolled
+
 template <typename Matrix_In_Type>
 inline auto get_row(const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index)
     -> PythonNumpy::DenseMatrix_Type<typename Matrix_In_Type::Value_Type,
                                      Matrix_In_Type::COLS, 1> {
 
-  PythonNumpy::DenseMatrix_Type<typename Matrix_In_Type::Value_Type,
-                                Matrix_In_Type::COLS, 1>
-      out;
+  using Out_Type =
+      PythonNumpy::DenseMatrix_Type<typename Matrix_In_Type::Value_Type,
+                                    Matrix_In_Type::COLS, 1>;
+  Out_Type out;
 
-  for (std::size_t i = 0; i < Matrix_In_Type::COLS; i++) {
-    out(i, 0) = in_matrix(i, row_index);
-  }
+  GetRow_Unrolled::compute<Matrix_In_Type, Out_Type>(in_matrix, row_index, out);
 
   return out;
 }
