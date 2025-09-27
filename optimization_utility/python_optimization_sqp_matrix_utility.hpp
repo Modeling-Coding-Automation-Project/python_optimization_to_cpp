@@ -393,6 +393,41 @@ public:
     return this->_measurement_function_jacobian_x(X, U, parameter);
   }
 
+  template <typename Lambda_Vector_Type>
+  inline auto fx_xx_lambda_contract(const X_Type &X, const U_Type &U,
+                                    const _Parameter_Type &parameter,
+                                    const Lambda_Vector_Type &lambda,
+                                    const X_Type &dX)
+      -> _StateFunctionHessian_XX_Out_Type {
+
+    static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
+                  "Lambda_Vector_Type::COLS != STATE_SIZE");
+    static_assert(Lambda_Vector_Type::ROWS == 1,
+                  "Lambda_Vector_Type::ROWS != 1");
+
+    auto Hf_xx = this->_state_function_hessian_xx(X, U, parameter);
+
+    _StateFunctionHessian_XX_Out_Type out;
+
+    for (std::size_t j = 0; j < STATE_SIZE; j++) {
+      _T acc_j = 0.0;
+
+      for (std::size_t i = 0; i < STATE_SIZE; i++) {
+        _T acc_ij = 0.0;
+
+        for (std::size_t k = 0; k < STATE_SIZE; k++) {
+          acc_ij += Hf_xx(i, j * STATE_SIZE + k) * dX(k, 0);
+        }
+
+        acc_j += lambda(i) * acc_ij;
+      }
+
+      out(j, 0) = acc_j;
+    }
+
+    return out;
+  }
+
 public:
   /* Variable */
   _Parameter_Type state_space_parameters;
