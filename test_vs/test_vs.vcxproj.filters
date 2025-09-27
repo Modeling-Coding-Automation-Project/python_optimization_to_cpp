@@ -35,5 +35,8 @@
     <ClInclude Include="..\optimization_utility\python_optimization_utility.hpp">
       <Filter>リソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\python_optimization\python_optimization_sqp_active_set_pcg_pls.hpp">
+      <Filter>リソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

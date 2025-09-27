@@ -5,5 +5,6 @@
 
 #include "python_optimization_active_set.hpp"
 #include "python_optimization_qp_active_set.hpp"
+#include "python_optimization_sqp_active_set_pcg_pls.hpp"
 
 #endif // __PYTHON_OPTIMIZATION_HPP__
