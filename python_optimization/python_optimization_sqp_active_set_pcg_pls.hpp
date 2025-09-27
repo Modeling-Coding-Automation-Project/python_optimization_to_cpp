@@ -85,6 +85,7 @@ protected:
   using _Gradient_Type = U_Horizon_Type;
   using _V_Horizon_Type = U_Horizon_Type;
   using _HVP_Type = U_Horizon_Type;
+  using _RHS_Type = U_Horizon_Type;
 
   using _ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
 
@@ -159,12 +160,13 @@ public:
   }
 
   /* Function */
-  U_Horizon_Type U_horizon;
-  X_Type X_initial;
-  _HVP_Function_Object_Type hvp_function;
+  //   inline auto preconditioned_conjugate_gradient(const _RHS_Type &rhs,
 
 public:
   /* Variable */
+  U_Horizon_Type U_horizon;
+  X_Type X_initial;
+  _HVP_Function_Object_Type hvp_function;
 
 protected:
   /* Variable */

@@ -439,7 +439,7 @@ class SQP_MatrixUtilityDeploy:
 
         # state hessian xx function code
         state_hessian_xx_file_name_without_ext = \
-            cost_matrices.hf_xx_code_file_name.split(".")[0]
+            cost_matrices.state_hessian_xx_code_file_name.split(".")[0]
 
         state_hessian_xx_cpp_file_name, state_hessian_xx_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
@@ -449,7 +449,7 @@ class SQP_MatrixUtilityDeploy:
 
         # state hessian xu function code
         state_hessian_xu_file_name_without_ext = \
-            cost_matrices.hf_xu_code_file_name.split(".")[0]
+            cost_matrices.state_hessian_xu_code_file_name.split(".")[0]
 
         state_hessian_xu_cpp_file_name, state_hessian_xu_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
@@ -459,7 +459,7 @@ class SQP_MatrixUtilityDeploy:
 
         # state hessian uu function code
         state_hessian_uu_file_name_without_ext = \
-            cost_matrices.hf_uu_code_file_name.split(".")[0]
+            cost_matrices.state_hessian_uu_code_file_name.split(".")[0]
 
         state_hessian_uu_cpp_file_name, state_hessian_uu_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
@@ -469,7 +469,7 @@ class SQP_MatrixUtilityDeploy:
 
         # measurement hessian xx function code
         measurement_hessian_xx_file_name_without_ext = \
-            cost_matrices.hh_xx_code_file_name.split(".")[0]
+            cost_matrices.measurement_hessian_xx_code_file_name.split(".")[0]
 
         measurement_hessian_xx_cpp_file_name, measurement_hessian_xx_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
