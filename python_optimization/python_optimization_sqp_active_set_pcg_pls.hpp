@@ -317,9 +317,10 @@ public:
   }
 
   /* Function */
-  inline auto preconditioned_conjugate_gradient(const _RHS_Type &rhs,
-                                                const _M_Inv_Type &M_inv)
-      -> _RHS_Type {
+  inline auto
+  preconditioned_conjugate_gradient(const U_Horizon_Type U_horizon_in,
+                                    const _RHS_Type &rhs,
+                                    const _M_Inv_Type &M_inv) -> _RHS_Type {
 
     _RHS_Type d;
 
@@ -340,7 +341,7 @@ public:
       for (std::size_t pcg_iteration = 0;
            pcg_iteration < this->_pcg_max_iteration; ++pcg_iteration) {
 
-        auto Hp = this->hvp_function(this->X_initial, this->U_horizon, p);
+        auto Hp = this->hvp_function(this->X_initial, U_horizon_in, p);
         Hp = Hp + this->_lambda_factor * p;
 
         _T denominator =
@@ -466,10 +467,10 @@ public:
         }
       }
 
-      this->U_horizon = U_horizon_store;
       this->hvp_function = hvp_function_in;
 
-      auto d = this->preconditioned_conjugate_gradient(rhs, M_inv);
+      auto d =
+          this->preconditioned_conjugate_gradient(U_horizon_store, rhs, M_inv);
 
       /*
        * line search and projection
@@ -477,13 +478,13 @@ public:
        *  project the whole)
        */
       _T alpha = static_cast<_T>(1);
-      U_Horizon_Type U_horizon_new = U_horizon;
+      U_Horizon_Type U_horizon_new = U_horizon_store;
 
       bool U_updated_flag = false;
       for (std::size_t line_search_iteration = 0;
            line_search_iteration < this->_line_search_max_iteration;
            ++line_search_iteration) {
-        auto U_candidate = U_horizon + alpha * d;
+        auto U_candidate = U_horizon_new + alpha * d;
 
         for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
           for (std::size_t j = 0; j < NP; ++j) {
@@ -509,15 +510,16 @@ public:
       }
 
       if (true == U_updated_flag) {
-        U_horizon = U_horizon_new;
+        U_horizon_store = U_horizon_new;
       } else {
         break;
       }
     }
 
     this->_J_optimal = J;
+    this->U_horizon = U_horizon_store;
 
-    return U_horizon;
+    return this->U_horizon;
   }
 
 public:
