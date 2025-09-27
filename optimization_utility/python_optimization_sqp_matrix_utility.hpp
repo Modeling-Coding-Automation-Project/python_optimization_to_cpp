@@ -358,6 +358,41 @@ public:
     return PythonNumpy::make_SparseMatrixEmpty<_T, INPUT_SIZE, STATE_SIZE>();
   }
 
+  inline auto calculate_state_function(const X_Type &X, const U_Type &U,
+                                       const _Parameter_Type &parameter)
+      -> _StateFunction_Out_Type {
+
+    return this->_state_function(X, U, parameter);
+  }
+
+  inline auto calculate_measurement_function(const X_Type &X,
+                                             const _Parameter_Type &parameter)
+      -> _MeasurementFunction_Out_Type {
+
+    return this->_measurement_function(X, parameter);
+  }
+
+  inline auto calculate_state_jacobian_x(const X_Type &X, const U_Type &U,
+                                         const _Parameter_Type &parameter)
+      -> _StateFunctionJacobian_X_Out_Type {
+
+    return this->_state_function_jacobian_x(X, U, parameter);
+  }
+
+  inline auto calculate_state_jacobian_u(const X_Type &X, const U_Type &U,
+                                         const _Parameter_Type &parameter)
+      -> _StateFunctionJacobian_U_Out_Type {
+
+    return this->_state_function_jacobian_u(X, U, parameter);
+  }
+
+  inline auto calculate_measurement_jacobian_x(const X_Type &X, const U_Type &U,
+                                               const _Parameter_Type &parameter)
+      -> _MeasurementFunctionJacobian_X_Out_Type {
+
+    return this->_measurement_function_jacobian_x(X, U, parameter);
+  }
+
 public:
   /* Variable */
   _Parameter_Type state_space_parameters;
