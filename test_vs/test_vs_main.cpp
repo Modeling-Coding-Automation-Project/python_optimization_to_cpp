@@ -343,8 +343,15 @@ void test_SQP_CostMatrices_NMPC() {
     using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
     using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
 
-    using Px_Type = DiagMatrix_Type<T, STATE_SIZE>;
-    using Py_Type = DiagMatrix_Type<T, STATE_SIZE>;
+    Qx_Type Qx = make_DiagMatrix<STATE_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.1), static_cast<T>(0.5), static_cast<T>(0.1)
+    );
+    R_Type R = make_DiagMatrix<INPUT_SIZE>(
+        static_cast<T>(0.1), static_cast<T>(0.1)
+    );
+    Qy_Type Qy = make_DiagMatrix<OUTPUT_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.5)
+    );
 
     using U_Min_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
     using U_Max_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
