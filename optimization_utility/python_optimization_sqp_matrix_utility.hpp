@@ -400,14 +400,14 @@ public:
     static_cast<void>(X);
     static_cast<void>(U);
 
-    return 2.0 * this->_Qx;
+    return static_cast<_T>(2) * this->_Qx;
   }
 
   inline auto l_uu(const X_Type &X, const U_Type &U) -> _R_Type & {
     static_cast<void>(X);
     static_cast<void>(U);
 
-    return 2.0 * this->_R;
+    return static_cast<_T>(2) * this->_R;
   }
 
   inline auto l_xu(const X_Type &X, const U_Type &U)
@@ -807,8 +807,9 @@ public:
         this->_Y_min_max_rho * MatrixOperation::get_row(Y_limit_penalty, NP);
 
     auto lam_next =
-        2.0 * (Px_X + PythonNumpy::ATranspose_mul_B(
-                          C_N, (Py_eN_y_r + Y_min_max_rho_YN_limit_penalty)));
+        static_cast<_T>(2) *
+        (Px_X + PythonNumpy::ATranspose_mul_B(
+                    C_N, (Py_eN_y_r + Y_min_max_rho_YN_limit_penalty)));
 
     gradient = _Gradient_Type();
 
@@ -829,7 +830,8 @@ public:
           MatrixOperation::get_row(X_horizon, k),
           MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
 
-      auto _2_R_U = 2.0 * this->_R * MatrixOperation::get_row(U_horizon, k);
+      auto _2_R_U = static_cast<_T>(2) * this->_R *
+                    MatrixOperation::get_row(U_horizon, k);
       auto B_k_T_lam_next = PythonNumpy::ATranspose_mul_B(B_k, lam_next);
 
       MatrixOperation::set_row(gradient, _2_R_U + B_k_T_lam_next, k);
@@ -837,14 +839,15 @@ public:
       auto Qx_X = this->_Qx * MatrixOperation::get_row(X_horizon, k);
       auto Qy_ek_y = this->_Qy * ek_y;
       auto Y_min_max_rho_Yk_limit_penalty =
-          2.0 * this->_Y_min_max_rho *
+          static_cast<_T>(2) * this->_Y_min_max_rho *
           MatrixOperation::get_row(Y_limit_penalty, k);
 
       auto A_k_T_lam_next = PythonNumpy::ATranspose_mul_B(A_k, lam_next);
 
       lam_next =
-          2.0 * (Qx_X + PythonNumpy::ATranspose_mul_B(
-                            Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
+          static_cast<_T>(2) *
+              (Qx_X + PythonNumpy::ATranspose_mul_B(
+                          Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
           A_k_T_lam_next;
     }
   }
@@ -1027,8 +1030,9 @@ public:
         this->_Y_min_max_rho * MatrixOperation::get_row(Y_limit_penalty, NP);
 
     auto lam_input =
-        2.0 * (Px_XN + PythonNumpy::ATranspose_mul_B(
-                           Cx_N, (Py_eN_y + Y_min_max_rho_YN_limit_penalty)));
+        static_cast<_T>(2) *
+        (Px_XN + PythonNumpy::ATranspose_mul_B(
+                     Cx_N, (Py_eN_y + Y_min_max_rho_YN_limit_penalty)));
     MatrixOperation::set_row(lam, lam_input, NP);
 
     for (std::size_t k = NP; k-- > 0;) {
@@ -1051,8 +1055,9 @@ public:
           PythonNumpy::ATranspose_mul_B(A_k, MatrixOperation::get_row(lam, k));
 
       auto lam_input =
-          2.0 * (Qx_X + PythonNumpy::ATranspose_mul_B(
-                            Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
+          static_cast<_T>(2) *
+              (Qx_X + PythonNumpy::ATranspose_mul_B(
+                          Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
           A_k_T_lam;
       MatrixOperation::set_row(lam, lam_input, k);
     }
@@ -1085,18 +1090,18 @@ public:
         MatrixOperation::get_row(dx, NP);
     auto Cx_N_dx = Cx_N * MatrixOperation::get_row(dx, NP);
 
-    auto CX_N_T_Py_Cx_N_dx =
-        PythonNumpy::ATranspose_mul_B(Cx_N * (2.0 * this->_Py * Cx_N_dx));
+    auto CX_N_T_Py_Cx_N_dx = PythonNumpy::ATranspose_mul_B(
+        Cx_N, (static_cast<_T>(2) * this->_Py * Cx_N_dx));
 
     auto Y_min_max_rho_YN_limit_active_CX_N_dx =
-        2.0 * this->_Y_min_max_rho *
+        static_cast<_T>(2) * this->_Y_min_max_rho *
         MatrixOperation::get_row(Y_limit_active, NP) * Cx_N_dx;
 
     auto CX_N_T_penalty_CX_N_dx = PythonNumpy::ATranspose_mul_B(
-        Cx_N * Y_min_max_rho_YN_limit_active_CX_N_dx);
+        Cx_N, Y_min_max_rho_YN_limit_active_CX_N_dx);
 
     auto Y_min_max_rho_YN_limit_penalty =
-        2.0 * this->_Y_min_max_rho *
+        static_cast<_T>(2) * this->_Y_min_max_rho *
         MatrixOperation::get_row(Y_limit_penalty, NP);
 
     auto Hxx_penalty_term_N = this->hxx_lambda_contract(
@@ -1108,6 +1113,39 @@ public:
     MatrixOperation::set_row(d_lambda, d_lambda_input, NP);
 
     _HVP_Type Hu;
+
+    for (std::size_t k = NP; k-- > 0;) {
+      auto A_k = this->calculate_state_jacobian_x(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
+
+      auto B_k = this->calculate_state_jacobian_u(
+          MatrixOperation::get_row(X_horizon, k),
+          MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
+
+      auto Cx_k = this->calculate_measurement_jacobian_x(
+          MatrixOperation::get_row(X_horizon, k), U_dummy,
+          this->state_space_parameters);
+
+      auto ek_y = MatrixOperation::get_row(Y_horizon, k) -
+                  MatrixOperation::get_row(this->reference_trajectory, k);
+
+      auto Cx_dx_k = Cx_k * MatrixOperation::get_row(dx, k);
+
+      auto term_Qy_GN = PythonNumpy::ATranspose_mul_B(
+          Cx_k, (static_cast<_T>(2) * this->_Py * Cx_dx_k));
+
+      auto term_Qy_hxx = this->hxx_lambda_contract(
+          MatrixOperation::get_row(X_horizon, k), this->state_space_parameters,
+          static_cast<_T>(2) * this->_Py * ek_y,
+          MatrixOperation::get_row(dx, k));
+
+      auto Y_min_max_rho_Yk_limit_active_Cx_dx_k =
+          static_cast<_T>(2) * this->_Y_min_max_rho *
+          MatrixOperation::get_row(Y_limit_active, k) * Cx_dx_k;
+      auto term_penalty_GN = PythonNumpy::ATranspose_mul_B(
+          Cx_k, Y_min_max_rho_Yk_limit_active_Cx_dx_k);
+    }
 
     return Hu;
   }
