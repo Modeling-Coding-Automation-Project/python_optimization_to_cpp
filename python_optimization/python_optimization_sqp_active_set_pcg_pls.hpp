@@ -41,11 +41,15 @@ public:
   static constexpr std::size_t INPUT_SIZE = CostMatrices_Type_In::INPUT_SIZE;
   static constexpr std::size_t OUTPUT_SIZE = CostMatrices_Type_In::OUTPUT_SIZE;
 
+  static constexpr std::size_t NP = CostMatrices_Type_In::NP;
+
 public:
   /* Type */
   using Value_Type = typename CostMatrices_Type_In::Value_Type;
 
+  using X_Horizon_Type = typename CostMatrices_Type_In::X_Horizon_Type;
   using U_Horizon_Type = typename CostMatrices_Type_In::U_Horizon_Type;
+  using Y_Horizon_Type = typename CostMatrices_Type_In::Y_Horizon_Type;
 
   /* Check Compatibility */
 
@@ -57,6 +61,10 @@ protected:
 
   using _R_Full_Size =
       PythonNumpy::DenseMatrix_Type<_T, INPUT_SIZE, INPUT_SIZE>;
+
+  using Mask_Type = U_Horizon_Type;
+
+  using ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
 
 public:
   /* Constructor */
