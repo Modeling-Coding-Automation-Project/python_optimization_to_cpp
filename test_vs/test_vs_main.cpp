@@ -336,6 +336,27 @@ void test_SQP_CostMatrices_NMPC() {
 
     constexpr std::size_t NP = 10;
 
+    using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter;
+
+    using U_Min_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using U_Max_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+
+    U_Min_Type u_min = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(-1),
+        static_cast<T>(-1)
+    );
+    U_Max_Type u_max = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(1),
+        static_cast<T>(1)
+    );
+
+    using Reference_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
+    using Reference_Trajectory_Type = DenseMatrix_Type<T, OUTPUT_SIZE, (NP + 1)>;
+
+    Reference_Trajectory_Type reference_trajectory;
+
+
+
 
     tester.throw_error_if_test_failed();
 }
