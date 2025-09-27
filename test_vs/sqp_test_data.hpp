@@ -9,17 +9,18 @@ namespace SQP_TestData {
 
 namespace sqp_2_mass_spring_damper_demo_parameter {
 
+template <typename T>
 class Parameter {
 public:
-    double m1 = static_cast<double>(1.0);
-    double m2 = static_cast<double>(1.0);
-    double k1 = static_cast<double>(10.0);
-    double k2 = static_cast<double>(15.0);
-    double k3 = static_cast<double>(10.0);
-    double b1 = static_cast<double>(1.0);
-    double b2 = static_cast<double>(2.0);
-    double b3 = static_cast<double>(1.0);
-    double dt = static_cast<double>(0.1);
+    T m1 = static_cast<T>(1.0);
+    T m2 = static_cast<T>(1.0);
+    T k1 = static_cast<T>(10.0);
+    T k2 = static_cast<T>(15.0);
+    T k3 = static_cast<T>(10.0);
+    T b1 = static_cast<T>(1.0);
+    T b2 = static_cast<T>(2.0);
+    T b3 = static_cast<T>(1.0);
+    T dt = static_cast<T>(0.1);
 };
 
 } // namespace sqp_2_mass_spring_damper_demo_parameter
@@ -28,56 +29,56 @@ namespace sqp_2_mass_spring_damper_demo_sqp_state_function {
 
 using namespace PythonMath;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function(const double dt, const double x1, const double k2, const double u1, const double k3, const double b2, const double b3, const double b1, const double x2, const double v1, const double v2, const double u2, const double m1, const double m2, const double k1) -> X_Type {
+    static inline auto sympy_function(const T dt, const T x1, const T k2, const T u1, const T k3, const T b2, const T b3, const T b1, const T x2, const T v1, const T v2, const T u2, const T m1, const T m2, const T k1) -> X_Type {
 
         X_Type result;
 
-        double x0 = v1 - v2;
+        T x0 = v1 - v2;
 
-        double x3 = x1 - x2;
+        T x3 = x1 - x2;
 
-        result.template set<0, 0>(static_cast<double>(dt * v1 + x1));
-        result.template set<1, 0>(static_cast<double>(dt * (-b1 * v1 - b2 * x0 - k1 * x1 - k2 * x3 + u1) / m1 + v1));
-        result.template set<2, 0>(static_cast<double>(dt * v2 + x2));
-        result.template set<3, 0>(static_cast<double>(dt * (b2 * x0 - b3 * v2 + k2 * x3 - k3 * x2 + u2) / m2 + v2));
+        result.template set<0, 0>(static_cast<T>(dt * v1 + x1));
+        result.template set<1, 0>(static_cast<T>(dt * (-b1 * v1 - b2 * x0 - k1 * x1 - k2 * x3 + u1) / m1 + v1));
+        result.template set<2, 0>(static_cast<T>(dt * v2 + x2));
+        result.template set<3, 0>(static_cast<T>(dt * (b2 * x0 - b3 * v2 + k2 * x3 - k3 * x2 + u2) / m2 + v2));
 
         return result;
     }
 
     static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> X_Type {
 
-        double x1 = X.template get<0, 0>();
+        T x1 = X.template get<0, 0>();
 
-        double v1 = X.template get<1, 0>();
+        T v1 = X.template get<1, 0>();
 
-        double x2 = X.template get<2, 0>();
+        T x2 = X.template get<2, 0>();
 
-        double v2 = X.template get<3, 0>();
+        T v2 = X.template get<3, 0>();
 
-        double u1 = U.template get<0, 0>();
+        T u1 = U.template get<0, 0>();
 
-        double u2 = U.template get<1, 0>();
+        T u2 = U.template get<1, 0>();
 
-        double dt = Parameters.dt;
+        T dt = Parameters.dt;
 
-        double k2 = Parameters.k2;
+        T k2 = Parameters.k2;
 
-        double k3 = Parameters.k3;
+        T k3 = Parameters.k3;
 
-        double b2 = Parameters.b2;
+        T b2 = Parameters.b2;
 
-        double b3 = Parameters.b3;
+        T b3 = Parameters.b3;
 
-        double b1 = Parameters.b1;
+        T b1 = Parameters.b1;
 
-        double m1 = Parameters.m1;
+        T m1 = Parameters.m1;
 
-        double m2 = Parameters.m2;
+        T m2 = Parameters.m2;
 
-        double k1 = Parameters.k1;
+        T k1 = Parameters.k1;
 
         return sympy_function(dt, x1, k2, u1, k3, b2, b3, b1, x2, v1, v2, u2, m1, m2, k1);
     }
@@ -90,15 +91,15 @@ namespace sqp_2_mass_spring_damper_demo_sqp_measurement_function {
 
 using namespace PythonMath;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type, typename Y_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type, typename Y_Type>
 class Function {
 public:
-    static inline auto sympy_function(const double x1, const double x2) -> Y_Type {
+    static inline auto sympy_function(const T x1, const T x2) -> Y_Type {
 
         Y_Type result;
 
-        result.template set<0, 0>(static_cast<double>(x1));
-        result.template set<1, 0>(static_cast<double>(x2));
+        result.template set<0, 0>(static_cast<T>(x1));
+        result.template set<1, 0>(static_cast<T>(x2));
 
         return result;
     }
@@ -107,9 +108,9 @@ public:
         static_cast<void>(U);
         static_cast<void>(Parameters);
 
-        double x1 = X.template get<0, 0>();
+        T x1 = X.template get<0, 0>();
 
-        double x2 = X.template get<2, 0>();
+        T x2 = X.template get<2, 0>();
 
         return sympy_function(x1, x2);
     }
@@ -131,60 +132,61 @@ using State_Jacobian_x_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<true, true, true, true>
 >;
 
-using State_Jacobian_x_Type = SparseMatrix_Type<double, State_Jacobian_x_Type_SparseAvailable>;
+template <typename T>
+using State_Jacobian_x_Type = SparseMatrix_Type<T, State_Jacobian_x_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function(const double b3, const double b1, const double dt, const double k2, const double k3, const double m1, const double b2, const double m2, const double k1) -> State_Jacobian_x_Type {
+    static inline auto sympy_function(const T b3, const T b1, const T dt, const T k2, const T k3, const T m1, const T b2, const T m2, const T k1) -> State_Jacobian_x_Type<T> {
 
-        State_Jacobian_x_Type result;
+        State_Jacobian_x_Type<T> result;
 
-        double x0 = dt / m1;
+        T x0 = dt / m1;
 
-        double x1 = dt / m2;
+        T x1 = dt / m2;
 
-        result.template set<0, 0>(static_cast<double>(1));
-        result.template set<0, 1>(static_cast<double>(dt));
-        result.template set<0, 2>(static_cast<double>(0));
-        result.template set<0, 3>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(x0 * (-k1 - k2)));
-        result.template set<1, 1>(static_cast<double>(x0 * (-b1 - b2) + 1));
-        result.template set<1, 2>(static_cast<double>(k2 * x0));
-        result.template set<1, 3>(static_cast<double>(b2 * x0));
-        result.template set<2, 0>(static_cast<double>(0));
-        result.template set<2, 1>(static_cast<double>(0));
-        result.template set<2, 2>(static_cast<double>(1));
-        result.template set<2, 3>(static_cast<double>(dt));
-        result.template set<3, 0>(static_cast<double>(k2 * x1));
-        result.template set<3, 1>(static_cast<double>(b2 * x1));
-        result.template set<3, 2>(static_cast<double>(x1 * (-k2 - k3)));
-        result.template set<3, 3>(static_cast<double>(x1 * (-b2 - b3) + 1));
+        result.template set<0, 0>(static_cast<T>(1));
+        result.template set<0, 1>(static_cast<T>(dt));
+        result.template set<0, 2>(static_cast<T>(0));
+        result.template set<0, 3>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(x0 * (-k1 - k2)));
+        result.template set<1, 1>(static_cast<T>(x0 * (-b1 - b2) + 1));
+        result.template set<1, 2>(static_cast<T>(k2 * x0));
+        result.template set<1, 3>(static_cast<T>(b2 * x0));
+        result.template set<2, 0>(static_cast<T>(0));
+        result.template set<2, 1>(static_cast<T>(0));
+        result.template set<2, 2>(static_cast<T>(1));
+        result.template set<2, 3>(static_cast<T>(dt));
+        result.template set<3, 0>(static_cast<T>(k2 * x1));
+        result.template set<3, 1>(static_cast<T>(b2 * x1));
+        result.template set<3, 2>(static_cast<T>(x1 * (-k2 - k3)));
+        result.template set<3, 3>(static_cast<T>(x1 * (-b2 - b3) + 1));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Jacobian_x_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Jacobian_x_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
 
-        double b3 = Parameters.b3;
+        T b3 = Parameters.b3;
 
-        double b1 = Parameters.b1;
+        T b1 = Parameters.b1;
 
-        double dt = Parameters.dt;
+        T dt = Parameters.dt;
 
-        double k2 = Parameters.k2;
+        T k2 = Parameters.k2;
 
-        double k3 = Parameters.k3;
+        T k3 = Parameters.k3;
 
-        double m1 = Parameters.m1;
+        T m1 = Parameters.m1;
 
-        double b2 = Parameters.b2;
+        T b2 = Parameters.b2;
 
-        double m2 = Parameters.m2;
+        T m2 = Parameters.m2;
 
-        double k1 = Parameters.k1;
+        T k1 = Parameters.k1;
 
         return sympy_function(b3, b1, dt, k2, k3, m1, b2, m2, k1);
     }
@@ -205,36 +207,37 @@ using State_Jacobian_u_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<false, true>
 >;
 
-using State_Jacobian_u_Type = SparseMatrix_Type<double, State_Jacobian_u_Type_SparseAvailable>;
+template <typename T>
+using State_Jacobian_u_Type = SparseMatrix_Type<T, State_Jacobian_u_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function(const double m2, const double m1, const double dt) -> State_Jacobian_u_Type {
+    static inline auto sympy_function(const T m2, const T m1, const T dt) -> State_Jacobian_u_Type<T> {
 
-        State_Jacobian_u_Type result;
+        State_Jacobian_u_Type<T> result;
 
-        result.template set<0, 0>(static_cast<double>(0));
-        result.template set<0, 1>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(dt / m1));
-        result.template set<1, 1>(static_cast<double>(0));
-        result.template set<2, 0>(static_cast<double>(0));
-        result.template set<2, 1>(static_cast<double>(0));
-        result.template set<3, 0>(static_cast<double>(0));
-        result.template set<3, 1>(static_cast<double>(dt / m2));
+        result.template set<0, 0>(static_cast<T>(0));
+        result.template set<0, 1>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(dt / m1));
+        result.template set<1, 1>(static_cast<T>(0));
+        result.template set<2, 0>(static_cast<T>(0));
+        result.template set<2, 1>(static_cast<T>(0));
+        result.template set<3, 0>(static_cast<T>(0));
+        result.template set<3, 1>(static_cast<T>(dt / m2));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Jacobian_u_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Jacobian_u_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
 
-        double m2 = Parameters.m2;
+        T m2 = Parameters.m2;
 
-        double m1 = Parameters.m1;
+        T m1 = Parameters.m1;
 
-        double dt = Parameters.dt;
+        T dt = Parameters.dt;
 
         return sympy_function(m2, m1, dt);
     }
@@ -253,28 +256,29 @@ using Measurement_Jacobian_x_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<false, false, true, false>
 >;
 
-using Measurement_Jacobian_x_Type = SparseMatrix_Type<double, Measurement_Jacobian_x_Type_SparseAvailable>;
+template <typename T>
+using Measurement_Jacobian_x_Type = SparseMatrix_Type<T, Measurement_Jacobian_x_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function() -> Measurement_Jacobian_x_Type {
+    static inline auto sympy_function() -> Measurement_Jacobian_x_Type<T> {
 
-        Measurement_Jacobian_x_Type result;
+        Measurement_Jacobian_x_Type<T> result;
 
-        result.template set<0, 0>(static_cast<double>(1));
-        result.template set<0, 1>(static_cast<double>(0));
-        result.template set<0, 2>(static_cast<double>(0));
-        result.template set<0, 3>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(0));
-        result.template set<1, 1>(static_cast<double>(0));
-        result.template set<1, 2>(static_cast<double>(1));
-        result.template set<1, 3>(static_cast<double>(0));
+        result.template set<0, 0>(static_cast<T>(1));
+        result.template set<0, 1>(static_cast<T>(0));
+        result.template set<0, 2>(static_cast<T>(0));
+        result.template set<0, 3>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(0));
+        result.template set<1, 1>(static_cast<T>(0));
+        result.template set<1, 2>(static_cast<T>(1));
+        result.template set<1, 3>(static_cast<T>(0));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> Measurement_Jacobian_x_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> Measurement_Jacobian_x_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
         static_cast<void>(Parameters);
@@ -311,84 +315,85 @@ using State_Hessian_xx_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<false, false, false, false>
 >;
 
-using State_Hessian_xx_Type = SparseMatrix_Type<double, State_Hessian_xx_Type_SparseAvailable>;
+template <typename T>
+using State_Hessian_xx_Type = SparseMatrix_Type<T, State_Hessian_xx_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function() -> State_Hessian_xx_Type {
+    static inline auto sympy_function() -> State_Hessian_xx_Type<T> {
 
-        State_Hessian_xx_Type result;
+        State_Hessian_xx_Type<T> result;
 
-        result.template set<0, 0>(static_cast<double>(0));
-        result.template set<0, 1>(static_cast<double>(0));
-        result.template set<0, 2>(static_cast<double>(0));
-        result.template set<0, 3>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(0));
-        result.template set<1, 1>(static_cast<double>(0));
-        result.template set<1, 2>(static_cast<double>(0));
-        result.template set<1, 3>(static_cast<double>(0));
-        result.template set<2, 0>(static_cast<double>(0));
-        result.template set<2, 1>(static_cast<double>(0));
-        result.template set<2, 2>(static_cast<double>(0));
-        result.template set<2, 3>(static_cast<double>(0));
-        result.template set<3, 0>(static_cast<double>(0));
-        result.template set<3, 1>(static_cast<double>(0));
-        result.template set<3, 2>(static_cast<double>(0));
-        result.template set<3, 3>(static_cast<double>(0));
-        result.template set<4, 0>(static_cast<double>(0));
-        result.template set<4, 1>(static_cast<double>(0));
-        result.template set<4, 2>(static_cast<double>(0));
-        result.template set<4, 3>(static_cast<double>(0));
-        result.template set<5, 0>(static_cast<double>(0));
-        result.template set<5, 1>(static_cast<double>(0));
-        result.template set<5, 2>(static_cast<double>(0));
-        result.template set<5, 3>(static_cast<double>(0));
-        result.template set<6, 0>(static_cast<double>(0));
-        result.template set<6, 1>(static_cast<double>(0));
-        result.template set<6, 2>(static_cast<double>(0));
-        result.template set<6, 3>(static_cast<double>(0));
-        result.template set<7, 0>(static_cast<double>(0));
-        result.template set<7, 1>(static_cast<double>(0));
-        result.template set<7, 2>(static_cast<double>(0));
-        result.template set<7, 3>(static_cast<double>(0));
-        result.template set<8, 0>(static_cast<double>(0));
-        result.template set<8, 1>(static_cast<double>(0));
-        result.template set<8, 2>(static_cast<double>(0));
-        result.template set<8, 3>(static_cast<double>(0));
-        result.template set<9, 0>(static_cast<double>(0));
-        result.template set<9, 1>(static_cast<double>(0));
-        result.template set<9, 2>(static_cast<double>(0));
-        result.template set<9, 3>(static_cast<double>(0));
-        result.template set<10, 0>(static_cast<double>(0));
-        result.template set<10, 1>(static_cast<double>(0));
-        result.template set<10, 2>(static_cast<double>(0));
-        result.template set<10, 3>(static_cast<double>(0));
-        result.template set<11, 0>(static_cast<double>(0));
-        result.template set<11, 1>(static_cast<double>(0));
-        result.template set<11, 2>(static_cast<double>(0));
-        result.template set<11, 3>(static_cast<double>(0));
-        result.template set<12, 0>(static_cast<double>(0));
-        result.template set<12, 1>(static_cast<double>(0));
-        result.template set<12, 2>(static_cast<double>(0));
-        result.template set<12, 3>(static_cast<double>(0));
-        result.template set<13, 0>(static_cast<double>(0));
-        result.template set<13, 1>(static_cast<double>(0));
-        result.template set<13, 2>(static_cast<double>(0));
-        result.template set<13, 3>(static_cast<double>(0));
-        result.template set<14, 0>(static_cast<double>(0));
-        result.template set<14, 1>(static_cast<double>(0));
-        result.template set<14, 2>(static_cast<double>(0));
-        result.template set<14, 3>(static_cast<double>(0));
-        result.template set<15, 0>(static_cast<double>(0));
-        result.template set<15, 1>(static_cast<double>(0));
-        result.template set<15, 2>(static_cast<double>(0));
-        result.template set<15, 3>(static_cast<double>(0));
+        result.template set<0, 0>(static_cast<T>(0));
+        result.template set<0, 1>(static_cast<T>(0));
+        result.template set<0, 2>(static_cast<T>(0));
+        result.template set<0, 3>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(0));
+        result.template set<1, 1>(static_cast<T>(0));
+        result.template set<1, 2>(static_cast<T>(0));
+        result.template set<1, 3>(static_cast<T>(0));
+        result.template set<2, 0>(static_cast<T>(0));
+        result.template set<2, 1>(static_cast<T>(0));
+        result.template set<2, 2>(static_cast<T>(0));
+        result.template set<2, 3>(static_cast<T>(0));
+        result.template set<3, 0>(static_cast<T>(0));
+        result.template set<3, 1>(static_cast<T>(0));
+        result.template set<3, 2>(static_cast<T>(0));
+        result.template set<3, 3>(static_cast<T>(0));
+        result.template set<4, 0>(static_cast<T>(0));
+        result.template set<4, 1>(static_cast<T>(0));
+        result.template set<4, 2>(static_cast<T>(0));
+        result.template set<4, 3>(static_cast<T>(0));
+        result.template set<5, 0>(static_cast<T>(0));
+        result.template set<5, 1>(static_cast<T>(0));
+        result.template set<5, 2>(static_cast<T>(0));
+        result.template set<5, 3>(static_cast<T>(0));
+        result.template set<6, 0>(static_cast<T>(0));
+        result.template set<6, 1>(static_cast<T>(0));
+        result.template set<6, 2>(static_cast<T>(0));
+        result.template set<6, 3>(static_cast<T>(0));
+        result.template set<7, 0>(static_cast<T>(0));
+        result.template set<7, 1>(static_cast<T>(0));
+        result.template set<7, 2>(static_cast<T>(0));
+        result.template set<7, 3>(static_cast<T>(0));
+        result.template set<8, 0>(static_cast<T>(0));
+        result.template set<8, 1>(static_cast<T>(0));
+        result.template set<8, 2>(static_cast<T>(0));
+        result.template set<8, 3>(static_cast<T>(0));
+        result.template set<9, 0>(static_cast<T>(0));
+        result.template set<9, 1>(static_cast<T>(0));
+        result.template set<9, 2>(static_cast<T>(0));
+        result.template set<9, 3>(static_cast<T>(0));
+        result.template set<10, 0>(static_cast<T>(0));
+        result.template set<10, 1>(static_cast<T>(0));
+        result.template set<10, 2>(static_cast<T>(0));
+        result.template set<10, 3>(static_cast<T>(0));
+        result.template set<11, 0>(static_cast<T>(0));
+        result.template set<11, 1>(static_cast<T>(0));
+        result.template set<11, 2>(static_cast<T>(0));
+        result.template set<11, 3>(static_cast<T>(0));
+        result.template set<12, 0>(static_cast<T>(0));
+        result.template set<12, 1>(static_cast<T>(0));
+        result.template set<12, 2>(static_cast<T>(0));
+        result.template set<12, 3>(static_cast<T>(0));
+        result.template set<13, 0>(static_cast<T>(0));
+        result.template set<13, 1>(static_cast<T>(0));
+        result.template set<13, 2>(static_cast<T>(0));
+        result.template set<13, 3>(static_cast<T>(0));
+        result.template set<14, 0>(static_cast<T>(0));
+        result.template set<14, 1>(static_cast<T>(0));
+        result.template set<14, 2>(static_cast<T>(0));
+        result.template set<14, 3>(static_cast<T>(0));
+        result.template set<15, 0>(static_cast<T>(0));
+        result.template set<15, 1>(static_cast<T>(0));
+        result.template set<15, 2>(static_cast<T>(0));
+        result.template set<15, 3>(static_cast<T>(0));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_xx_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_xx_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
         static_cast<void>(Parameters);
@@ -424,52 +429,53 @@ using State_Hessian_xu_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<false, false>
 >;
 
-using State_Hessian_xu_Type = SparseMatrix_Type<double, State_Hessian_xu_Type_SparseAvailable>;
+template <typename T>
+using State_Hessian_xu_Type = SparseMatrix_Type<T, State_Hessian_xu_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function() -> State_Hessian_xu_Type {
+    static inline auto sympy_function() -> State_Hessian_xu_Type<T> {
 
-        State_Hessian_xu_Type result;
+        State_Hessian_xu_Type<T> result;
 
-        result.template set<0, 0>(static_cast<double>(0));
-        result.template set<0, 1>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(0));
-        result.template set<1, 1>(static_cast<double>(0));
-        result.template set<2, 0>(static_cast<double>(0));
-        result.template set<2, 1>(static_cast<double>(0));
-        result.template set<3, 0>(static_cast<double>(0));
-        result.template set<3, 1>(static_cast<double>(0));
-        result.template set<4, 0>(static_cast<double>(0));
-        result.template set<4, 1>(static_cast<double>(0));
-        result.template set<5, 0>(static_cast<double>(0));
-        result.template set<5, 1>(static_cast<double>(0));
-        result.template set<6, 0>(static_cast<double>(0));
-        result.template set<6, 1>(static_cast<double>(0));
-        result.template set<7, 0>(static_cast<double>(0));
-        result.template set<7, 1>(static_cast<double>(0));
-        result.template set<8, 0>(static_cast<double>(0));
-        result.template set<8, 1>(static_cast<double>(0));
-        result.template set<9, 0>(static_cast<double>(0));
-        result.template set<9, 1>(static_cast<double>(0));
-        result.template set<10, 0>(static_cast<double>(0));
-        result.template set<10, 1>(static_cast<double>(0));
-        result.template set<11, 0>(static_cast<double>(0));
-        result.template set<11, 1>(static_cast<double>(0));
-        result.template set<12, 0>(static_cast<double>(0));
-        result.template set<12, 1>(static_cast<double>(0));
-        result.template set<13, 0>(static_cast<double>(0));
-        result.template set<13, 1>(static_cast<double>(0));
-        result.template set<14, 0>(static_cast<double>(0));
-        result.template set<14, 1>(static_cast<double>(0));
-        result.template set<15, 0>(static_cast<double>(0));
-        result.template set<15, 1>(static_cast<double>(0));
+        result.template set<0, 0>(static_cast<T>(0));
+        result.template set<0, 1>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(0));
+        result.template set<1, 1>(static_cast<T>(0));
+        result.template set<2, 0>(static_cast<T>(0));
+        result.template set<2, 1>(static_cast<T>(0));
+        result.template set<3, 0>(static_cast<T>(0));
+        result.template set<3, 1>(static_cast<T>(0));
+        result.template set<4, 0>(static_cast<T>(0));
+        result.template set<4, 1>(static_cast<T>(0));
+        result.template set<5, 0>(static_cast<T>(0));
+        result.template set<5, 1>(static_cast<T>(0));
+        result.template set<6, 0>(static_cast<T>(0));
+        result.template set<6, 1>(static_cast<T>(0));
+        result.template set<7, 0>(static_cast<T>(0));
+        result.template set<7, 1>(static_cast<T>(0));
+        result.template set<8, 0>(static_cast<T>(0));
+        result.template set<8, 1>(static_cast<T>(0));
+        result.template set<9, 0>(static_cast<T>(0));
+        result.template set<9, 1>(static_cast<T>(0));
+        result.template set<10, 0>(static_cast<T>(0));
+        result.template set<10, 1>(static_cast<T>(0));
+        result.template set<11, 0>(static_cast<T>(0));
+        result.template set<11, 1>(static_cast<T>(0));
+        result.template set<12, 0>(static_cast<T>(0));
+        result.template set<12, 1>(static_cast<T>(0));
+        result.template set<13, 0>(static_cast<T>(0));
+        result.template set<13, 1>(static_cast<T>(0));
+        result.template set<14, 0>(static_cast<T>(0));
+        result.template set<14, 1>(static_cast<T>(0));
+        result.template set<15, 0>(static_cast<T>(0));
+        result.template set<15, 1>(static_cast<T>(0));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_xu_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_xu_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
         static_cast<void>(Parameters);
@@ -497,52 +503,53 @@ using State_Hessian_ux_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<false, false, false, false>
 >;
 
-using State_Hessian_ux_Type = SparseMatrix_Type<double, State_Hessian_ux_Type_SparseAvailable>;
+template <typename T>
+using State_Hessian_ux_Type = SparseMatrix_Type<T, State_Hessian_ux_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function() -> State_Hessian_ux_Type {
+    static inline auto sympy_function() -> State_Hessian_ux_Type<T> {
 
-        State_Hessian_ux_Type result;
+        State_Hessian_ux_Type<T> result;
 
-        result.template set<0, 0>(static_cast<double>(0));
-        result.template set<0, 1>(static_cast<double>(0));
-        result.template set<0, 2>(static_cast<double>(0));
-        result.template set<0, 3>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(0));
-        result.template set<1, 1>(static_cast<double>(0));
-        result.template set<1, 2>(static_cast<double>(0));
-        result.template set<1, 3>(static_cast<double>(0));
-        result.template set<2, 0>(static_cast<double>(0));
-        result.template set<2, 1>(static_cast<double>(0));
-        result.template set<2, 2>(static_cast<double>(0));
-        result.template set<2, 3>(static_cast<double>(0));
-        result.template set<3, 0>(static_cast<double>(0));
-        result.template set<3, 1>(static_cast<double>(0));
-        result.template set<3, 2>(static_cast<double>(0));
-        result.template set<3, 3>(static_cast<double>(0));
-        result.template set<4, 0>(static_cast<double>(0));
-        result.template set<4, 1>(static_cast<double>(0));
-        result.template set<4, 2>(static_cast<double>(0));
-        result.template set<4, 3>(static_cast<double>(0));
-        result.template set<5, 0>(static_cast<double>(0));
-        result.template set<5, 1>(static_cast<double>(0));
-        result.template set<5, 2>(static_cast<double>(0));
-        result.template set<5, 3>(static_cast<double>(0));
-        result.template set<6, 0>(static_cast<double>(0));
-        result.template set<6, 1>(static_cast<double>(0));
-        result.template set<6, 2>(static_cast<double>(0));
-        result.template set<6, 3>(static_cast<double>(0));
-        result.template set<7, 0>(static_cast<double>(0));
-        result.template set<7, 1>(static_cast<double>(0));
-        result.template set<7, 2>(static_cast<double>(0));
-        result.template set<7, 3>(static_cast<double>(0));
+        result.template set<0, 0>(static_cast<T>(0));
+        result.template set<0, 1>(static_cast<T>(0));
+        result.template set<0, 2>(static_cast<T>(0));
+        result.template set<0, 3>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(0));
+        result.template set<1, 1>(static_cast<T>(0));
+        result.template set<1, 2>(static_cast<T>(0));
+        result.template set<1, 3>(static_cast<T>(0));
+        result.template set<2, 0>(static_cast<T>(0));
+        result.template set<2, 1>(static_cast<T>(0));
+        result.template set<2, 2>(static_cast<T>(0));
+        result.template set<2, 3>(static_cast<T>(0));
+        result.template set<3, 0>(static_cast<T>(0));
+        result.template set<3, 1>(static_cast<T>(0));
+        result.template set<3, 2>(static_cast<T>(0));
+        result.template set<3, 3>(static_cast<T>(0));
+        result.template set<4, 0>(static_cast<T>(0));
+        result.template set<4, 1>(static_cast<T>(0));
+        result.template set<4, 2>(static_cast<T>(0));
+        result.template set<4, 3>(static_cast<T>(0));
+        result.template set<5, 0>(static_cast<T>(0));
+        result.template set<5, 1>(static_cast<T>(0));
+        result.template set<5, 2>(static_cast<T>(0));
+        result.template set<5, 3>(static_cast<T>(0));
+        result.template set<6, 0>(static_cast<T>(0));
+        result.template set<6, 1>(static_cast<T>(0));
+        result.template set<6, 2>(static_cast<T>(0));
+        result.template set<6, 3>(static_cast<T>(0));
+        result.template set<7, 0>(static_cast<T>(0));
+        result.template set<7, 1>(static_cast<T>(0));
+        result.template set<7, 2>(static_cast<T>(0));
+        result.template set<7, 3>(static_cast<T>(0));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_ux_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_ux_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
         static_cast<void>(Parameters);
@@ -570,36 +577,37 @@ using State_Hessian_uu_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<false, false>
 >;
 
-using State_Hessian_uu_Type = SparseMatrix_Type<double, State_Hessian_uu_Type_SparseAvailable>;
+template <typename T>
+using State_Hessian_uu_Type = SparseMatrix_Type<T, State_Hessian_uu_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function() -> State_Hessian_uu_Type {
+    static inline auto sympy_function() -> State_Hessian_uu_Type<T> {
 
-        State_Hessian_uu_Type result;
+        State_Hessian_uu_Type<T> result;
 
-        result.template set<0, 0>(static_cast<double>(0));
-        result.template set<0, 1>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(0));
-        result.template set<1, 1>(static_cast<double>(0));
-        result.template set<2, 0>(static_cast<double>(0));
-        result.template set<2, 1>(static_cast<double>(0));
-        result.template set<3, 0>(static_cast<double>(0));
-        result.template set<3, 1>(static_cast<double>(0));
-        result.template set<4, 0>(static_cast<double>(0));
-        result.template set<4, 1>(static_cast<double>(0));
-        result.template set<5, 0>(static_cast<double>(0));
-        result.template set<5, 1>(static_cast<double>(0));
-        result.template set<6, 0>(static_cast<double>(0));
-        result.template set<6, 1>(static_cast<double>(0));
-        result.template set<7, 0>(static_cast<double>(0));
-        result.template set<7, 1>(static_cast<double>(0));
+        result.template set<0, 0>(static_cast<T>(0));
+        result.template set<0, 1>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(0));
+        result.template set<1, 1>(static_cast<T>(0));
+        result.template set<2, 0>(static_cast<T>(0));
+        result.template set<2, 1>(static_cast<T>(0));
+        result.template set<3, 0>(static_cast<T>(0));
+        result.template set<3, 1>(static_cast<T>(0));
+        result.template set<4, 0>(static_cast<T>(0));
+        result.template set<4, 1>(static_cast<T>(0));
+        result.template set<5, 0>(static_cast<T>(0));
+        result.template set<5, 1>(static_cast<T>(0));
+        result.template set<6, 0>(static_cast<T>(0));
+        result.template set<6, 1>(static_cast<T>(0));
+        result.template set<7, 0>(static_cast<T>(0));
+        result.template set<7, 1>(static_cast<T>(0));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_uu_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> State_Hessian_uu_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
         static_cast<void>(Parameters);
@@ -627,52 +635,53 @@ using Measurement_Hessian_xx_Type_SparseAvailable = SparseAvailable<
     ColumnAvailable<false, false, false, false>
 >;
 
-using Measurement_Hessian_xx_Type = SparseMatrix_Type<double, Measurement_Hessian_xx_Type_SparseAvailable>;
+template <typename T>
+using Measurement_Hessian_xx_Type = SparseMatrix_Type<T, Measurement_Hessian_xx_Type_SparseAvailable>;
 
-template <typename X_Type, typename U_Type, typename Parameter_Type>
+template <typename T, typename X_Type, typename U_Type, typename Parameter_Type>
 class Function {
 public:
-    static inline auto sympy_function() -> Measurement_Hessian_xx_Type {
+    static inline auto sympy_function() -> Measurement_Hessian_xx_Type<T> {
 
-        Measurement_Hessian_xx_Type result;
+        Measurement_Hessian_xx_Type<T> result;
 
-        result.template set<0, 0>(static_cast<double>(0));
-        result.template set<0, 1>(static_cast<double>(0));
-        result.template set<0, 2>(static_cast<double>(0));
-        result.template set<0, 3>(static_cast<double>(0));
-        result.template set<1, 0>(static_cast<double>(0));
-        result.template set<1, 1>(static_cast<double>(0));
-        result.template set<1, 2>(static_cast<double>(0));
-        result.template set<1, 3>(static_cast<double>(0));
-        result.template set<2, 0>(static_cast<double>(0));
-        result.template set<2, 1>(static_cast<double>(0));
-        result.template set<2, 2>(static_cast<double>(0));
-        result.template set<2, 3>(static_cast<double>(0));
-        result.template set<3, 0>(static_cast<double>(0));
-        result.template set<3, 1>(static_cast<double>(0));
-        result.template set<3, 2>(static_cast<double>(0));
-        result.template set<3, 3>(static_cast<double>(0));
-        result.template set<4, 0>(static_cast<double>(0));
-        result.template set<4, 1>(static_cast<double>(0));
-        result.template set<4, 2>(static_cast<double>(0));
-        result.template set<4, 3>(static_cast<double>(0));
-        result.template set<5, 0>(static_cast<double>(0));
-        result.template set<5, 1>(static_cast<double>(0));
-        result.template set<5, 2>(static_cast<double>(0));
-        result.template set<5, 3>(static_cast<double>(0));
-        result.template set<6, 0>(static_cast<double>(0));
-        result.template set<6, 1>(static_cast<double>(0));
-        result.template set<6, 2>(static_cast<double>(0));
-        result.template set<6, 3>(static_cast<double>(0));
-        result.template set<7, 0>(static_cast<double>(0));
-        result.template set<7, 1>(static_cast<double>(0));
-        result.template set<7, 2>(static_cast<double>(0));
-        result.template set<7, 3>(static_cast<double>(0));
+        result.template set<0, 0>(static_cast<T>(0));
+        result.template set<0, 1>(static_cast<T>(0));
+        result.template set<0, 2>(static_cast<T>(0));
+        result.template set<0, 3>(static_cast<T>(0));
+        result.template set<1, 0>(static_cast<T>(0));
+        result.template set<1, 1>(static_cast<T>(0));
+        result.template set<1, 2>(static_cast<T>(0));
+        result.template set<1, 3>(static_cast<T>(0));
+        result.template set<2, 0>(static_cast<T>(0));
+        result.template set<2, 1>(static_cast<T>(0));
+        result.template set<2, 2>(static_cast<T>(0));
+        result.template set<2, 3>(static_cast<T>(0));
+        result.template set<3, 0>(static_cast<T>(0));
+        result.template set<3, 1>(static_cast<T>(0));
+        result.template set<3, 2>(static_cast<T>(0));
+        result.template set<3, 3>(static_cast<T>(0));
+        result.template set<4, 0>(static_cast<T>(0));
+        result.template set<4, 1>(static_cast<T>(0));
+        result.template set<4, 2>(static_cast<T>(0));
+        result.template set<4, 3>(static_cast<T>(0));
+        result.template set<5, 0>(static_cast<T>(0));
+        result.template set<5, 1>(static_cast<T>(0));
+        result.template set<5, 2>(static_cast<T>(0));
+        result.template set<5, 3>(static_cast<T>(0));
+        result.template set<6, 0>(static_cast<T>(0));
+        result.template set<6, 1>(static_cast<T>(0));
+        result.template set<6, 2>(static_cast<T>(0));
+        result.template set<6, 3>(static_cast<T>(0));
+        result.template set<7, 0>(static_cast<T>(0));
+        result.template set<7, 1>(static_cast<T>(0));
+        result.template set<7, 2>(static_cast<T>(0));
+        result.template set<7, 3>(static_cast<T>(0));
 
         return result;
     }
 
-    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> Measurement_Hessian_xx_Type {
+    static inline auto function(const X_Type X, const U_Type U, const Parameter_Type Parameters) -> Measurement_Hessian_xx_Type<T> {
         static_cast<void>(X);
         static_cast<void>(U);
         static_cast<void>(Parameters);

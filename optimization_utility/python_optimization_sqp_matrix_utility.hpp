@@ -582,14 +582,14 @@ public:
   inline void set_Y_offset(Y_Type Y_offset) { this->_Y_offset = Y_offset; }
 
   /* Function */
-  inline auto l_xx(const X_Type &X, const U_Type &U) -> _Qx_Type & {
+  inline auto l_xx(const X_Type &X, const U_Type &U) -> _Qx_Type {
     static_cast<void>(X);
     static_cast<void>(U);
 
     return static_cast<_T>(2) * this->_Qx;
   }
 
-  inline auto l_uu(const X_Type &X, const U_Type &U) -> _R_Type & {
+  inline auto l_uu(const X_Type &X, const U_Type &U) -> _R_Type {
     static_cast<void>(X);
     static_cast<void>(U);
 

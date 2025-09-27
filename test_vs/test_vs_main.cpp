@@ -337,60 +337,60 @@ void test_SQP_CostMatrices_NMPC() {
 
     constexpr std::size_t NP = 10;
 
-    using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter;
+    using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter<T>;
 
     using State_Jacobian_X_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::State_Jacobian_x_Type;
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::State_Jacobian_x_Type<T>;
     using State_Jacobian_U_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::State_Jacobian_u_Type;
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::State_Jacobian_u_Type<T>;
     using Measurement_Jacobian_X_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Measurement_Jacobian_x_Type;
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Measurement_Jacobian_x_Type<T>;
     using State_Hessian_XX_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::State_Hessian_xx_Type;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::State_Hessian_xx_Type<T>;
     using State_Hessian_XU_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::State_Hessian_xu_Type;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::State_Hessian_xu_Type<T>;
     using State_Hessian_UX_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::State_Hessian_ux_Type;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::State_Hessian_ux_Type<T>;
     using State_Hessian_UU_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::State_Hessian_uu_Type;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::State_Hessian_uu_Type<T>;
     using Measurement_Hessian_XX_Matrix_Type =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Measurement_Hessian_xx_Type;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Measurement_Hessian_xx_Type<T>;
 
     using X_Type = StateSpaceState_Type<T, STATE_SIZE>;
     using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
     using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
 
     PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
-        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
     PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
         sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
-        X_Type, U_Type, Parameter_Type, Y_Type>::function;
+        T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
 
     PythonOptimization::StateFunctionJacobian_X_Object<
         State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
-        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
     PythonOptimization::StateFunctionJacobian_U_Object<
         State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
-        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
     PythonOptimization::MeasurementFunctionJacobian_X_Object<
         Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
-        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
     PythonOptimization::StateFunctionHessian_XX_Object<
         State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xx_function =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
     PythonOptimization::StateFunctionHessian_XU_Object<
         State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xu_function =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::Function<T, X_Type, U_Type, Parameter_Type>::function;
     PythonOptimization::StateFunctionHessian_UX_Object<
         State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_ux_function =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::Function<T, X_Type, U_Type, Parameter_Type>::function;
     PythonOptimization::StateFunctionHessian_UU_Object<
         State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_uu_function =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::Function<T, X_Type, U_Type, Parameter_Type>::function;
     PythonOptimization::MeasurementFunctionHessian_XX_Object<
         Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_hessian_xx_function =
-        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Function<X_Type, U_Type, Parameter_Type>::function;
+        sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
     using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
     using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
@@ -483,7 +483,47 @@ void test_SQP_CostMatrices_NMPC() {
         static_cast<T>(0)
     );
 
-    DenseMatrix_Type<T, INPUT_SIZE, NP> U_initial;
+    DenseMatrix_Type<T, INPUT_SIZE, NP> U_horizon_initial;
+
+    /* 関数 */
+    U_Type U_temp = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(1),
+        static_cast<T>(2)
+    );
+
+    auto l_xx_return = cost_matrices.l_xx(X_initial, U_temp);
+
+    auto l_xx_return_answer = make_DiagMatrix<STATE_SIZE>(
+        static_cast<T>(1.0), static_cast<T>(0.2), static_cast<T>(1.0), static_cast<T>(0.2)
+    );
+
+    tester.expect_near(l_xx_return.matrix.data, l_xx_return_answer.matrix.data, NEAR_LIMIT_STRICT,
+        "check l_xx.");
+
+    auto l_uu_return = cost_matrices.l_uu(X_initial, U_temp);
+
+    auto l_uu_return_answer = make_DiagMatrix<INPUT_SIZE>(
+        static_cast<T>(0.2), static_cast<T>(0.2)
+    );
+
+    tester.expect_near(l_uu_return.matrix.data, l_uu_return_answer.matrix.data, NEAR_LIMIT_STRICT,
+        "check l_uu.");
+
+    auto l_xu_return = cost_matrices.l_xu(X_initial, U_temp);
+    auto l_xu_return_dense = l_xu_return.create_dense();
+
+    auto l_xu_return_answer = make_DenseMatrixZeros<T, STATE_SIZE, INPUT_SIZE>();
+
+    tester.expect_near(l_xu_return_dense.matrix.data, l_xu_return_answer.matrix.data, NEAR_LIMIT_STRICT,
+        "check l_xu.");
+
+    auto l_ux_return = cost_matrices.l_ux(X_initial, U_temp);
+    auto l_ux_return_dense = l_ux_return.create_dense();
+
+    auto l_ux_return_answer = make_DenseMatrixZeros<T, INPUT_SIZE, STATE_SIZE>();
+
+    tester.expect_near(l_ux_return_dense.matrix.data, l_ux_return_answer.matrix.data, NEAR_LIMIT_STRICT,
+        "check l_ux.");
 
 
 
@@ -506,6 +546,8 @@ int main() {
     test_qp_active_set_solver<float>();
 
     test_SQP_CostMatrices_NMPC<double>();
+
+    test_SQP_CostMatrices_NMPC<float>();
 
 
     return 0;
