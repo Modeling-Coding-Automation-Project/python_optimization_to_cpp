@@ -299,6 +299,8 @@ protected:
   using _U_horizon_Type = PythonNumpy::Tile_Type<1, NP, U_Type>;
   using _Y_horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Type>;
 
+  using _Reference_Trajectory_Type = _Y_horizon_Type;
+
 public:
   /* Constructor */
   SQP_CostMatrices_NMPC() {}
@@ -621,9 +623,64 @@ public:
     }
   }
 
+  inline auto compute_cost(const X_Type X_initial,
+                           const _U_horizon_Type &U_horizon) -> _T {
+
+    auto X = this->simulate_trajectory(X_initial, U_horizon,
+                                       this->state_space_parameters);
+
+    _Y_horizon_Type Y_horizon;
+    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
+        Y_horizon, this->_Y_offset);
+
+    /*
+            for k in range(self.Np + 1):
+                Y[:, k] += self.calculate_measurement_function(
+                    X[:, k], self.state_space_parameters).flatten()
+
+            Y_limit_penalty = self.calculate_Y_limit_penalty(Y)
+
+            J = 0.0
+            for k in range(self.Np):
+                e_y_r = Y[:, k] - self.reference_trajectory[:, k]
+                J += X[:, k].T @ self.Qx @ X[:, k] + \
+                    e_y_r.T @ self.Qy @ e_y_r + U[:, k].T @ self.R @ U[:, k] + \
+                    self.Y_min_max_rho * \
+                    (Y_limit_penalty[:, k].T @ Y_limit_penalty[:, k])
+
+            eN_y_r = Y[:, self.Np] - self.reference_trajectory[:, self.Np]
+            J += X[:, self.Np].T @ self.Px @ X[:, self.Np] + \
+                eN_y_r.T @ self.Py @ eN_y_r + \
+                self.Y_min_max_rho * \
+                (Y_limit_penalty[:, self.Np].T @ Y_limit_penalty[:, self.Np])
+
+            return J
+    */
+
+    for (std::size_t k = 0; k < (NP + 1); k++) {
+      auto Y_k =
+          this->calculate_measurement_function(X, this->state_space_parameters);
+
+      for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
+        Y_horizon(i, k) += Y_k(i, 0);
+      }
+    }
+
+    auto Y_limit_penalty = this->calculate_Y_limit_penalty(Y_horizon);
+
+    _T J = static_cast<_T>(0);
+    for (std::size_t k = 0; k < NP; k++) {
+      Y_Type e_y_r;
+      for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
+        e_y_r(i, 0) = Y_horizon(i, k) - this->reference_trajectory(i, k);
+      }
+    }
+  }
+
 public:
   /* Variable */
   _Parameter_Type state_space_parameters;
+  _Reference_Trajectory_Type reference_trajectory;
 
 protected:
   /* Variable */
