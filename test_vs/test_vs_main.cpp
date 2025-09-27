@@ -429,7 +429,7 @@ void test_SQP_CostMatrices_NMPC() {
     Reference_Trajectory_Type reference_trajectory;
 
     /* コンストラクタ */
-    SQP_CostMatrices_NMPC_Type<T, NP, Parameter_Type,
+    using Cost_Matrices_Type = SQP_CostMatrices_NMPC_Type<T, NP, Parameter_Type,
         U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
         State_Jacobian_X_Matrix_Type,
         State_Jacobian_U_Matrix_Type,
@@ -438,7 +438,9 @@ void test_SQP_CostMatrices_NMPC() {
         State_Hessian_XU_Matrix_Type,
         State_Hessian_UX_Matrix_Type,
         State_Hessian_UU_Matrix_Type,
-        Measurement_Hessian_XX_Matrix_Type> cost_matrices =
+        Measurement_Hessian_XX_Matrix_Type>;
+
+    Cost_Matrices_Type cost_matrices =
         make_SQP_CostMatrices_NMPC<T, NP, Parameter_Type,
         U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
         State_Jacobian_X_Matrix_Type,
@@ -452,8 +454,8 @@ void test_SQP_CostMatrices_NMPC() {
             Qx, R, Qy, u_min, u_max, y_min, y_max);
 
     /* コピー、ムーブ */
-    auto cost_matrices_copy = cost_matrices;
-    auto cost_matrices_move = std::move(cost_matrices_copy);
+    Cost_Matrices_Type cost_matrices_copy = cost_matrices;
+    Cost_Matrices_Type cost_matrices_move = std::move(cost_matrices_copy);
     cost_matrices = std::move(cost_matrices_move);
 
     T u_min_value = cost_matrices.state_space_parameters.k1;
@@ -677,6 +679,21 @@ void test_sqp_active_set_pcg_pls() {
     /* SQP Active Set PCG PLS 定義 */
     SQP_ActiveSet_PCG_PLS_Type<Cost_Matrices_Type> solver =
         make_SQP_ActiveSet_PCG_PLS<Cost_Matrices_Type>();
+
+    /* コピー、ムーブ */
+    solver.X_initial = X_initial;
+
+    SQP_ActiveSet_PCG_PLS_Type<Cost_Matrices_Type> solver_copy = solver;
+    SQP_ActiveSet_PCG_PLS_Type<Cost_Matrices_Type> solver_move = std::move(solver_copy);
+    solver = std::move(solver_move);
+
+    tester.expect_near(solver.X_initial.matrix.data, X_initial.matrix.data, NEAR_LIMIT_STRICT,
+        "check X_initial.");
+
+
+    solver.set_solver_max_iteration(20);
+
+
 
 
 
