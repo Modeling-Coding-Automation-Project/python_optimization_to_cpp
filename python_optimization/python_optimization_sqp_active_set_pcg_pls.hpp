@@ -101,6 +101,16 @@ protected:
       HVP_Function_Object<X_Horizon_Type, U_Horizon_Type, _V_Horizon_Type,
                           _HVP_Type>;
 
+  using _U_min_Type = typename _CostMatrices_Type::U_Min_Type;
+  using _U_max_Type = typename _CostMatrices_Type::U_Max_Type;
+  using _Y_min_Type = typename _CostMatrices_Type::Y_Min_Type;
+  using _Y_max_Type = typename _CostMatrices_Type::Y_Max_Type;
+
+  using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_min_Type>;
+  using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_max_Type>;
+  using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), _Y_min_Type>;
+  using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), _Y_max_Type>;
+
 public:
   /* Constructor */
   SQP_ActiveSet_PCG_PLS();
@@ -282,6 +292,72 @@ public:
 
     return d;
   }
+
+  /*
+      def free_mask(self,
+                    U_horizon: np.ndarray,
+                    gradient: np.ndarray,
+                    U_min_matrix: np.ndarray,
+                    U_max_matrix: np.ndarray,
+                    atol: float = U_NEAR_LIMIT_DEFAULT,
+                    gtol: float = GRADIENT_ZERO_LIMIT_DEFAULT):
+          """
+          Determines the mask of free variables in the optimization horizon
+            based on current values, gradients, and bounds.
+
+          This method identifies which variables are at their lower or upper
+     bounds within a specified tolerance (`atol`), and then checks the gradient
+     to decide if the variable should be considered free or active. Variables at
+     their bounds with gradients indicating movement away from the bound are
+     marked as not free. The active set is updated accordingly.
+
+          Args:
+              U_horizon (np.ndarray): Current values of the optimization
+     variables over the horizon. gradient (np.ndarray): Gradient of the
+     objective function with respect to the variables. U_min_matrix
+     (np.ndarray): Matrix of lower bounds for the variables. U_max_matrix
+     (np.ndarray): Matrix of upper bounds for the variables. atol (float,
+     optional): Absolute tolerance for determining if a variable is at its
+     bound. Defaults to U_NEAR_LIMIT_DEFAULT. gtol (float, optional): Gradient
+     tolerance for determining activity. Defaults to
+     GRADIENT_ZERO_LIMIT_DEFAULT.
+
+          Returns:
+              np.ndarray: Boolean mask indicating which variables are free
+                (True) and which are not (False).
+          """
+          m = np.ones_like(U_horizon, dtype=bool)
+          self._active_set.clear()
+          at_lower = np.zeros_like(U_horizon, dtype=bool)
+          at_upper = np.zeros_like(U_horizon, dtype=bool)
+
+          for i in range(U_horizon.shape[0]):
+              for j in range(U_horizon.shape[1]):
+
+                  if (U_horizon[i, j] >= (U_min_matrix[i, j] - atol)) and \
+                          (U_horizon[i, j] <= (U_min_matrix[i, j] + atol)):
+                      at_lower[i, j] = True
+
+                  if (U_horizon[i, j] >= (U_max_matrix[i, j] - atol)) and \
+                          (U_horizon[i, j] <= (U_max_matrix[i, j] + atol)):
+                      at_upper[i, j] = True
+
+          for i in range(U_horizon.shape[0]):
+              for j in range(U_horizon.shape[1]):
+                  if (at_lower[i, j] and (gradient[i, j] > gtol)) or \
+                          (at_upper[i, j] and (gradient[i, j] < -gtol)):
+                      m[i, j] = False
+                  else:
+                      self._active_set.push_active(i, j)
+
+          return m
+
+  */
+
+  inline auto free_mask(U_Horizon_Type &U_horizon, _Gradient_Type &gradient,
+                        const _U_Min_Matrix_Type &U_min_matrix,
+                        const _U_Max_Matrix_Type &U_max_matrix, const _T &atol,
+                        const _T &gtol) -> _Mask_Type {}
 
 public:
   /* Variable */

@@ -190,6 +190,11 @@ public:
   using U_Horizon_Type = PythonNumpy::Tile_Type<1, NP, U_Type>;
   using Y_Horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Type>;
 
+  using U_Min_Type = U_Min_Type_In;
+  using U_Max_Type = U_Max_Type_In;
+  using Y_Min_Type = Y_Min_Type_In;
+  using Y_Max_Type = Y_Max_Type_In;
+
   /* Check Compatibility */
   static_assert(std::is_same<typename U_Min_Type_In::Value_Type, T>::value,
                 "U_Min_Type_In::Value_Type != T");
