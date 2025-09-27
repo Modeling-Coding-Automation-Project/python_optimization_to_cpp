@@ -380,25 +380,25 @@ protected:
 public:
   /* Constructor */
   SQP_CostMatrices_NMPC()
-      : _Y_min_max_rho(), _Y_offset(), _Qx(), _R(), _Qy(), _U_min_matrix(),
-        _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(), _state_function(),
-        _measurement_function(), _state_function_jacobian_x(),
-        _state_function_jacobian_u(), _measurement_function_jacobian_x(),
-        _state_function_hessian_xx(), _state_function_hessian_xu(),
-        _state_function_hessian_ux(), _state_function_hessian_uu(),
-        _measurement_function_hessian_xx() {}
+      : _Y_min_max_rho(), _Y_offset(), _Qx(), _R(), _Qy(), _Px(), _Py(),
+        _U_min_matrix(), _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(),
+        _state_function(), _measurement_function(),
+        _state_function_jacobian_x(), _state_function_jacobian_u(),
+        _measurement_function_jacobian_x(), _state_function_hessian_xx(),
+        _state_function_hessian_xu(), _state_function_hessian_ux(),
+        _state_function_hessian_uu(), _measurement_function_hessian_xx() {}
 
   SQP_CostMatrices_NMPC(const _Qx_Type &Qx, const _R_Type &R,
                         const _Qy_Type &Qy, const U_Min_Type &U_min,
                         const U_Max_Type &U_max, const Y_Min_Type &Y_min,
                         const Y_Max_Type &Y_max)
-      : _Y_min_max_rho(), _Y_offset(), _Qx(Qx), _R(R), _Qy(Qy), _U_min_matrix(),
-        _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(), _state_function(),
-        _measurement_function(), _state_function_jacobian_x(),
-        _state_function_jacobian_u(), _measurement_function_jacobian_x(),
-        _state_function_hessian_xx(), _state_function_hessian_xu(),
-        _state_function_hessian_ux(), _state_function_hessian_uu(),
-        _measurement_function_hessian_xx() {
+      : _Y_min_max_rho(), _Y_offset(), _Qx(Qx), _R(R), _Qy(Qy), _Px(Qx),
+        _Py(Qy), _U_min_matrix(), _U_max_matrix(), _Y_min_matrix(),
+        _Y_max_matrix(), _state_function(), _measurement_function(),
+        _state_function_jacobian_x(), _state_function_jacobian_u(),
+        _measurement_function_jacobian_x(), _state_function_hessian_xx(),
+        _state_function_hessian_xu(), _state_function_hessian_ux(),
+        _state_function_hessian_uu(), _measurement_function_hessian_xx() {
 
     this->set_U_min(U_min);
     this->set_U_max(U_max);
@@ -411,9 +411,10 @@ public:
       : state_space_parameters(input.state_space_parameters),
         reference_trajectory(input.reference_trajectory),
         _Y_min_max_rho(input._Y_min_max_rho), _Y_offset(input._Y_offset),
-        _Qx(input._Qx), _R(input._R), _Qy(input._Qy),
-        _U_min_matrix(input._U_min_matrix), _U_max_matrix(input._U_max_matrix),
-        _Y_min_matrix(input._Y_min_matrix), _Y_max_matrix(input._Y_max_matrix),
+        _Qx(input._Qx), _R(input._R), _Qy(input._Qy), _Px(input._Px),
+        _Py(input._Py), _U_min_matrix(input._U_min_matrix),
+        _U_max_matrix(input._U_max_matrix), _Y_min_matrix(input._Y_min_matrix),
+        _Y_max_matrix(input._Y_max_matrix),
         _state_function(input._state_function),
         _measurement_function(input._measurement_function),
         _state_function_jacobian_x(input._state_function_jacobian_x),
@@ -437,6 +438,8 @@ public:
       this->_Qx = input._Qx;
       this->_R = input._R;
       this->_Qy = input._Qy;
+      this->_Px = input._Px;
+      this->_Py = input._Py;
 
       this->_U_min_matrix = input._U_min_matrix;
       this->_U_max_matrix = input._U_max_matrix;
@@ -468,6 +471,7 @@ public:
         _Y_min_max_rho(input._Y_min_max_rho),
         _Y_offset(std::move(input._Y_offset)), _Qx(std::move(input._Qx)),
         _R(std::move(input._R)), _Qy(std::move(input._Qy)),
+        _Px(std::move(input._Px)), _Py(std::move(input._Py)),
         _U_min_matrix(std::move(input._U_min_matrix)),
         _U_max_matrix(std::move(input._U_max_matrix)),
         _Y_min_matrix(std::move(input._Y_min_matrix)),
@@ -495,6 +499,8 @@ public:
       this->_Qx = std::move(input._Qx);
       this->_R = std::move(input._R);
       this->_Qy = std::move(input._Qy);
+      this->_Px = std::move(input._Px);
+      this->_Py = std::move(input._Py);
 
       this->_U_min_matrix = std::move(input._U_min_matrix);
       this->_U_max_matrix = std::move(input._U_max_matrix);
@@ -636,11 +642,11 @@ public:
     return this->_state_function(X, U, parameter);
   }
 
-  inline auto calculate_measurement_function(const X_Type &X,
+  inline auto calculate_measurement_function(const X_Type &X, const U_Type &U,
                                              const _Parameter_Type &parameter)
       -> _MeasurementFunction_Out_Type {
 
-    return this->_measurement_function(X, parameter);
+    return this->_measurement_function(X, U, parameter);
   }
 
   inline auto calculate_state_jacobian_x(const X_Type &X, const U_Type &U,
@@ -1298,6 +1304,9 @@ protected:
   _Qx_Type _Qx;
   _R_Type _R;
   _Qy_Type _Qy;
+
+  _Qx_Type _Px;
+  _Qy_Type _Py;
 
   _U_Min_Matrix_Type _U_min_matrix;
   _U_Max_Matrix_Type _U_max_matrix;
