@@ -191,39 +191,47 @@ public:
   using Y_Horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Type>;
 
   /* Check Compatibility */
-  static_assert(std::is_same<U_Min_Type_In::Value_Type, T>::value,
+  static_assert(std::is_same<typename U_Min_Type_In::Value_Type, T>::value,
                 "U_Min_Type_In::Value_Type != T");
-  static_assert(std::is_same<U_Max_Type_In::Value_Type, T>::value,
+  static_assert(std::is_same<typename U_Max_Type_In::Value_Type, T>::value,
                 "U_Max_Type_In::Value_Type != T");
-  static_assert(std::is_same<Y_Min_Type_In::Value_Type, T>::value,
+  static_assert(std::is_same<typename Y_Min_Type_In::Value_Type, T>::value,
                 "Y_Min_Type_In::Value_Type != T");
-  static_assert(std::is_same<Y_Max_Type_In::Value_Type, T>::value,
+  static_assert(std::is_same<typename Y_Max_Type_In::Value_Type, T>::value,
                 "Y_Max_Type_In::Value_Type != T");
 
   static_assert(
-      std::is_same<State_Jacobian_X_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename State_Jacobian_X_Matrix_Type_In::Value_Type,
+                   T>::value,
       "State_Jacobian_X_Matrix_Type::Value_Type != T");
   static_assert(
-      std::is_same<State_Jacobian_U_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename State_Jacobian_U_Matrix_Type_In::Value_Type,
+                   T>::value,
       "State_Jacobian_U_Matrix_Type::Value_Type != T");
   static_assert(
-      std::is_same<Measurement_Jacobian_X_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename Measurement_Jacobian_X_Matrix_Type_In::Value_Type,
+                   T>::value,
       "Measurement_Jacobian_X_Matrix_Type::Value_Type != T");
 
   static_assert(
-      std::is_same<State_Hessian_XX_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename State_Hessian_XX_Matrix_Type_In::Value_Type,
+                   T>::value,
       "State_Hessian_XX_Matrix_Type::Value_Type != T");
   static_assert(
-      std::is_same<State_Hessian_XU_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename State_Hessian_XU_Matrix_Type_In::Value_Type,
+                   T>::value,
       "State_Hessian_XU_Matrix_Type::Value_Type != T");
   static_assert(
-      std::is_same<State_Hessian_UX_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename State_Hessian_UX_Matrix_Type_In::Value_Type,
+                   T>::value,
       "State_Hessian_UX_Matrix_Type::Value_Type != T");
   static_assert(
-      std::is_same<State_Hessian_UU_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename State_Hessian_UU_Matrix_Type_In::Value_Type,
+                   T>::value,
       "State_Hessian_UU_Matrix_Type::Value_Type != T");
   static_assert(
-      std::is_same<Measurement_Hessian_XX_Matrix_Type_In::Value_Type, T>::value,
+      std::is_same<typename Measurement_Hessian_XX_Matrix_Type_In::Value_Type,
+                   T>::value,
       "Measurement_Hessian_XX_Matrix_Type::Value_Type != T");
 
   static_assert(U_Min_Type_In::COLS == INPUT_SIZE,
@@ -963,7 +971,7 @@ public:
     auto CX_N_T_penalty_CX_N_dx = PythonNumpy::ATranspose_mul_B(
         Cx_N, Y_min_max_rho_YN_limit_active_CX_N_dx);
 
-    auto Y_min_max_rho_YN_limit_penalty =
+    Y_min_max_rho_YN_limit_penalty =
         static_cast<_T>(2) * this->_Y_min_max_rho *
         MatrixOperation::get_row(Y_limit_penalty, NP);
 
