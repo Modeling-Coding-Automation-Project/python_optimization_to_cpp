@@ -92,15 +92,13 @@ protected:
   using _ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
 
   using _Cost_Function_Object_Type =
-      CostFunction_Object<X_Horizon_Type, U_Horizon_Type>;
+      CostFunction_Object<X_Type, U_Horizon_Type>;
 
   using _Cost_And_Gradient_Function_Object_Type =
-      CostAndGradientFunction_Object<X_Horizon_Type, U_Horizon_Type,
-                                     _Gradient_Type>;
+      CostAndGradientFunction_Object<X_Type, U_Horizon_Type, _Gradient_Type>;
 
   using _HVP_Function_Object_Type =
-      HVP_Function_Object<X_Horizon_Type, U_Horizon_Type, _V_Horizon_Type,
-                          _HVP_Type>;
+      HVP_Function_Object<X_Type, U_Horizon_Type, _V_Horizon_Type, _HVP_Type>;
 
   using _U_min_Type = typename _CostMatrices_Type::U_Min_Type;
   using _U_max_Type = typename _CostMatrices_Type::U_Max_Type;

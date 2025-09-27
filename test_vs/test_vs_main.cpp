@@ -672,12 +672,22 @@ void test_sqp_active_set_pcg_pls() {
     using HVP_Type = U_horizon_Type;
 
     CostFunction_Object<X_Type, U_horizon_Type> cost_function =
-        cost_matrices.compute_cost;
+        [&cost_matrices](const X_Type& X, const U_horizon_Type& U)
+        -> typename X_Type::Value_Type {
+        return cost_matrices.compute_cost(X, U);
+        };
     CostAndGradientFunction_Object<X_Type, U_horizon_Type, Gradient_Type>
-        cost_and_gradient_function = cost_matrices.compute_cost_and_gradient;
+        cost_and_gradient_function =
+        [&cost_matrices](const X_Type& X, const U_horizon_Type& U,
+            typename X_Type::Value_Type& J,
+            Gradient_Type& gradient) {
+                cost_matrices.compute_cost_and_gradient(X, U, J, gradient);
+        };
     HVP_Function_Object<X_Type, U_horizon_Type, V_Horizon_Type, HVP_Type>
-        hvp_function = cost_matrices.hvp_analytic;
-
+        hvp_function = [&cost_matrices](const X_Type& X, const U_horizon_Type& U,
+            const V_Horizon_Type& V) -> HVP_Type {
+                return cost_matrices.hvp_analytic(X, U, V);
+        };
 
     cost_matrices.reference_trajectory = reference_trajectory;
 
