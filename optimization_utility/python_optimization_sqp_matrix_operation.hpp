@@ -565,6 +565,40 @@ struct Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
   }
 };
 
+template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
+          std::size_t INPUT_SIZE, std::size_t I_idx, bool Activate>
+struct Conditional {};
+
+template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
+          std::size_t INPUT_SIZE, std::size_t I_idx>
+struct Conditional<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
+                   STATE_SIZE, INPUT_SIZE, I_idx, true> {
+  static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+
+    Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+        INPUT_SIZE, (OUTPUT_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
+  }
+};
+
+template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
+          typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
+          std::size_t INPUT_SIZE, std::size_t I_idx>
+struct Conditional<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
+                   STATE_SIZE, INPUT_SIZE, I_idx, false> {
+  static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
+                      const Weight_Type &lam_next, Out_Type &out) {
+
+    static_cast<void>(Hf_xu);
+    static_cast<void>(dU);
+    static_cast<void>(lam_next);
+    static_cast<void>(out);
+    /* Do Nothing */
+  }
+};
+
 } // namespace FxuLambdaContract
 
 // Public wrapper to run the unrolled recursion.
@@ -593,9 +627,10 @@ compute_fx_xu_lambda_contract(const Fxu_Type &Hf_xu, const dU_Type &dU,
                 "Hf_xu COLS must equal INPUT_SIZE");
   static_assert(Out_Type::COLS == STATE_SIZE, "out COLS must equal STATE_SIZE");
 
-  FxuLambdaContract::Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
-                         STATE_SIZE, INPUT_SIZE,
-                         (OUTPUT_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
+  FxuLambdaContract::Conditional<
+      Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+      INPUT_SIZE, (OUTPUT_SIZE - 1), (INPUT_SIZE > 0)>::compute(Hf_xu, dU,
+                                                                lam_next, out);
 }
 
 /* hxx lambda contract */
