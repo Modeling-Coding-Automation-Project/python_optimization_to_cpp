@@ -683,11 +683,11 @@ void test_sqp_active_set_pcg_pls() {
             Gradient_Type& gradient) {
                 cost_matrices.compute_cost_and_gradient(X, U, J, gradient);
         };
-    //HVP_Function_Object<X_Type, U_horizon_Type, V_Horizon_Type, HVP_Type>
-    //    hvp_function = [&cost_matrices](const X_Type& X, const U_horizon_Type& U,
-    //        const V_Horizon_Type& V) -> HVP_Type {
-    //            return cost_matrices.hvp_analytic(X, U, V);
-    //    };
+    HVP_Function_Object<X_Type, U_horizon_Type, V_Horizon_Type, HVP_Type>
+        hvp_function = [&cost_matrices](const X_Type& X, const U_horizon_Type& U,
+            const V_Horizon_Type& V) -> HVP_Type {
+                return cost_matrices.hvp_analytic(X, U, V);
+        };
 
     cost_matrices.reference_trajectory = reference_trajectory;
 

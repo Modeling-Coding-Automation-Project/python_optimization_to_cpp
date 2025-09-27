@@ -43,6 +43,30 @@ inline auto get_row(const Matrix_In_Type &in_matrix,
   return out;
 }
 
+template <typename Matrix_A_Type, typename Matrix_B_Type>
+inline auto element_wise_multiply(const Matrix_A_Type &A,
+                                  const Matrix_B_Type &B)
+    -> PythonNumpy::DenseMatrix_Type<typename Matrix_A_Type::Value_Type,
+                                     Matrix_A_Type::COLS, Matrix_A_Type::ROWS> {
+
+  static_assert(Matrix_A_Type::COLS == Matrix_B_Type::COLS,
+                "Matrix_A_Type::COLS != Matrix_B_Type::COLS");
+  static_assert(Matrix_A_Type::ROWS == Matrix_B_Type::ROWS,
+                "Matrix_A_Type::ROWS != Matrix_B_Type::ROWS");
+
+  PythonNumpy::DenseMatrix_Type<typename Matrix_A_Type::Value_Type,
+                                Matrix_A_Type::COLS, Matrix_A_Type::ROWS>
+      out;
+
+  for (std::size_t i = 0; i < Matrix_A_Type::COLS; i++) {
+    for (std::size_t j = 0; j < Matrix_A_Type::ROWS; j++) {
+      out(i, j) = A(i, j) * B(i, j);
+    }
+  }
+
+  return out;
+}
+
 template <typename X_Type, typename W_Type>
 inline auto calculate_quadratic_form(const X_Type &X, const W_Type &W) ->
     typename X_Type::Value_Type {
