@@ -701,10 +701,8 @@ public:
 
     _T J = static_cast<_T>(0);
     for (std::size_t k = 0; k < NP; k++) {
-      Y_Type e_y_r;
-      for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
-        e_y_r(i, 0) = Y_horizon(i, k) - this->reference_trajectory(i, k);
-      }
+      auto e_y_r = MatrixOperation::get_row(Y_horizon, k) -
+                   MatrixOperation::get_row(this->reference_trajectory, k);
     }
   }
 
