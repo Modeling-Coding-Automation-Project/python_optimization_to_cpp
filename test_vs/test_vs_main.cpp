@@ -665,6 +665,19 @@ void test_sqp_active_set_pcg_pls() {
         Measurement_Hessian_XX_Matrix_Type>(
             Qx, R, Qy, u_min, u_max, y_min, y_max);
 
+    cost_matrices.set_function_objects(
+        state_function,
+        measurement_function,
+        state_jacobian_x_function,
+        state_jacobian_u_function,
+        measurement_jacobian_x_function,
+        state_hessian_xx_function,
+        state_hessian_xu_function,
+        state_hessian_ux_function,
+        state_hessian_uu_function,
+        measurement_hessian_xx_function
+    );
+
     /* 関数オブジェクト定義 */
     using U_horizon_Type = DenseMatrix_Type<T, INPUT_SIZE, NP>;
     using Gradient_Type = U_horizon_Type;
