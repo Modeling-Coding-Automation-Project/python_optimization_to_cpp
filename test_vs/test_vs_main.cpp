@@ -665,6 +665,20 @@ void test_sqp_active_set_pcg_pls() {
         Measurement_Hessian_XX_Matrix_Type>(
             Qx, R, Qy, u_min, u_max, y_min, y_max);
 
+    /* 関数オブジェクト定義 */
+    using U_horizon_Type = DenseMatrix_Type<T, INPUT_SIZE, NP>;
+    using Gradient_Type = U_horizon_Type;
+    using V_Horizon_Type = U_horizon_Type;
+    using HVP_Type = U_horizon_Type;
+
+    CostFunction_Object<X_Type, U_horizon_Type> cost_function =
+        cost_matrices.compute_cost;
+    CostAndGradientFunction_Object<X_Type, U_horizon_Type, Gradient_Type>
+        cost_and_gradient_function = cost_matrices.compute_cost_and_gradient;
+    HVP_Function_Object<X_Type, U_horizon_Type, V_Horizon_Type, HVP_Type>
+        hvp_function = cost_matrices.hvp_analytic;
+
+
     cost_matrices.reference_trajectory = reference_trajectory;
 
     auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
@@ -690,9 +704,18 @@ void test_sqp_active_set_pcg_pls() {
     tester.expect_near(solver.X_initial.matrix.data, X_initial.matrix.data, NEAR_LIMIT_STRICT,
         "check X_initial.");
 
-
+    /* solve */
     solver.set_solver_max_iteration(20);
 
+    auto U_horizon_opt = solver.solve(
+        U_horizon_initial,
+        cost_and_gradient_function,
+        cost_function,
+        hvp_function,
+        X_initial,
+        cost_matrices.get_U_min_matrix(),
+        cost_matrices.get_U_max_matrix()
+    );
 
 
 

@@ -581,6 +581,23 @@ public:
 
   inline void set_Y_offset(Y_Type Y_offset) { this->_Y_offset = Y_offset; }
 
+  /* Getters */
+  inline _U_Min_Matrix_Type get_U_min_matrix(void) const {
+    return this->_U_min_matrix;
+  }
+
+  inline _U_Max_Matrix_Type get_U_max_matrix(void) const {
+    return this->_U_max_matrix;
+  }
+
+  inline _Y_Min_Matrix_Type get_Y_min_matrix(void) const {
+    return this->_Y_min_matrix;
+  }
+
+  inline _Y_Max_Matrix_Type get_Y_max_matrix(void) const {
+    return this->_Y_max_matrix;
+  }
+
   /* Function */
   inline auto l_xx(const X_Type &X, const U_Type &U) -> _Qx_Type {
     static_cast<void>(X);
