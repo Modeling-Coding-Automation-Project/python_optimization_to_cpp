@@ -323,6 +323,7 @@ void test_SQP_CostMatrices_NMPC() {
     using namespace PythonNumpy;
     using namespace PythonControl;
     using namespace PythonOptimization;
+    using namespace SQP_TestData;
 
     MCAPTester<T> tester;
 
