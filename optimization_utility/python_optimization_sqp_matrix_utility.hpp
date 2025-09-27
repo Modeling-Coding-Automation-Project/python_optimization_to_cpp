@@ -746,10 +746,10 @@ public:
   }
 
   template <typename Weight_Vector_Type>
-  inline auto
-  hxx_lambda_contract(const X_Type &X, const _Parameter_Type &parameter,
-                      const Weight_Vector_Type &weight, const X_Type &dX)
-      -> _MeasurementFunctionHessian_XX_Out_Type {
+  inline auto hxx_lambda_contract(const X_Type &X,
+                                  const _Parameter_Type &parameter,
+                                  const Weight_Vector_Type &weight,
+                                  const X_Type &dX) -> X_Type {
 
     static_assert(Weight_Vector_Type::COLS == OUTPUT_SIZE,
                   "Weight_Vector_Type::COLS != OUTPUT_SIZE");
@@ -759,19 +759,9 @@ public:
     U_Type U;
     auto Hh_xx = this->_measurement_function_hessian_xx(X, U, parameter);
 
-    _MeasurementFunctionHessian_XX_Out_Type out;
+    X_Type out;
 
-    for (std::size_t i = 0; i < OUTPUT_SIZE; i++) {
-
-      for (std::size_t j = 0; j < STATE_SIZE; j++) {
-        _T acc = static_cast<_T>(0);
-
-        for (std::size_t k = 0; k < STATE_SIZE; k++) {
-          acc += Hh_xx(i * STATE_SIZE + j, k) * dX(k, 0);
-        }
-        out(j, 0) += weight(i, 0) * acc;
-      }
-    }
+    MatrixOperation::compute_hxx_lambda_contract(Hh_xx, dX, weight, out);
 
     return out;
   }

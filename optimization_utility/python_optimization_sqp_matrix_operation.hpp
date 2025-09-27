@@ -336,6 +336,135 @@ inline void calculate_Y_limit_penalty_and_active(
                                            Y_limit_active);
 }
 
+/* hxx lambda contract */
+
+namespace HxxLambdaContract {
+
+// K-accumulation: recursively accumulate over k (STATE_SIZE dimension)
+template <typename Hxx_Type, typename dX_Type, typename Value_Type,
+          std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
+          std::size_t J, std::size_t K_idx>
+struct AccumulateK {
+  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                             Value_Type &acc) {
+    acc += Hh_xx.template get<I * STATE_SIZE + J, K_idx>() *
+           dX.template get<K_idx, 0>();
+    AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
+                (K_idx - 1)>::compute(Hh_xx, dX, acc);
+  }
+};
+
+// K-accumulation termination (K_idx == 0)
+template <typename Hxx_Type, typename dX_Type, typename Value_Type,
+          std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
+          std::size_t J>
+struct AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
+                   0> {
+  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                             Value_Type &acc) {
+    acc +=
+        Hh_xx.template get<I * STATE_SIZE + J, 0>() * dX.template get<0, 0>();
+  }
+};
+
+// Column recursion over j (STATE_SIZE): computes contribution to out(j,0)
+template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
+          std::size_t I, std::size_t J_idx>
+struct Column {
+  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                             const Weight_Type &weight, Out_Type &out) {
+    using Value = typename Out_Type::Value_Type;
+    Value acc = static_cast<Value>(0);
+    AccumulateK<Hxx_Type, dX_Type, Value, OUTPUT_SIZE, STATE_SIZE, I, J_idx,
+                (STATE_SIZE - 1)>::compute(Hh_xx, dX, acc);
+
+    const auto w = weight.template get<I, 0>();
+    const auto updated = out.template get<J_idx, 0>() + w * acc;
+    out.template set<J_idx, 0>(updated);
+
+    Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
+           (J_idx - 1)>::compute(Hh_xx, dX, weight, out);
+  }
+};
+
+// Column recursion termination for j == 0
+template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
+          std::size_t I>
+struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+              I, 0> {
+  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                             const Weight_Type &weight, Out_Type &out) {
+    using Value = typename Out_Type::Value_Type;
+    Value acc = static_cast<Value>(0);
+    AccumulateK<Hxx_Type, dX_Type, Value, OUTPUT_SIZE, STATE_SIZE, I, 0,
+                (STATE_SIZE - 1)>::compute(Hh_xx, dX, acc);
+
+    const auto w = weight.template get<I, 0>();
+    const auto updated = out.template get<0, 0>() + w * acc;
+    out.template set<0, 0>(updated);
+  }
+};
+
+// Row recursion over i (OUTPUT_SIZE): iterates outputs
+template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
+          std::size_t I_idx>
+struct Row {
+  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                             const Weight_Type &weight, Out_Type &out) {
+    Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+           I_idx, (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
+    Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+        (I_idx - 1)>::compute(Hh_xx, dX, weight, out);
+  }
+};
+
+// Row recursion termination for i == 0
+template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
+struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+           0> {
+  static inline void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                             const Weight_Type &weight, Out_Type &out) {
+    Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
+           (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
+  }
+};
+
+} // namespace HxxLambdaContract
+
+// Public wrapper to run the unrolled recursion.
+// Out_Type must be pre-initialized (e.g., zero) before calling, since this
+// performs accumulation with "+=" semantics.
+template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
+          typename Out_Type>
+inline void
+compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
+                            const Weight_Type &weight, Out_Type &out) {
+  static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
+  static_assert(Weight_Type::ROWS == 1,
+                "weight must be a (OUTPUT_SIZE x 1) vector");
+  static_assert(Out_Type::ROWS == 1,
+                "out must be a (STATE_SIZE x 1) vector (ROWS == 1)");
+
+  constexpr std::size_t STATE_SIZE = dX_Type::COLS;
+  constexpr std::size_t OUTPUT_SIZE = Weight_Type::COLS;
+
+  static_assert(STATE_SIZE > 0 && OUTPUT_SIZE > 0,
+                "STATE_SIZE and OUTPUT_SIZE must be positive");
+  static_assert(Hxx_Type::ROWS == STATE_SIZE,
+                "Hh_xx ROWS must equal STATE_SIZE");
+  static_assert(Hxx_Type::COLS == OUTPUT_SIZE * STATE_SIZE,
+                "Hh_xx COLS must equal OUTPUT_SIZE * STATE_SIZE");
+  static_assert(Out_Type::COLS == STATE_SIZE, "out COLS must equal STATE_SIZE");
+
+  HxxLambdaContract::Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
+                         STATE_SIZE, (OUTPUT_SIZE - 1)>::compute(Hh_xx, dX,
+                                                                 weight, out);
+}
+
 } // namespace MatrixOperation
 
 } // namespace PythonOptimization
