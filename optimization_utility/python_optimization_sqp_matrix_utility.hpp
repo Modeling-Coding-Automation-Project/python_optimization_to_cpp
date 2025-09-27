@@ -742,6 +742,22 @@ public:
       J += X_T_Qx_X + e_y_r_T_Qy_e_y_r + U_T_R_U +
            this->_Y_min_max_rho * Y_limit_penalty_T_Y_limit_penalty;
     }
+
+    auto eN_y_r = MatrixOperation::get_row(Y_horizon, NP) -
+                  MatrixOperation::get_row(this->reference_trajectory, NP);
+
+    auto XN_T_Qx_XN = MatrixOperation::calculate_quadratic_form(
+        MatrixOperation::get_row(X, NP), this->_Qx);
+    auto eN_y_r_T_Qy_eN_y_r =
+        MatrixOperation::calculate_quadratic_form(eN_y_r, this->_Qy);
+    auto YN_limit_penalty_T_YN_limit_penalty =
+        MatrixOperation::calculate_quadratic_no_weighted(
+            MatrixOperation::get_row(Y_limit_penalty, NP));
+
+    J += XN_T_Qx_XN + eN_y_r_T_Qy_eN_y_r +
+         this->_Y_min_max_rho * YN_limit_penalty_T_YN_limit_penalty;
+
+    return J;
   }
 
 public:
