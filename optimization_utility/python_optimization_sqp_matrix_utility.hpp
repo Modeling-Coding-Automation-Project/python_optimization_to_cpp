@@ -295,6 +295,9 @@ protected:
           _MeasurementFunctionHessian_XX_Out_Type, X_Type, U_Type,
           _Parameter_Type>;
 
+  using _X_horizon_Type = PythonNumpy::Tile_Type<1, (NP + 1), X_Type>;
+  using _U_horizon_Type = PythonNumpy::Tile_Type<1, NP, U_Type>;
+
 public:
   /* Constructor */
   SQP_CostMatrices_NMPC() {}
@@ -553,6 +556,51 @@ public:
     }
 
     return out;
+  }
+
+  /*
+    def simulate_trajectory(
+        self,
+        X_initial: np.ndarray,
+        U: np.ndarray,
+        Parameters
+    ):
+        """
+        Simulates the trajectory of the system over a prediction horizon.
+        Args:
+            X_initial (np.ndarray): Initial state vector of the system (shape:
+    [nx,]). U (np.ndarray): Control input sequence over the prediction horizon
+              (shape: [nu, Np]).
+            Parameters: Additional parameters required by the state function.
+        Returns:
+            np.ndarray: Simulated state trajectory over the prediction horizon
+              (shape: [nx, Np + 1]).
+        """
+        X = np.zeros((self.nx, self.Np + 1))
+        X[:, 0] = X_initial.flatten()
+        for k in range(self.Np):
+            X[:, k + 1] = self.calculate_state_function(
+                X[:, k], U[:, k], Parameters).flatten()
+
+        return X
+    */
+  inline auto simulate_trajectory(const X_Type &X_initial,
+                                  const _U_horizon_Type &U_horizon,
+                                  const _Parameter_Type &parameter)
+      -> _X_horizon_Type {
+
+    _X_horizon_Type X_horizon;
+    X_Type X = X_initial;
+
+    for (std::size_t k = 0; k < NP; k++) {
+      X = this->calculate_state_function(X, U_horizon, parameter);
+
+      for (std::size_t i = 0; i < STATE_SIZE; i++) {
+        X_horizon(i, k + 1) = X(i, 0);
+      }
+    }
+
+    return X_horizon;
   }
 
 public:
