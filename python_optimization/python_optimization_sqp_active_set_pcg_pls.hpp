@@ -78,8 +78,9 @@ protected:
 
   using _T = Value_Type;
 
-  using _R_Full_Size =
+  using _R_Full_Type =
       PythonNumpy::DenseMatrix_Type<_T, INPUT_SIZE, INPUT_SIZE>;
+  using _M_Inv_Type = _R_Full_Type;
 
   using _Mask_Type = U_Horizon_Type;
   using _Gradient_Type = U_Horizon_Type;
@@ -140,7 +141,7 @@ public:
     this->_lambda_factor = factor;
   }
 
-  inline void set_diag_R_full(const _R_Full_Size &diag_R_full) {
+  inline void set_diag_R_full(const _R_Full_Type &diag_R_full) {
     this->_diag_R_full = diag_R_full;
   }
 
@@ -160,7 +161,110 @@ public:
   }
 
   /* Function */
-  //   inline auto preconditioned_conjugate_gradient(const _RHS_Type &rhs,
+  inline auto preconditioned_conjugate_gradient(const _RHS_Type &rhs,
+                                                const _M_Inv_Type &M_inv)
+      -> _RHS_Type {
+
+    /*
+            d = np.zeros_like(rhs)
+
+    rhs_norm = ActiveSet2D_MatrixOperator.norm(rhs, self._active_set)
+    if rhs_norm < RHS_NORM_ZERO_LIMIT_DEFAULT:
+        return d
+
+    r = rhs.copy()
+
+    # Preconditioning
+    z = ActiveSet2D_MatrixOperator.element_wise_product(
+        r, M_inv, self._active_set)
+
+    p = z.copy()
+
+    rz = ActiveSet2D_MatrixOperator.vdot(
+        r, z, self._active_set)
+
+    for pcg_iteration in range(self._pcg_max_iteration):
+        Hp = self.hvp_function(self.X_initial, self.U_horizon, p)
+        Hp += self._lambda_factor * p
+
+        denominator = ActiveSet2D_MatrixOperator.vdot(
+            p, Hp, self._active_set)
+
+        # Simple handling of negative curvature and semi-definiteness
+        self._pcg_step_iterated_number = pcg_iteration + 1
+        if denominator <= self._pcg_php_minus_limit:
+            break
+
+        alpha = rz / denominator
+
+        d += ActiveSet2D_MatrixOperator.matrix_multiply_scalar(
+            p, alpha, self._active_set)
+
+        r -= ActiveSet2D_MatrixOperator.matrix_multiply_scalar(
+            Hp, alpha, self._active_set)
+
+        if ActiveSet2D_MatrixOperator.norm(r, self._active_set) <= \
+                self._pcg_tol * rhs_norm:
+            break
+
+        z = ActiveSet2D_MatrixOperator.element_wise_product(
+            r, M_inv, self._active_set)
+
+        rz_new = ActiveSet2D_MatrixOperator.vdot(
+            r, z, self._active_set)
+
+        beta = rz_new / rz
+
+        p = z + ActiveSet2D_MatrixOperator.matrix_multiply_scalar(
+            p, beta, self._active_set)
+
+        rz = rz_new
+
+    return d
+    */
+    _RHS_Type d;
+
+    auto rhs_norm = ActiveSet2D_MatrixOperator::norm(rhs, this->_active_set);
+    if (rhs_norm < RHS_NORM_ZERO_LIMIT_DEFAULT) {
+      /* Do Nothing. */
+    } else {
+      _RHS_Type r = rhs;
+
+      /* Preconditioning */
+      auto z = ActiveSet2D_MatrixOperator::element_wise_product(
+          r, M_inv, this->_active_set);
+
+      _RHS_Type p = z;
+
+      auto rz = ActiveSet2D_MatrixOperator::vdot(r, z, this->_active_set);
+
+      for (std::size_t pcg_iteration = 0;
+           pcg_iteration < this->_pcg_max_iteration; ++pcg_iteration) {
+
+        auto Hp = this->hvp_function(this->X_initial, this->U_horizon, p);
+        Hp = Hp + this->_lambda_factor * p;
+
+        _T denominator =
+            ActiveSet2D_MatrixOperator::vdot(p, Hp, this->_active_set);
+
+        /* Simple handling of negative curvature and semi-definiteness */
+        this->_pcg_step_iterated_number = pcg_iteration + 1;
+        if (denominator <= this->_pcg_php_minus_limit) {
+          break;
+        }
+
+        _T alpha = rz / denominator;
+
+        d = d + ActiveSet2D_MatrixOperator::matrix_multiply_scalar(
+                    p, alpha, this->_active_set);
+
+        r = r - ActiveSet2D_MatrixOperator::matrix_multiply_scalar(
+                    Hp, alpha, this->_active_set);
+      }
+    }
+
+    return d;
+  }
 
 public:
   /* Variable */
@@ -182,7 +286,7 @@ protected:
   _T _pcg_tol;
   _T _lambda_factor;
 
-  _R_Full_Size _diag_R_full;
+  _R_Full_Type _diag_R_full;
 
   _Mask_Type _mask;
   _ActiveSet_Type _active_set;
