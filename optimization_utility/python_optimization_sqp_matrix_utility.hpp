@@ -360,6 +360,8 @@ protected:
   using _Reference_Trajectory_Type = _Y_horizon_Type;
 
   using _Gradient_Type = _U_horizon_Type;
+  using _V_horizon_Type = _U_horizon_Type;
+  using _HVP_Type = _U_horizon_Type;
 
 public:
   /* Constructor */
@@ -506,7 +508,7 @@ public:
     _StateFunctionHessian_XU_Out_Type out;
 
     if (0 == INPUT_SIZE) {
-      // Do Nothing.
+      /* Do Nothing. */
     } else {
       for (std::size_t i = 0; i < STATE_SIZE; i++) {
 
@@ -572,7 +574,7 @@ public:
     _StateFunctionHessian_UU_Out_Type out;
 
     if (0 == INPUT_SIZE) {
-      // Do Nothing.
+      /* Do Nothing. */
     } else {
       for (std::size_t i = 0; i < STATE_SIZE; i++) {
 
@@ -649,7 +651,7 @@ public:
         } else if (Y_horizon(i, j) > this->_Y_max_matrix(i, j)) {
           Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_max_matrix(i, j);
         } else {
-          // Do Nothing.
+          /* Do Nothing. */
         }
       }
     }
@@ -675,7 +677,7 @@ public:
           Y_limit_penalty(i, j) = Y_horizon(i, j) - this->_Y_max_matrix(i, j);
           Y_limit_active(i, j) = static_cast<_T>(1);
         } else {
-          // Do Nothing.
+          /* Do Nothing. */
         }
       }
     }
@@ -684,16 +686,16 @@ public:
   inline auto compute_cost(const X_Type X_initial,
                            const _U_horizon_Type &U_horizon) -> _T {
 
-    auto X = this->simulate_trajectory(X_initial, U_horizon,
-                                       this->state_space_parameters);
+    auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
+                                               this->state_space_parameters);
 
     _Y_horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
         Y_horizon, this->_Y_offset);
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k =
-          this->calculate_measurement_function(X, this->state_space_parameters);
+      auto Y_k = this->calculate_measurement_function(
+          MatrixOperation::get_row(X_horizon, k), this->state_space_parameters);
 
       MatrixOperation::set_row(Y_horizon, Y_k, k);
     }
@@ -706,7 +708,7 @@ public:
                    MatrixOperation::get_row(this->reference_trajectory, k);
 
       auto X_T_Qx_X = MatrixOperation::calculate_quadratic_form(
-          MatrixOperation::get_row(X, k), this->_Qx);
+          MatrixOperation::get_row(X_horizon, k), this->_Qx);
       auto e_y_r_T_Qy_e_y_r =
           MatrixOperation::calculate_quadratic_form(e_y_r, this->_Qy);
 
@@ -725,7 +727,7 @@ public:
                   MatrixOperation::get_row(this->reference_trajectory, NP);
 
     auto XN_T_Qx_XN = MatrixOperation::calculate_quadratic_form(
-        MatrixOperation::get_row(X, NP), this->_Qx);
+        MatrixOperation::get_row(X_horizon, NP), this->_Qx);
     auto eN_y_r_T_Qy_eN_y_r =
         MatrixOperation::calculate_quadratic_form(eN_y_r, this->_Qy);
     auto YN_limit_penalty_T_YN_limit_penalty =
@@ -744,16 +746,16 @@ public:
 
     auto U_dummy = U_Type();
 
-    auto X = this->simulate_trajectory(X_initial, U_horizon,
-                                       this->state_space_parameters);
+    auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
+                                               this->state_space_parameters);
 
     _Y_horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
         Y_horizon, this->_Y_offset);
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k =
-          this->calculate_measurement_function(X, this->state_space_parameters);
+      auto Y_k = this->calculate_measurement_function(
+          MatrixOperation::get_row(X_horizon, k), this->state_space_parameters);
 
       MatrixOperation::set_row(Y_horizon, Y_k, k);
     }
@@ -765,7 +767,7 @@ public:
                    MatrixOperation::get_row(this->reference_trajectory, k);
 
       auto X_T_Qx_X = MatrixOperation::calculate_quadratic_form(
-          MatrixOperation::get_row(X, k), this->_Qx);
+          MatrixOperation::get_row(X_horizon, k), this->_Qx);
       auto e_y_r_T_Qy_e_y_r =
           MatrixOperation::calculate_quadratic_form(e_y_r, this->_Qy);
 
@@ -784,7 +786,7 @@ public:
                   MatrixOperation::get_row(this->reference_trajectory, NP);
 
     auto XN_T_Qx_XN = MatrixOperation::calculate_quadratic_form(
-        MatrixOperation::get_row(X, NP), this->_Qx);
+        MatrixOperation::get_row(X_horizon, NP), this->_Qx);
     auto eN_y_r_T_Qy_eN_y_r =
         MatrixOperation::calculate_quadratic_form(eN_y_r, this->_Qy);
     auto YN_limit_penalty_T_YN_limit_penalty =
@@ -796,9 +798,10 @@ public:
 
     // terminal adjoint
     auto C_N = this->calculate_measurement_jacobian_x(
-        MatrixOperation::get_row(X, NP), U_dummy, this->state_space_parameters);
+        MatrixOperation::get_row(X_horizon, NP), U_dummy,
+        this->state_space_parameters);
 
-    auto Px_X = this->_Px * MatrixOperation::get_row(X, NP);
+    auto Px_X = this->_Px * MatrixOperation::get_row(X_horizon, NP);
     auto Py_eN_y_r = this->_Py * eN_y_r;
     auto Y_min_max_rho_YN_limit_penalty =
         this->_Y_min_max_rho * MatrixOperation::get_row(Y_limit_penalty, NP);
@@ -812,18 +815,18 @@ public:
     for (std::size_t k = NP; k-- > 0;) {
 
       auto Cx_k = this->calculate_measurement_jacobian_x(
-          MatrixOperation::get_row(X, k), U_dummy,
+          MatrixOperation::get_row(X_horizon, k), U_dummy,
           this->state_space_parameters);
 
       auto ek_y = MatrixOperation::get_row(Y_horizon, k) -
                   MatrixOperation::get_row(this->reference_trajectory, k);
 
       auto A_k = this->calculate_state_jacobian_x(
-          MatrixOperation::get_row(X, k),
+          MatrixOperation::get_row(X_horizon, k),
           MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
 
       auto B_k = this->calculate_state_jacobian_u(
-          MatrixOperation::get_row(X, k),
+          MatrixOperation::get_row(X_horizon, k),
           MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
 
       auto _2_R_U = 2.0 * this->_R * MatrixOperation::get_row(U_horizon, k);
@@ -831,7 +834,7 @@ public:
 
       MatrixOperation::set_row(gradient, _2_R_U + B_k_T_lam_next, k);
 
-      auto Qx_X = this->_Qx * MatrixOperation::get_row(X, k);
+      auto Qx_X = this->_Qx * MatrixOperation::get_row(X_horizon, k);
       auto Qy_ek_y = this->_Qy * ek_y;
       auto Y_min_max_rho_Yk_limit_penalty =
           2.0 * this->_Y_min_max_rho *
@@ -844,6 +847,151 @@ public:
                             Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
           A_k_T_lam_next;
     }
+  }
+
+  inline auto hvp_analytic(const X_Type &X_initial,
+                           const _U_horizon_Type &U_horizon,
+                           const _V_horizon_Type &V_horizon) -> _HVP_Type {
+
+    /*
+            # --- 1) forward states
+            X = self.simulate_trajectory(
+                X_initial, U_horizon, self.state_space_parameters)
+            Y = np.zeros((self.ny, self.Np + 1))
+            for k in range(self.Np + 1):
+                Y[:, k] = self.calculate_measurement_function(
+                    X[:, k], self.state_space_parameters).flatten()
+            yN = self.calculate_measurement_function(
+                X[:, self.Np], self.state_space_parameters)
+
+            eN_y = yN - self.reference_trajectory[:, self.Np].reshape(-1, 1)
+
+            Y_limit_penalty, Y_limit_active = \
+                self.calculate_Y_limit_penalty_and_active(Y)
+
+            # --- 2) first-order adjoint (costate lambda) with output terms
+            lam = np.zeros((self.nx, self.Np + 1))
+            Cx_N = self.calculate_measurement_jacobian_x(
+                X[:, self.Np], self.state_space_parameters)
+
+            lam[:, self.Np] = 2.0 * self.Px @ X[:, self.Np] + \
+                (Cx_N.T @ ((2.0 * self.Py @ eN_y).flatten() + 2.0 *
+                           self.Y_min_max_rho * Y_limit_penalty[:, self.Np])
+                 ).flatten()
+
+            for k in range(self.Np - 1, -1, -1):
+                A_k = self.calculate_state_jacobian_x(
+                    X[:, k], U_horizon[:, k], self.state_space_parameters)
+                Cx_k = self.calculate_measurement_jacobian_x(
+                    X[:, k], self.state_space_parameters)
+                ek_y = Y[:, k] - self.reference_trajectory[:, k]
+
+                lam[:, k] = 2.0 * self.Qx @ X[:, k] + \
+                    Cx_k.T @ (2.0 * self.Qy @ ek_y +
+                              2.0 * self.Y_min_max_rho * Y_limit_penalty[:, k])
+       + \ A_k.T @ lam[:, k + 1]
+
+            # --- 3) forward directional state: delta_x ---
+            dx = np.zeros((self.nx, self.Np + 1))
+            for k in range(self.Np):
+                A_k = self.calculate_state_jacobian_x(
+                    X[:, k], U_horizon[:, k], self.state_space_parameters)
+                B_k = self.calculate_state_jacobian_u(
+                    X[:, k], U_horizon[:, k], self.state_space_parameters)
+                dx[:, k + 1] = A_k @ dx[:, k] + B_k @ V_horizon[:, k]
+
+            # --- 4) backward second-order adjoint ---
+            d_lambda = np.zeros((self.nx, self.Np + 1))
+
+            # Match the treatment of the terminal term phi_xx = l_xx(X_N,·)
+       (currently 2P) # Additionally, contributions from pure second-order
+       output and second derivatives of output l_xx_dx = self.l_xx(X[:,
+       self.Np], None) @ dx[:, self.Np] CX_N_dx = Cx_N @ dx[:, self.Np]
+
+            CX_N_T_Py_Cx_N_dx = Cx_N.T @ (2.0 * self.Py @ CX_N_dx)
+            CX_N_T_penalty_CX_N_dx = Cx_N.T @ ((2.0 * self.Y_min_max_rho)
+                                               * (Y_limit_active[:, self.Np] *
+       CX_N_dx))
+
+            Hxx_penalty_term_N = self.hxx_lambda_contract(
+                X[:, self.Np], self.state_space_parameters,
+                2.0 * self.Y_min_max_rho *
+                Y_limit_penalty[:, self.Np], dx[:, self.Np]
+            )
+
+            d_lambda[:, self.Np] += \
+                l_xx_dx.flatten() + \
+                CX_N_T_Py_Cx_N_dx.flatten() + \
+                Hxx_penalty_term_N.flatten()
+
+            d_lambda[:, self.Np] += CX_N_T_penalty_CX_N_dx.flatten()
+
+            Hu = np.zeros_like(U_horizon)
+            for k in range(self.Np - 1, -1, -1):
+                A_k = self.calculate_state_jacobian_x(
+                    X[:, k], U_horizon[:, k], self.state_space_parameters)
+                B_k = self.calculate_state_jacobian_u(
+                    X[:, k], U_horizon[:, k], self.state_space_parameters)
+                Cx_k = self.calculate_measurement_jacobian_x(
+                    X[:, k], self.state_space_parameters)
+                ek_y = Y[:, k] - self.reference_trajectory[:, k]
+
+                Cx_dx_k = Cx_k @ dx[:, k]
+                term_Qy_GN = Cx_k.T @ (2.0 * self.Qy @ Cx_dx_k)
+                term_Qy_hxx = self.hxx_lambda_contract(
+                    X[:, k], self.state_space_parameters,
+                    2.0 * self.Qy @ ek_y, dx[:, k]
+                )
+
+                term_penalty_GN = Cx_k.T @ ((2.0 * self.Y_min_max_rho)
+                                            * (Y_limit_active[:, k] * Cx_dx_k))
+                term_penalty_hxx = self.hxx_lambda_contract(
+                    X[:, k], self.state_space_parameters,
+                    2.0 * self.Y_min_max_rho * Y_limit_penalty[:, k], dx[:, k]
+                )
+
+                term_xx = self.fx_xx_lambda_contract(
+                    X[:, k], U_horizon[:, k], self.state_space_parameters,
+       lam[:, k + 1], dx[:, k]) term_xu = self.fx_xu_lambda_contract( X[:, k],
+       U_horizon[:, k], self.state_space_parameters, lam[:, k + 1], V_horizon[:,
+       k])
+
+                d_lambda[:, k] = \
+                    (self.l_xx(X[:, k], U_horizon[:, k]) @ dx[:, k]).flatten() +
+       \
+                    (self.l_xu(X[:, k], U_horizon[:, k]) @ V_horizon[:,
+       k]).flatten() + \
+                    (A_k.T @ d_lambda[:, k + 1]).flatten() + \
+                    term_Qy_GN.flatten() + \
+                    term_Qy_hxx.flatten() + \
+                    term_penalty_GN.flatten() + \
+                    term_penalty_hxx.flatten() + \
+                    term_xx.flatten() + \
+                    term_xu.flatten()
+
+                # (HV)_k:
+                #   2R V + B^T dlambda_{k+1} + second-order terms from dynamics
+                #   (Cu=0 -> no direct contribution from output terms)
+                term_ux = self.fu_xx_lambda_contract(
+                    X[:, k], U_horizon[:, k], self.state_space_parameters,
+       lam[:, k + 1], dx[:, k]) term_uu = self.fu_uu_lambda_contract( X[:, k],
+       U_horizon[:, k], self.state_space_parameters, lam[:, k + 1], V_horizon[:,
+       k])
+
+                Hu[:, k] = \
+                    (self.l_uu(X[:, k], U_horizon[:, k]) @ V_horizon[:,
+       k]).flatten() + \
+                    (self.l_ux(X[:, k], U_horizon[:, k]) @ dx[:, k]).flatten() +
+       \
+                    (B_k.T @ d_lambda[:, k + 1]).flatten() + \
+                    term_ux.flatten() + term_uu.flatten()
+
+            return Hu
+    */
+
+    /* --- 1) forward states */
+    auto X_horizon = this->simulate_trajectory(X_initial, U_horizon,
+                                               this->state_space_parameters);
   }
 
 public:
