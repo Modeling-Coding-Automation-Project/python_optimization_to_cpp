@@ -129,6 +129,8 @@ current_dir = os.path.dirname(__file__)
 generator = SIL_CodeGenerator(deployed_file_names, current_dir)
 generator.build_SIL_code()
 
+from test_sil.sqp_2_mass_spring_damper import Sqp2MassSpringDamperSIL
+
 U_opt = solver.solve(
     U_horizon_initial=U_horizon_initial,
     cost_and_gradient_function=sqp_cost_matrices.compute_cost_and_gradient,

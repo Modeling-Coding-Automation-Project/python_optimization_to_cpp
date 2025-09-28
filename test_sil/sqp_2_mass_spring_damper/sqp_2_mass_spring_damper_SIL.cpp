@@ -15,27 +15,28 @@ using namespace PythonOptimization;
 
 using FLOAT = typename sqp_2_mass_spring_damper_SIL_wrapper::type::Value_Type;
 
-using X_Type = sqp_pendulum_demo_sqp_cost_matrices::X_Type;
+using X_Type = sqp_2_mass_spring_damper_SIL_wrapper::X_Type;
 
 constexpr std::size_t STATE_SIZE =
-    sqp_pendulum_demo_sqp_cost_matrices::STATE_SIZE;
+    sqp_2_mass_spring_damper_SIL_wrapper::STATE_SIZE;
 constexpr std::size_t INPUT_SIZE =
-    sqp_pendulum_demo_sqp_cost_matrices::INPUT_SIZE;
-constexpr std::size_t NP = sqp_pendulum_demo_sqp_cost_matrices::NP;
+    sqp_2_mass_spring_damper_SIL_wrapper::INPUT_SIZE;
+constexpr std::size_t NP = sqp_2_mass_spring_damper_SIL_wrapper::NP;
 
 using Reference_Trajectory_Type =
-    sqp_pendulum_demo_sqp_cost_matrices::Reference_Trajectory_Type;
+    sqp_2_mass_spring_damper_SIL_wrapper::Reference_Trajectory_Type;
 
-using Cost_Matrices_Type = sqp_pendulum_demo_sqp_cost_matrices::type;
+using Cost_Matrices_Type = sqp_2_mass_spring_damper_SIL_wrapper::type;
 
 using U_horizon_Type = DenseMatrix_Type<double, INPUT_SIZE, NP>;
 using Gradient_Type = U_horizon_Type;
 using V_Horizon_Type = U_horizon_Type;
 using HVP_Type = U_horizon_Type;
 
-sqp_2_mass_spring_damper_SIL_wrapper::type cost_matrices;
+py::array_t<FLOAT> solve(void) {
 
-void initialize(void) {
+  auto cost_matrices = sqp_2_mass_spring_damper_SIL_wrapper::make();
+
   /* Define functions for solver */
   CostFunction_Object<X_Type, U_horizon_Type> cost_function =
       [&cost_matrices](const X_Type &X, const U_horizon_Type &U) ->
@@ -53,13 +54,8 @@ void initialize(void) {
     return cost_matrices.hvp_analytic(X, U, V);
   };
 
-  cost_matrices = sqp_2_mass_spring_damper_SIL_wrapper::make();
-
   /* Initial variables */
   Reference_Trajectory_Type reference_trajectory;
-
-  auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
-      static_cast<double>(3.141592653589793 / 4.0), static_cast<double>(0));
 
   DenseMatrix_Type<double, INPUT_SIZE, NP> U_horizon_initial;
 
@@ -68,9 +64,9 @@ void initialize(void) {
 
   /* solve */
   solver.set_solver_max_iteration(30);
-}
 
-py::array_t<FLOAT> solve(void) {
+  auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
+      static_cast<double>(3.141592653589793 / 4.0), static_cast<double>(0));
 
   auto U_horizon_opt =
       solver.solve(U_horizon_initial, cost_and_gradient_function, cost_function,
