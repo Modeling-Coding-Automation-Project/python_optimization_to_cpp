@@ -648,6 +648,10 @@ class SQP_MatrixUtilityDeploy:
         code_text += f"using Measurement_Hessian_XX_Matrix_Type = {measurement_hessian_xx_file_name_no_extension}" + \
             "::Measurement_Hessian_xx_Type;\n\n"
 
+        code_text += "PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =\n" + \
+            f"    {state_function_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
         code_text += "} // namespace " + namespace_name + "\n\n"
 
         code_text += "#endif // " + file_header_macro_name + "\n"
