@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Active File",
+      "name": "Debug Active C++ File",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/${fileBasenameNoExtension}",
@@ -21,7 +21,21 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "Build Active File"
+      "preLaunchTask": "Build Active C++ File"
+    },
+    {
+      "name": "Run without Debug Active C++ File",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/${fileBasenameNoExtension}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "Build without Debug Active C++ File",
+      "noDebug": true
     }
   ]
 }
