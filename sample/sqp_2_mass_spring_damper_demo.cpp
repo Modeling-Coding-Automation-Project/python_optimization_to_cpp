@@ -76,7 +76,7 @@ int main(void) {
 
   for (std::size_t i = 0; i < INPUT_SIZE; i++) {
     for (std::size_t j = 0; j < NP; j++) {
-      std::cout << U_horizon_opt(j, i) << ", ";
+      std::cout << U_horizon_opt(i, j) << ", ";
     }
     std::cout << std::endl;
   }
