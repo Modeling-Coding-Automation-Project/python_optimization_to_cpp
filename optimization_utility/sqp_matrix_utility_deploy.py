@@ -696,6 +696,28 @@ class SQP_MatrixUtilityDeploy:
             f"    {measurement_hessian_xx_file_name_no_extension}::Function<" + \
             "X_Type, U_Type, Parameter_Type>::function;\n\n"
 
+        code_text += f"using Qx_Type = DiagMatrix_Type<{type_name}, STATE_SIZE>;\n"
+        code_text += f"using R_Type = DiagMatrix_Type<{type_name}, INPUT_SIZE>;\n"
+        code_text += f"using Qy_Type = DiagMatrix_Type<{type_name}, OUTPUT_SIZE>;\n\n"
+
+        code_text += f"using U_Min_Type = {U_min_file_name_no_extension}::type;\n"
+        code_text += f"using U_Max_Type = {U_max_file_name_no_extension}::type;\n"
+        code_text += f"using Y_Min_Type = {Y_min_file_name_no_extension}::type;\n"
+        code_text += f"using Y_Max_Type = {Y_max_file_name_no_extension}::type;\n\n"
+
+        code_text += f"using Reference_Trajectory_Type = DenseMatrix_Type<{type_name}, OUTPUT_SIZE, (NP + 1)>;\n\n"
+
+        code_text += f"using type = SQP_CostMatrices_NMPC_Type<{type_name}, NP, Parameter_Type,\n" + \
+            "    U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,\n" + \
+            "    State_Jacobian_X_Matrix_Type,\n" + \
+            "    State_Jacobian_U_Matrix_Type,\n" + \
+            "    Measurement_Jacobian_X_Matrix_Type,\n" + \
+            "    State_Hessian_XX_Matrix_Type,\n" + \
+            "    State_Hessian_XU_Matrix_Type,\n" + \
+            "    State_Hessian_UX_Matrix_Type,\n" + \
+            "    State_Hessian_UU_Matrix_Type,\n" + \
+            "    Measurement_Hessian_XX_Matrix_Type>;\n\n"
+
         code_text += "} // namespace " + namespace_name + "\n\n"
 
         code_text += "#endif // " + file_header_macro_name + "\n"
