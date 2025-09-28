@@ -780,6 +780,8 @@ int main() {
 
     test_sqp_active_set_pcg_pls<double>();
 
+    test_sqp_active_set_pcg_pls<float>();
+
 
     return 0;
 }
