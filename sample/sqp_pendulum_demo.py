@@ -108,6 +108,10 @@ solver = SQP_ActiveSet_PCG_PLS(
 )
 solver.set_solver_max_iteration(30)
 
+# You can create cpp header which can easily define SQP_CostMatrices_NMPC as C++ code
+SQP_MatrixUtilityDeploy.generate_cpp_code(
+    cost_matrices=sqp_cost_matrices)
+
 U_opt = solver.solve(
     U_horizon_initial=U_horizon_initial,
     cost_and_gradient_function=sqp_cost_matrices.compute_cost_and_gradient,
