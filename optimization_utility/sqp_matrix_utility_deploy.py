@@ -10,6 +10,9 @@ import numpy as np
 import sympy as sp
 from dataclasses import dataclass, fields, is_dataclass
 
+from optimization_utility.common_optimization_deploy import MinMaxCodeGenerator
+from optimization_utility.common_optimization_deploy import get_active_array
+
 from external_libraries.MCAP_python_optimization.optimization_utility.sqp_matrix_utility import SQP_CostMatrices_NMPC
 from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import NumpyDeploy
 from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import python_to_cpp_types
@@ -486,5 +489,25 @@ class SQP_MatrixUtilityDeploy:
                 measurement_hessian_xx_file_name_without_ext,
                 "Measurement_Hessian_xx_Type",
                 type_name)
+
+        # %% create limits code
+        U_size = cost_matrices.nu
+        Y_size = cost_matrices.ny
+
+        # U_min
+        min_max_array = cost_matrices.U_min_matrix[:, 0].reshape(-1, 1)
+        U_min_active_array = get_active_array(min_max_array)
+
+        U_min_code_generator = MinMaxCodeGenerator(
+            min_max_array=min_max_array,
+            min_max_name="U_min",
+            size=U_size
+        )
+        U_min_code_generator.generate_active_set(
+            is_active_array=U_min_active_array
+        )
+
+        # %% create cpp code
+        # code_text = ""
 
         pass
