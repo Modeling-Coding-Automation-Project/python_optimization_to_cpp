@@ -1305,6 +1305,131 @@ inline void free_mask_at_check(const U_Mat_Type &U_horizon_in,
                                          at_upper);
 }
 
+/* free_mask push active */
+
+namespace FreeMaskPushActive {
+
+// Column recursion for J (0..N-1), when J_idx > 0
+template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
+          std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
+struct Column {
+  static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
+                             const AtLower_Type &at_lower,
+                             const AtUpper_Type &at_upper,
+                             const Value_Type &gtol,
+                             ActiveSet_Type &active_set) {
+
+    const bool atL = at_lower.template get<I, J_idx>();
+    const bool atU = at_upper.template get<I, J_idx>();
+    const auto g = gradient.template get<I, J_idx>();
+
+    if ((atL && (g > gtol)) || (atU && (g < -gtol))) {
+      m.template set<I, J_idx>(false);
+    } else {
+      active_set.push_active(I, J_idx);
+    }
+
+    Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+           Value_Type, M, N, I, (J_idx - 1)>::compute(m, gradient, at_lower,
+                                                      at_upper, gtol,
+                                                      active_set);
+  }
+};
+
+// Column recursion termination for J_idx == 0
+template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
+          std::size_t M, std::size_t N, std::size_t I>
+struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
+              ActiveSet_Type, Value_Type, M, N, I, 0> {
+  static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
+                             const AtLower_Type &at_lower,
+                             const AtUpper_Type &at_upper,
+                             const Value_Type &gtol,
+                             ActiveSet_Type &active_set) {
+
+    const bool atL = at_lower.template get<I, 0>();
+    const bool atU = at_upper.template get<I, 0>();
+    const auto g = gradient.template get<I, 0>();
+
+    if ((atL && (g > gtol)) || (atU && (g < -gtol))) {
+      m.template set<I, 0>(false);
+    } else {
+      active_set.push_active(I, 0);
+    }
+  }
+};
+
+// Row recursion for I (0..M-1), when I_idx > 0
+template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
+          std::size_t M, std::size_t N, std::size_t I_idx>
+struct Row {
+  static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
+                             const AtLower_Type &at_lower,
+                             const AtUpper_Type &at_upper,
+                             const Value_Type &gtol,
+                             ActiveSet_Type &active_set) {
+
+    Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+           Value_Type, M, N, I_idx, (N - 1)>::compute(m, gradient, at_lower,
+                                                      at_upper, gtol,
+                                                      active_set);
+
+    Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+        Value_Type, M, N, (I_idx - 1)>::compute(m, gradient, at_lower, at_upper,
+                                                gtol, active_set);
+  }
+};
+
+// Row recursion termination for I_idx == 0
+template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
+          std::size_t M, std::size_t N>
+struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+           Value_Type, M, N, 0> {
+  static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
+                             const AtLower_Type &at_lower,
+                             const AtUpper_Type &at_upper,
+                             const Value_Type &gtol,
+                             ActiveSet_Type &active_set) {
+
+    Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+           Value_Type, M, N, 0, (N - 1)>::compute(m, gradient, at_lower,
+                                                  at_upper, gtol, active_set);
+  }
+};
+
+} // namespace FreeMaskPushActive
+
+// Public wrapper to run the unrolled recursion for updating mask and pushing
+// active indices. Note: m should be pre-initialized to true and this only
+// sets false where conditions are met, otherwise pushes to active set.
+template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
+          typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type>
+inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
+                                  const AtLower_Type &at_lower,
+                                  const AtUpper_Type &at_upper,
+                                  const Value_Type &gtol,
+                                  ActiveSet_Type &active_set) {
+  constexpr std::size_t M = Mask_Type::COLS; // INPUT_SIZE
+  constexpr std::size_t N = Mask_Type::ROWS; // NP
+
+  static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
+  static_assert(Gradient_Type::COLS == M, "gradient COLS mismatch with mask m");
+  static_assert(Gradient_Type::ROWS == N, "gradient ROWS mismatch with mask m");
+  static_assert(AtLower_Type::COLS == M, "at_lower COLS mismatch with mask m");
+  static_assert(AtLower_Type::ROWS == N, "at_lower ROWS mismatch with mask m");
+  static_assert(AtUpper_Type::COLS == M, "at_upper COLS mismatch with mask m");
+  static_assert(AtUpper_Type::ROWS == N, "at_upper ROWS mismatch with mask m");
+
+  FreeMaskPushActive::Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
+                          ActiveSet_Type, Value_Type, M, N,
+                          (M - 1)>::compute(m, gradient, at_lower, at_upper,
+                                            gtol, active_set);
+}
+
 } // namespace MatrixOperation
 
 } // namespace PythonOptimization

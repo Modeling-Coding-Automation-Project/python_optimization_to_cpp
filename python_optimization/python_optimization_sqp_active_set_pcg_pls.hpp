@@ -393,16 +393,8 @@ public:
     MatrixOperation::free_mask_at_check(U_horizon_in, U_min_matrix,
                                         U_max_matrix, atol, at_lower, at_upper);
 
-    for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-      for (std::size_t j = 0; j < NP; ++j) {
-        if ((at_lower(i, j) && (gradient(i, j) > gtol)) ||
-            (at_upper(i, j) && (gradient(i, j) < -gtol))) {
-          m(i, j) = false;
-        } else {
-          this->_active_set.push_active(i, j);
-        }
-      }
-    }
+    MatrixOperation::free_mask_push_active(m, gradient, at_lower, at_upper,
+                                           gtol, this->_active_set);
 
     return m;
   }
