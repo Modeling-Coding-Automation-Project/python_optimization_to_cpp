@@ -1,3 +1,25 @@
+/**
+ * @file python_optimization_sqp_matrix_operation.hpp
+ *
+ * @brief Matrix operation utilities for SQP-based Python optimization, ported
+ * to C++.
+ *
+ * This header provides a collection of template-based matrix operations for use
+ * in sequential quadratic programming (SQP) optimization routines, supporting
+ * fixed-size matrices and compile-time recursion for performance and type
+ * safety.
+ *
+ * Main Features:
+ * - Row and column extraction and assignment between matrices.
+ * - Element-wise matrix multiplication.
+ * - Quadratic form calculations (weighted and unweighted).
+ * - Penalty calculations for output constraints (Y limits), including active
+ * set detection.
+ * - Contract operations for Hessian and gradient matrices with lambda weights.
+ * - Masking and active set management for free variables.
+ * - Saturation and inversion operations for control horizons and diagonal
+ * matrices.
+ */
 #ifndef __PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP__
 #define __PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP__
 
@@ -65,6 +87,25 @@ inline void compute(Matrix_Out_Type &out_matrix,
 
 } // namespace SetRow
 
+/**
+ * @brief Sets a specific row of an output matrix from a given input row matrix.
+ *
+ * This function assigns the values from a single-row input matrix (`in_matrix`)
+ * to the specified row (`row_index`) of the output matrix (`out_matrix`).
+ *
+ * @tparam Matrix_Out_Type Type of the output matrix. Must define a static
+ * member `COLS`.
+ * @tparam Matrix_In_Type Type of the input matrix. Must define static members
+ * `COLS` and `ROWS`.
+ * @param[out] out_matrix The matrix whose row will be set.
+ * @param[in] in_matrix The single-row matrix providing the values.
+ * @param[in] row_index The index of the row in `out_matrix` to be set.
+ *
+ * @note The function enforces at compile time that the number of columns in
+ * both matrices match, and that the input matrix has exactly one row.
+ * @throws static_assert if the column counts do not match or if the input
+ * matrix is not a single row.
+ */
 template <typename Matrix_Out_Type, typename Matrix_In_Type>
 inline void set_row(Matrix_Out_Type &out_matrix,
                     const Matrix_In_Type &in_matrix,
@@ -126,6 +167,18 @@ inline void compute(const Matrix_In_Type &in_matrix,
 
 } // namespace GetRow
 
+/**
+ * @brief Extracts a specific row from the input matrix and returns it as a
+ * dense matrix.
+ *
+ * @tparam Matrix_In_Type Type of the input matrix.
+ * @param in_matrix The input matrix from which the row will be extracted.
+ * @param row_index The index of the row to extract.
+ * @return A dense matrix containing the specified row, with the same value type
+ * and number of columns as the input matrix.
+ *
+ * This function uses the GetRow::compute method to perform the extraction.
+ */
 template <typename Matrix_In_Type>
 inline auto get_row(const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index)
@@ -142,6 +195,26 @@ inline auto get_row(const Matrix_In_Type &in_matrix,
   return out;
 }
 
+/**
+ * @brief Performs element-wise multiplication of two matrices.
+ *
+ * This function takes two matrices, A and B, of the same dimensions and returns
+ * a new matrix where each element is the product of the corresponding elements
+ * in A and B.
+ *
+ * @tparam Matrix_A_Type Type of the first input matrix. Must define Value_Type,
+ * COLS, and ROWS.
+ * @tparam Matrix_B_Type Type of the second input matrix. Must define COLS and
+ * ROWS.
+ * @param A The first input matrix.
+ * @param B The second input matrix.
+ * @return PythonNumpy::DenseMatrix_Type<typename Matrix_A_Type::Value_Type,
+ * Matrix_A_Type::COLS, Matrix_A_Type::ROWS> A matrix containing the
+ * element-wise products of A and B.
+ *
+ * @note The function enforces at compile time that both matrices have the same
+ * dimensions.
+ */
 template <typename Matrix_A_Type, typename Matrix_B_Type>
 inline auto element_wise_multiply(const Matrix_A_Type &A,
                                   const Matrix_B_Type &B)
@@ -166,6 +239,24 @@ inline auto element_wise_multiply(const Matrix_A_Type &A,
   return out;
 }
 
+/**
+ * @brief Calculates the quadratic form X * W * X^T for a given row vector X and
+ * matrix W.
+ *
+ * This function computes the quadratic form by multiplying the transpose of X
+ * with W, then multiplying the result by X. The result is extracted as a scalar
+ * value.
+ *
+ * @tparam X_Type Type of the input vector X. Must have a static member COLS and
+ * ROWS.
+ * @tparam W_Type Type of the input matrix W. Must have a static member ROWS.
+ * @param X Input row vector of type X_Type. Must have ROWS == 1.
+ * @param W Input matrix of type W_Type. Must have ROWS == X_Type::COLS.
+ * @return Scalar value representing the quadratic form.
+ *
+ * @note Compile-time assertions ensure that X is a row vector and that the
+ * dimensions of W and X are compatible.
+ */
 template <typename X_Type, typename W_Type>
 inline auto calculate_quadratic_form(const X_Type &X, const W_Type &W) ->
     typename X_Type::Value_Type {
@@ -178,6 +269,18 @@ inline auto calculate_quadratic_form(const X_Type &X, const W_Type &W) ->
   return result.template get<0, 0>();
 }
 
+/**
+ * @brief Calculates the quadratic form of a row vector without weighting.
+ *
+ * This function computes the quadratic form X * X^T for a given row vector X,
+ * where X is expected to have exactly one row (i.e., X_Type::ROWS == 1).
+ * The result is the scalar value at position (0, 0) of the resulting matrix.
+ *
+ * @tparam X_Type Type of the input vector, must have a static member ROWS == 1
+ * and a nested Value_Type.
+ * @param X The input row vector.
+ * @return The scalar result of the quadratic form (X * X^T).
+ */
 template <typename X_Type>
 inline auto calculate_quadratic_no_weighted(const X_Type &X) ->
     typename X_Type::Value_Type {
@@ -282,6 +385,31 @@ struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
 
 } // namespace CalculateY_LimitPenalty
 
+/**
+ * @brief Calculates the penalty for violating Y matrix limits over a prediction
+ * horizon.
+ *
+ * This function computes the penalty associated with the elements of the
+ * Y_horizon matrix that exceed the specified minimum (Y_min_matrix) and maximum
+ * (Y_max_matrix) bounds. The result is stored in the Y_limit_penalty output
+ * matrix.
+ *
+ * @tparam Y_Mat_Type Type of the input Y_horizon matrix.
+ * @tparam Y_Min_Matrix_Type Type of the minimum bounds matrix.
+ * @tparam Y_Max_Matrix_Type Type of the maximum bounds matrix.
+ * @tparam Out_Type Type of the output penalty matrix.
+ *
+ * @param Y_horizon The matrix representing the predicted values over the
+ * horizon.
+ * @param Y_min_matrix The matrix specifying the minimum allowed values for
+ * Y_horizon.
+ * @param Y_max_matrix The matrix specifying the maximum allowed values for
+ * Y_horizon.
+ * @param Y_limit_penalty Output matrix where the computed penalties are stored.
+ *
+ * @note The dimensions of Out_Type (COLS and ROWS) must be positive.
+ * @note This function uses a recursive template implementation for computation.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type>
 inline void calculate_Y_limit_penalty(const Y_Mat_Type &Y_horizon,
@@ -412,6 +540,29 @@ struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
 
 } // namespace CalculateY_LimitPenaltyAndActive
 
+/**
+ * @brief Calculates the penalty and active status for Y matrix limits over a
+ * horizon.
+ *
+ * This function computes the penalty values and active flags for each element
+ * in the Y matrix, based on provided minimum and maximum limit matrices. The
+ * results are stored in the output penalty and active matrices. The function is
+ * templated to support various matrix types and sizes, and performs
+ * compile-time checks to ensure matrix dimension compatibility.
+ *
+ * @tparam Y_Mat_Type         Type of the input Y matrix over the horizon.
+ * @tparam Y_Min_Matrix_Type  Type of the minimum limit matrix for Y.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum limit matrix for Y.
+ * @tparam Out_Penalty_Type   Type of the output penalty matrix.
+ * @tparam Active_Type        Type of the output active matrix.
+ *
+ * @param Y_horizon       Input Y matrix over the horizon.
+ * @param Y_min_matrix    Minimum limit matrix for Y.
+ * @param Y_max_matrix    Maximum limit matrix for Y.
+ * @param Y_limit_penalty Output matrix to store penalty values for Y limits.
+ * @param Y_limit_active  Output matrix to store active status flags for Y
+ * limits.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type>
@@ -534,14 +685,41 @@ struct Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 
 } // namespace FxxLambdaContract
 
-// Public wrapper to run the unrolled recursion.
-// Out_Type must be pre-initialized (e.g., zero) before calling, since this
-// performs accumulation with "+=" semantics.
+/**
+ * @brief Computes the contraction of the Hessian matrix Hf_xx with the
+ * direction vector dX and the weight vector lam_next, and stores the result in
+ * the output vector out.
+ *
+ * This function performs a specialized matrix operation used in Sequential
+ * Quadratic Programming (SQP) optimization routines. It contracts the Hessian
+ * matrix with the direction and weight vectors, enforcing strict compile-time
+ * checks on the dimensions of all input and output types to ensure correctness.
+ *
+ * @tparam Fxx_Type      Type representing the Hessian matrix (Hf_xx), expected
+ * to have dimensions [STATE_SIZE x OUTPUT_SIZE * STATE_SIZE].
+ * @tparam dX_Type       Type representing the direction vector (dX), expected
+ * to have dimensions [1 x STATE_SIZE].
+ * @tparam Weight_Type   Type representing the weight vector (lam_next),
+ * expected to have dimensions [1 x OUTPUT_SIZE].
+ * @tparam Out_Type      Type representing the output vector (out), expected to
+ * have dimensions [1 x STATE_SIZE].
+ *
+ * @param Hf_xx          The Hessian matrix of the objective function with
+ * respect to state variables.
+ * @param dX             The direction vector for the optimization step.
+ * @param lam_next       The weight vector (typically Lagrange multipliers for
+ * constraints).
+ * @param out            Output vector to store the result of the contraction.
+ *
+ * @note All types must satisfy the required static dimension checks. The
+ * computation is delegated to FxxLambdaContract::Row.
+ */
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type>
 inline void
 compute_fxx_lambda_contract(const Fxx_Type &Hf_xx, const dX_Type &dX,
                             const Weight_Type &lam_next, Out_Type &out) {
+
   static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
   static_assert(Weight_Type::ROWS == 1,
                 "lam_next must be a (OUTPUT_SIZE x 1) vector");
@@ -700,14 +878,42 @@ struct Conditional<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
 
 } // namespace FxuLambdaContract
 
-// Public wrapper to run the unrolled recursion.
-// Out_Type must be pre-initialized (e.g., zero) before calling, since this
-// performs accumulation with "+=" semantics.
+/**
+ * @brief Computes the contraction of the Hessian matrix Hf_xu with the input
+ * vector dU and the weight vector lam_next, storing the result in the output
+ * vector out.
+ *
+ * This function performs a matrix operation commonly used in Sequential
+ * Quadratic Programming (SQP) optimization routines. It contracts the Hessian
+ * matrix with the input and weight vectors, producing an output vector
+ * representing the result. The function enforces compile-time checks to ensure
+ * that the input types have the correct dimensions:
+ *   - dU must be a (INPUT_SIZE x 1) vector.
+ *   - lam_next must be a (OUTPUT_SIZE x 1) vector.
+ *   - out must be a (STATE_SIZE x 1) vector.
+ *   - Hf_xu must have dimensions compatible with the contraction operation.
+ *
+ * @tparam Fxu_Type      Type representing the Hessian matrix (Hf_xu).
+ * @tparam dU_Type       Type representing the input vector (dU).
+ * @tparam Weight_Type   Type representing the weight vector (lam_next).
+ * @tparam Out_Type      Type representing the output vector (out).
+ *
+ * @param Hf_xu      The Hessian matrix to be contracted.
+ * @param dU         The input vector.
+ * @param lam_next   The weight vector.
+ * @param out        The output vector where the result is stored.
+ *
+ * @note This function relies on FxuLambdaContract::Conditional for the actual
+ * computation.
+ * @note All type and dimension checks are performed at compile time using
+ * static_assert.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type>
 inline void
 compute_fx_xu_lambda_contract(const Fxu_Type &Hf_xu, const dU_Type &dU,
                               const Weight_Type &lam_next, Out_Type &out) {
+
   static_assert(dU_Type::ROWS == 1, "dU must be a (INPUT_SIZE x 1) vector");
   static_assert(Weight_Type::ROWS == 1,
                 "lam_next must be a (OUTPUT_SIZE x 1) vector");
@@ -831,14 +1037,37 @@ struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 
 } // namespace FuxxLambdaContract
 
-// Public wrapper to run the unrolled recursion.
-// Out_Type must be pre-initialized (e.g., zero) before calling, since this
-// performs accumulation with "+=" semantics.
+/**
+ * @brief Computes the contraction of the Hessian matrix Hf_ux with vectors dX
+ * and lam_next, and stores the result in the output vector out.
+ *
+ * This function performs a specialized matrix-vector operation used in SQP
+ * optimization, contracting the Hessian with the direction vector and the
+ * Lagrange multipliers.
+ *
+ * @tparam Fuxx_Type Type representing the Hessian matrix (Hf_ux).
+ * @tparam dX_Type Type representing the direction vector (dX).
+ * @tparam Weight_Type Type representing the Lagrange multipliers vector
+ * (lam_next).
+ * @tparam Out_Type Type representing the output vector (out).
+ *
+ * @param Hf_ux The Hessian matrix of size (STATE_SIZE x STATE_SIZE *
+ * INPUT_SIZE).
+ * @param dX The direction vector of size (1 x STATE_SIZE).
+ * @param lam_next The Lagrange multipliers vector of size (1 x STATE_SIZE).
+ * @param out The output vector of size (1 x INPUT_SIZE) to store the result.
+ *
+ * @note All types must satisfy the static assertions regarding their
+ * dimensions.
+ * @note This function delegates the computation to
+ * FuxxLambdaContract::Row::compute.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type>
 inline void
 compute_fu_xx_lambda_contract(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                               const Weight_Type &lam_next, Out_Type &out) {
+
   static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
   static_assert(Weight_Type::ROWS == 1,
                 "lam_next must be a (STATE_SIZE x 1) vector");
@@ -996,14 +1225,41 @@ struct Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE,
 
 } // namespace FuuuLambdaContract
 
-// Public wrapper to run the unrolled recursion.
-// Out_Type must be pre-initialized (e.g., zero) before calling, since this
-// performs accumulation with "+=" semantics.
+/**
+ * @brief Computes the contraction of the Hessian matrix Hf_uu with the input
+ * vector dU and the weight vector lam_next, storing the result in the output
+ * vector out.
+ *
+ * This function performs a specialized matrix operation used in Sequential
+ * Quadratic Programming (SQP) optimization routines. It contracts the Hessian
+ * matrix Hf_uu with the input update vector dU and the next-step Lagrange
+ * multiplier vector lam_next, producing an output vector out. The operation is
+ * dispatched to a conditional implementation based on template parameters.
+ *
+ * @tparam Fuu_Type      Type representing the Hessian matrix (INPUT_SIZE x
+ * STATE_SIZE * INPUT_SIZE).
+ * @tparam dU_Type       Type representing the input vector (1 x INPUT_SIZE).
+ * @tparam Weight_Type   Type representing the weight (Lagrange multiplier)
+ * vector (1 x STATE_SIZE).
+ * @tparam Out_Type      Type representing the output vector (1 x INPUT_SIZE).
+ *
+ * @param Hf_uu          The Hessian matrix of the objective function with
+ * respect to inputs.
+ * @param dU             The input update vector.
+ * @param lam_next       The next-step Lagrange multiplier vector.
+ * @param out            Output vector to store the result of the contraction.
+ *
+ * @note All input types must satisfy the specified static assertions regarding
+ * their dimensions.
+ * @note This function is intended for use in optimization routines where matrix
+ * contraction is required.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type>
 inline void
 compute_fu_uu_lambda_contract(const Fuu_Type &Hf_uu, const dU_Type &dU,
                               const Weight_Type &lam_next, Out_Type &out) {
+
   static_assert(dU_Type::ROWS == 1, "dU must be a (INPUT_SIZE x 1) vector");
   static_assert(Weight_Type::ROWS == 1,
                 "lam_next must be a (STATE_SIZE x 1) vector");
@@ -1126,14 +1382,40 @@ struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 
 } // namespace HxxLambdaContract
 
-// Public wrapper to run the unrolled recursion.
-// Out_Type must be pre-initialized (e.g., zero) before calling, since this
-// performs accumulation with "+=" semantics.
+/**
+ * @brief Computes the contraction of a Hessian matrix with a direction vector
+ * and a weight vector.
+ *
+ * This function performs a specialized matrix operation, contracting the
+ * provided Hessian matrix (`Hh_xx`) with the direction vector (`dX`) and the
+ * weight vector (`weight`), and stores the result in `out`. The operation is
+ * typically used in Sequential Quadratic Programming (SQP) optimization
+ * routines.
+ *
+ * @tparam Hxx_Type Type representing the Hessian matrix, expected to have
+ * dimensions (STATE_SIZE x OUTPUT_SIZE * STATE_SIZE).
+ * @tparam dX_Type Type representing the direction vector, expected to be a (1 x
+ * STATE_SIZE) vector.
+ * @tparam Weight_Type Type representing the weight vector, expected to be a (1
+ * x OUTPUT_SIZE) vector.
+ * @tparam Out_Type Type representing the output vector, expected to be a (1 x
+ * STATE_SIZE) vector.
+ *
+ * @param Hh_xx The Hessian matrix to be contracted.
+ * @param dX The direction vector for contraction.
+ * @param weight The weight vector for contraction.
+ * @param out Output vector to store the result of the contraction.
+ *
+ * @note All input types are statically checked for correct dimensions.
+ * @note This function delegates the actual computation to
+ * HxxLambdaContract::Row.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type>
 inline void
 compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
                             const Weight_Type &weight, Out_Type &out) {
+
   static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
   static_assert(Weight_Type::ROWS == 1,
                 "weight must be a (OUTPUT_SIZE x 1) vector");
@@ -1266,9 +1548,35 @@ struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
 
 } // namespace FreeMaskAtCheck
 
-// Public wrapper to run the unrolled recursion for setting at_lower/at_upper.
-// Note: at_lower and at_upper should be pre-initialized (e.g., false) before
-// calling. This function only sets true where conditions are met.
+/**
+ * @brief Checks and updates mask matrices indicating whether elements of the
+ * input matrix are at their lower or upper bounds within a specified tolerance.
+ *
+ * This function compares each element of the input matrix `U_horizon_in`
+ * against the corresponding elements in the lower bound matrix `U_min_matrix`
+ * and the upper bound matrix `U_max_matrix`. If an element is within the
+ * specified absolute tolerance `atol` of its lower or upper bound, the
+ * corresponding entry in the mask matrices `at_lower` or `at_upper` is updated
+ * accordingly.
+ *
+ * Template Parameters:
+ * - U_Mat_Type: Type of the input matrix.
+ * - U_Min_Matrix_Type: Type of the lower bound matrix.
+ * - U_Max_Matrix_Type: Type of the upper bound matrix.
+ * - AtLower_Type: Type of the mask matrix for lower bounds.
+ * - AtUpper_Type: Type of the mask matrix for upper bounds.
+ * - Value_Type: Type of the tolerance value.
+ *
+ * @param U_horizon_in   Input matrix to check.
+ * @param U_min_matrix   Matrix of lower bounds.
+ * @param U_max_matrix   Matrix of upper bounds.
+ * @param atol           Absolute tolerance for bound checking.
+ * @param at_lower       Output mask matrix indicating elements at lower bounds.
+ * @param at_upper       Output mask matrix indicating elements at upper bounds.
+ *
+ * @note All matrix types must have matching dimensions. Static assertions are
+ * used to enforce this.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type>
@@ -1277,6 +1585,7 @@ inline void free_mask_at_check(const U_Mat_Type &U_horizon_in,
                                const U_Max_Matrix_Type &U_max_matrix,
                                const Value_Type &atol, AtLower_Type &at_lower,
                                AtUpper_Type &at_upper) {
+
   constexpr std::size_t M = U_Mat_Type::COLS; // INPUT_SIZE
   constexpr std::size_t N = U_Mat_Type::ROWS; // NP
 
@@ -1403,9 +1712,33 @@ struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
 
 } // namespace FreeMaskPushActive
 
-// Public wrapper to run the unrolled recursion for updating mask and pushing
-// active indices. Note: m should be pre-initialized to true and this only
-// sets false where conditions are met, otherwise pushes to active set.
+/**
+ * @brief Updates the mask and pushes active constraints based on gradient and
+ * bounds.
+ *
+ * This function iterates over the mask matrix and, for each element, checks the
+ * corresponding gradient, lower bound, and upper bound values. If the gradient
+ * exceeds the specified tolerance
+ * (`gtol`), and the variable is not at its lower or upper bound, the index is
+ * pushed to the active set. The function uses compile-time assertions to ensure
+ * that the input matrices have compatible dimensions.
+ *
+ * @tparam Mask_Type        Type of the mask matrix (must define COLS and ROWS).
+ * @tparam Gradient_Type    Type of the gradient matrix (must match mask
+ * dimensions).
+ * @tparam AtLower_Type     Type indicating which variables are at their lower
+ * bounds.
+ * @tparam AtUpper_Type     Type indicating which variables are at their upper
+ * bounds.
+ * @tparam ActiveSet_Type   Type of the active set container.
+ * @tparam Value_Type       Type of the gradient tolerance value.
+ * @param m                 Reference to the mask matrix.
+ * @param gradient          Reference to the gradient matrix.
+ * @param at_lower          Reference to the lower bound indicator matrix.
+ * @param at_upper          Reference to the upper bound indicator matrix.
+ * @param gtol              Gradient tolerance value.
+ * @param active_set        Reference to the active set container to be updated.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type>
 inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
@@ -1413,6 +1746,7 @@ inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
                                   const AtUpper_Type &at_upper,
                                   const Value_Type &gtol,
                                   ActiveSet_Type &active_set) {
+
   constexpr std::size_t M = Mask_Type::COLS; // INPUT_SIZE
   constexpr std::size_t N = Mask_Type::ROWS; // NP
 
@@ -1500,13 +1834,31 @@ struct Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0> {
 
 } // namespace SolverCalculateMInv
 
-// Public wrapper to run the unrolled recursion for computing M_inv.
-// Note: M_inv should be a (INPUT_SIZE x NP) matrix; diag_R_full_lambda_factor
-// must be indexable with the same COLS/ROWS as M_inv for this implementation.
+/**
+ * @brief Calculates the inverse of a matrix M_inv using the provided diagonal
+ * matrix diag_R_full_lambda_factor.
+ *
+ * This function computes the inverse of a matrix by leveraging a specialized
+ * row-wise computation defined in SolverCalculateMInv::Row. It ensures that the
+ * matrix dimensions are positive and that the input matrix dimensions match the
+ * output matrix dimensions. The computation avoids division by zero by using
+ * the provided avoid_zero_limit parameter.
+ *
+ * @tparam Out_Mat_Type Type of the output matrix (M_inv).
+ * @tparam In_Mat_Type Type of the input diagonal matrix
+ * (diag_R_full_lambda_factor).
+ * @tparam Value_Type Scalar value type used in computation.
+ * @param[out] M_inv Output matrix to store the inverse result.
+ * @param[in] diag_R_full_lambda_factor Input diagonal matrix used for
+ * inversion.
+ * @param[in] avoid_zero_limit Value used to avoid division by zero during
+ * inversion.
+ */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type>
 inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
                                    const In_Mat_Type &diag_R_full_lambda_factor,
                                    const Value_Type &avoid_zero_limit) {
+
   constexpr std::size_t M = Out_Mat_Type::COLS;
   constexpr std::size_t N = Out_Mat_Type::ROWS;
 
@@ -1600,13 +1952,38 @@ struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
 
 } // namespace SaturateU_Horizon
 
-// Public wrapper to run the unrolled recursion for saturating U_horizon.
-// Note: U_candidate is modified in-place based on [U_min, U_max].
+/**
+ * @brief Saturates the elements of the input matrix U_candidate within
+ * specified minimum and maximum bounds.
+ *
+ * This function modifies the input matrix U_candidate in-place, ensuring that
+ * each element is clamped between the corresponding elements of U_min_matrix
+ * and U_max_matrix. The function is templated to support various matrix types
+ * and sizes, and performs compile-time checks to ensure that the dimensions of
+ * all matrices match.
+ *
+ * @tparam U_Mat_Type         Type of the candidate matrix to be saturated.
+ * @tparam U_Min_Matrix_Type  Type of the matrix specifying minimum bounds.
+ * @tparam U_Max_Matrix_Type  Type of the matrix specifying maximum bounds.
+ *
+ * @param U_candidate   Reference to the matrix whose elements will be
+ * saturated.
+ * @param U_min_matrix  Matrix specifying the minimum allowable values for each
+ * element.
+ * @param U_max_matrix  Matrix specifying the maximum allowable values for each
+ * element.
+ *
+ * @note The function relies on the SaturateU_Horizon::Row helper for the actual
+ * saturation logic.
+ * @note All matrices must have matching dimensions, enforced via static
+ * assertions.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type>
 inline void saturate_U_horizon(U_Mat_Type &U_candidate,
                                const U_Min_Matrix_Type &U_min_matrix,
                                const U_Max_Matrix_Type &U_max_matrix) {
+
   constexpr std::size_t M = U_Mat_Type::COLS; // INPUT_SIZE
   constexpr std::size_t N = U_Mat_Type::ROWS; // NP
 
