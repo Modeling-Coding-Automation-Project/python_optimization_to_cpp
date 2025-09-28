@@ -17,6 +17,9 @@ from external_libraries.MCAP_python_optimization.python_optimization.sqp_active_
 
 from optimization_utility.sqp_matrix_utility_deploy import SQP_MatrixUtilityDeploy
 
+from test_sil.SIL_operator import SIL_CodeGenerator
+from test_vs.MCAP_tester.tester.MCAP_tester import MCAPTester
+
 
 def create_plant_model():
     """Return sympy expressions for the 2-mass spring-damper discrete dynamics.
@@ -119,8 +122,12 @@ solver = SQP_ActiveSet_PCG_PLS(
 solver.set_solver_max_iteration(20)
 
 # You can create cpp header which can easily define SQP_CostMatrices_NMPC as C++ code
-SQP_MatrixUtilityDeploy.generate_cpp_code(
+deployed_file_names = SQP_MatrixUtilityDeploy.generate_cpp_code(
     cost_matrices=sqp_cost_matrices)
+
+current_dir = os.path.dirname(__file__)
+generator = SIL_CodeGenerator(deployed_file_names, current_dir)
+generator.build_SIL_code()
 
 U_opt = solver.solve(
     U_horizon_initial=U_horizon_initial,
@@ -132,5 +139,12 @@ U_opt = solver.solve(
     U_max_matrix=sqp_cost_matrices.U_max_matrix,
 )
 
-print("Optimized cost:", solver.J_opt)
-print("Optimal input sequence:\n", U_opt)
+U_cpp = Sqp2MassSpringDamperSIL.solve()
+
+tester = MCAPTester()
+NEAR_LIMIT = 1e-5
+
+tester.expect_near(
+    U_opt, U_cpp, NEAR_LIMIT,
+    "SIL SQP 2-Mass Spring-Damper: SQP control inputs"
+)
