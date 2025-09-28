@@ -359,7 +359,8 @@ class SQP_MatrixUtilityDeploy:
 
         deployed_file_names = []
 
-        ControlDeploy.restrict_data_type(cost_matrices.Qx[0, 0].dtype.name)
+        data_type = cost_matrices.Qx[0, 0].dtype.name
+        ControlDeploy.restrict_data_type(data_type)
 
         type_name = NumpyDeploy.check_dtype(cost_matrices.Qx)
 
@@ -506,6 +507,78 @@ class SQP_MatrixUtilityDeploy:
         U_min_code_generator.generate_active_set(
             is_active_array=U_min_active_array
         )
+
+        # U_max
+        min_max_array = cost_matrices.U_max_matrix[:, 0].reshape(-1, 1)
+        U_max_active_array = get_active_array(min_max_array)
+
+        U_max_code_generator = MinMaxCodeGenerator(
+            min_max_array=min_max_array,
+            min_max_name="U_max",
+            size=U_size
+        )
+        U_max_code_generator.generate_active_set(
+            is_active_array=U_max_active_array
+        )
+
+        # Y_min
+        min_max_array = cost_matrices.Y_min_matrix[:, 0].reshape(-1, 1)
+        Y_min_active_array = get_active_array(min_max_array)
+
+        Y_min_code_generator = MinMaxCodeGenerator(
+            min_max_array=min_max_array,
+            min_max_name="Y_min",
+            size=Y_size
+        )
+        Y_min_code_generator.generate_active_set(
+            is_active_array=Y_min_active_array
+        )
+
+        # Y_max
+        min_max_array = cost_matrices.Y_max_matrix[:, 0].reshape(-1, 1)
+        Y_max_active_array = get_active_array(min_max_array)
+
+        Y_max_code_generator = MinMaxCodeGenerator(
+            min_max_array=min_max_array,
+            min_max_name="Y_max",
+            size=Y_size
+        )
+        Y_max_code_generator.generate_active_set(
+            is_active_array=Y_max_active_array
+        )
+
+        # Limits code
+        U_min_file_name, U_min_file_name_no_extension = \
+            U_min_code_generator.create_limits_code(
+                data_type=data_type,
+                variable_name=variable_name,
+                caller_file_name_without_ext=caller_file_name_without_ext
+            )
+        deployed_file_names.append(U_min_file_name)
+
+        U_max_file_name, U_max_file_name_no_extension = \
+            U_max_code_generator.create_limits_code(
+                data_type=data_type,
+                variable_name=variable_name,
+                caller_file_name_without_ext=caller_file_name_without_ext
+            )
+        deployed_file_names.append(U_max_file_name)
+
+        Y_min_file_name, Y_min_file_name_no_extension = \
+            Y_min_code_generator.create_limits_code(
+                data_type=data_type,
+                variable_name=variable_name,
+                caller_file_name_without_ext=caller_file_name_without_ext
+            )
+        deployed_file_names.append(Y_min_file_name)
+
+        Y_max_file_name, Y_max_file_name_no_extension = \
+            Y_max_code_generator.create_limits_code(
+                data_type=data_type,
+                variable_name=variable_name,
+                caller_file_name_without_ext=caller_file_name_without_ext
+            )
+        deployed_file_names.append(Y_max_file_name)
 
         # %% create cpp code
         # code_text = ""
