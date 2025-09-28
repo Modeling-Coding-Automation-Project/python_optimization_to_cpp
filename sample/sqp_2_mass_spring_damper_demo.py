@@ -1,3 +1,34 @@
+"""
+File: sqp_2_mass_spring_damper_demo.py
+
+This script demonstrates nonlinear model predictive control (NMPC)
+ for a 2-mass spring-damper system using Sequential Quadratic Programming (SQP).
+
+Main Features:
+--------------
+- Defines a discrete-time plant model for a 2-mass spring-damper
+ system using symbolic expressions (SymPy).
+- Sets up NMPC problem parameters including state/input dimensions,
+ prediction horizon, cost weights, input constraints, and reference trajectory.
+- Constructs cost matrices for NMPC using SQP_CostMatrices_NMPC.
+- Initializes the SQP solver (SQP_ActiveSet_PCG_PLS) and configures solver parameters.
+- Generates C++ header files for the cost matrices for deployment.
+- Solves the NMPC optimization problem and prints the optimized cost and input sequence.
+
+Key Components:
+---------------
+- `create_plant_model()`: Returns symbolic discrete-time dynamics and
+ measurement equations for the plant.
+- `Parameters`: Dataclass holding physical parameters of the system.
+- `SQP_CostMatrices_NMPC`: Utility for constructing NMPC cost matrices.
+- `SQP_ActiveSet_PCG_PLS`: SQP solver for constrained optimization.
+- `SQP_MatrixUtilityDeploy.generate_cpp_code`: Generates C++ code for deployment.
+
+Usage:
+------
+Run the script to perform NMPC optimization for the 2-mass spring-damper system
+ and view the results.
+"""
 import os
 import sys
 sys.path.append(os.getcwd())

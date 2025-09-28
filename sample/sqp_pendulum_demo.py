@@ -1,3 +1,24 @@
+"""
+File: sqp_pendulum_demo.py
+
+This script demonstrates nonlinear model predictive control (NMPC) for
+ a pendulum-like system with a nonlinear actuator using Sequential Quadratic Programming (SQP).
+
+Main Features:
+--------------
+- Defines a symbolic plant model for a pendulum with nonlinear actuator dynamics.
+- Sets up NMPC problem parameters, including state, input, output dimensions,
+ prediction horizon, and cost weights.
+- Specifies input bounds and reference trajectory.
+- Utilizes SQP_CostMatrices_NMPC to construct cost and constraint matrices for NMPC.
+- Uses SQP_ActiveSet_PCG_PLS as the SQP solver for optimal control input sequence.
+- Generates C++ header files for the cost matrices via SQP_MatrixUtilityDeploy for deployment.
+- Prints the names of generated C++ files, optimized cost, and optimal input sequence.
+
+Usage:
+------
+Run the script to solve the NMPC problem for the pendulum system and generate C++ code for deployment.
+"""
 import os
 import sys
 sys.path.append(os.getcwd())
