@@ -392,6 +392,7 @@ class SQP_MatrixUtilityDeploy:
                 cost_matrices.state_space_parameters,
                 type_name,
                 parameter_class_file_name_no_extension)
+        deployed_file_names.append(parameter_class_cpp_file_name)
 
         # state equation function code
         state_function_file_name_no_extension = \
@@ -400,6 +401,7 @@ class SQP_MatrixUtilityDeploy:
         state_function_cpp_file_name = \
             create_and_write_state_function_code(
                 state_function_file_name_no_extension)
+        deployed_file_names.append(state_function_cpp_file_name)
 
         # measurement equation function code
         measurement_function_file_name_no_extension = \
@@ -408,6 +410,7 @@ class SQP_MatrixUtilityDeploy:
         measurement_function_cpp_file_name = \
             create_and_write_measurement_function_code(
                 measurement_function_file_name_no_extension)
+        deployed_file_names.append(measurement_function_cpp_file_name)
 
         # state jacobian x function code
         state_jacobian_x_file_name_no_extension = \
@@ -418,6 +421,7 @@ class SQP_MatrixUtilityDeploy:
                 state_jacobian_x_file_name_no_extension,
                 "State_Jacobian_x_Type",
                 type_name)
+        deployed_file_names.append(state_jacobian_x_cpp_file_name)
 
         # state jacobian u function code
         state_jacobian_u_file_name_no_extension = \
@@ -428,6 +432,7 @@ class SQP_MatrixUtilityDeploy:
                 state_jacobian_u_file_name_no_extension,
                 "State_Jacobian_u_Type",
                 type_name)
+        deployed_file_names.append(state_jacobian_u_cpp_file_name)
 
         # measurement jacobian x function code
         measurement_jacobian_x_file_name_no_extension = \
@@ -438,6 +443,7 @@ class SQP_MatrixUtilityDeploy:
                 measurement_jacobian_x_file_name_no_extension,
                 "Measurement_Jacobian_x_Type",
                 type_name)
+        deployed_file_names.append(measurement_jacobian_x_cpp_file_name)
 
         # state hessian xx function code
         state_hessian_xx_file_name_no_extension = \
@@ -448,6 +454,7 @@ class SQP_MatrixUtilityDeploy:
                 state_hessian_xx_file_name_no_extension,
                 "State_Hessian_xx_Type",
                 type_name)
+        deployed_file_names.append(state_hessian_xx_cpp_file_name)
 
         # state hessian xu function code
         state_hessian_xu_file_name_no_extension = \
@@ -458,6 +465,7 @@ class SQP_MatrixUtilityDeploy:
                 state_hessian_xu_file_name_no_extension,
                 "State_Hessian_xu_Type",
                 type_name)
+        deployed_file_names.append(state_hessian_xu_cpp_file_name)
 
         # state hessian ux function code
         state_hessian_ux_file_name_no_extension = \
@@ -468,6 +476,7 @@ class SQP_MatrixUtilityDeploy:
                 state_hessian_ux_file_name_no_extension,
                 "State_Hessian_ux_Type",
                 type_name)
+        deployed_file_names.append(state_hessian_ux_cpp_file_name)
 
         # state hessian uu function code
         state_hessian_uu_file_name_no_extension = \
@@ -478,6 +487,7 @@ class SQP_MatrixUtilityDeploy:
                 state_hessian_uu_file_name_no_extension,
                 "State_Hessian_uu_Type",
                 type_name)
+        deployed_file_names.append(state_hessian_uu_cpp_file_name)
 
         # measurement hessian xx function code
         measurement_hessian_xx_file_name_no_extension = \
@@ -488,6 +498,7 @@ class SQP_MatrixUtilityDeploy:
                 measurement_hessian_xx_file_name_no_extension,
                 "Measurement_Hessian_xx_Type",
                 type_name)
+        deployed_file_names.append(measurement_hessian_xx_cpp_file_name)
 
         # %% create limits code
         U_size = cost_matrices.nu
