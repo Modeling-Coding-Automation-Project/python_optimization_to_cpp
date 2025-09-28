@@ -1,6 +1,6 @@
 #include "sqp_2_mass_spring_damper_SIL_wrapper.hpp"
 
-#include "sqp_pendulum_demo_parameter.hpp"
+#include "sqp_2_mass_spring_damper_demo_SIL_parameter.hpp"
 
 #include "python_numpy.hpp"
 #include "python_optimization.hpp"
