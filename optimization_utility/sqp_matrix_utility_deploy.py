@@ -718,6 +718,60 @@ class SQP_MatrixUtilityDeploy:
             "    State_Hessian_UU_Matrix_Type,\n" + \
             "    Measurement_Hessian_XX_Matrix_Type>;\n\n"
 
+        code_text += "inline auto make() -> type {\n\n"
+
+        # limits
+        code_text = U_min_code_generator.write_limits_code(
+            code_text, type_name)
+        code_text = U_max_code_generator.write_limits_code(
+            code_text, type_name)
+
+        code_text = Y_min_code_generator.write_limits_code(
+            code_text, type_name)
+        code_text = Y_max_code_generator.write_limits_code(
+            code_text, type_name)
+
+        code_text += "  Qx_Type Qx = make_DiagMatrix<STATE_SIZE>(\n"
+        for i in range(cost_matrices.nx):
+            code_text += f"      static_cast<{type_name}>({cost_matrices.Qx[i, i]})"
+            if i != cost_matrices.nx - 1:
+                code_text += ",\n"
+            else:
+                code_text += ");\n\n"
+
+        code_text += "  R_Type R = make_DiagMatrix<INPUT_SIZE>(\n"
+        for i in range(cost_matrices.nu):
+            code_text += f"      static_cast<{type_name}>({cost_matrices.R[i, i]})"
+            if i != cost_matrices.nu - 1:
+                code_text += ",\n"
+            else:
+                code_text += ");\n\n"
+
+        code_text += "  Qy_Type Qy = make_DiagMatrix<OUTPUT_SIZE>(\n"
+        for i in range(cost_matrices.ny):
+            code_text += f"      static_cast<{type_name}>({cost_matrices.Qy[i, i]})"
+            if i != cost_matrices.ny - 1:
+                code_text += ",\n"
+            else:
+                code_text += ");\n\n"
+
+        code_text += "  Reference_Trajectory_Type reference_trajectory;\n\n"
+
+        code_text += "    type cost_matrices =\n" + \
+            f"        make_SQP_CostMatrices_NMPC<{type_name}, NP, Parameter_Type,\n" + \
+            "            U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,\n" + \
+            "            State_Jacobian_X_Matrix_Type,\n" + \
+            "            State_Jacobian_U_Matrix_Type,\n" + \
+            "            Measurement_Jacobian_X_Matrix_Type,\n" + \
+            "            State_Hessian_XX_Matrix_Type,\n" + \
+            "            State_Hessian_XU_Matrix_Type,\n" + \
+            "            State_Hessian_UX_Matrix_Type,\n" + \
+            "            State_Hessian_UU_Matrix_Type,\n" + \
+            "            Measurement_Hessian_XX_Matrix_Type>(\n" + \
+            "                Qx, R, Qy, U_min, U_max, Y_min, Y_max);\n\n"
+
+        code_text += "}\n\n"
+
         code_text += "} // namespace " + namespace_name + "\n\n"
 
         code_text += "#endif // " + file_header_macro_name + "\n"
