@@ -648,8 +648,52 @@ class SQP_MatrixUtilityDeploy:
         code_text += f"using Measurement_Hessian_XX_Matrix_Type = {measurement_hessian_xx_file_name_no_extension}" + \
             "::Measurement_Hessian_xx_Type;\n\n"
 
-        code_text += "PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =\n" + \
+        code_text += "static PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> STATE_FUNCTION =\n" + \
             f"    {state_function_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> MEASUREMENT_FUNCTION =\n" + \
+            f"    {measurement_function_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type, Y_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::StateFunctionJacobian_X_Object<\n" + \
+            "    State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> STATE_JACOBIAN_X_FUNCTION =\n" + \
+            f"    {state_jacobian_x_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::StateFunctionJacobian_U_Object<\n" + \
+            "    State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> STATE_JACOBIAN_U_FUNCTION =\n" + \
+            f"    {state_jacobian_u_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::MeasurementFunctionJacobian_X_Object<\n" + \
+            "    Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> MEASUREMENT_JACOBIAN_X_FUNCTION =\n" + \
+            f"    {measurement_jacobian_x_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::StateFunctionHessian_XX_Object<\n" + \
+            "    State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> STATE_HESSIAN_XX_FUNCTION =\n" + \
+            f"    {state_hessian_xx_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::StateFunctionHessian_XU_Object<\n" + \
+            "    State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> STATE_HESSIAN_XU_FUNCTION =\n" + \
+            f"    {state_hessian_xu_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::StateFunctionHessian_UX_Object<\n" + \
+            "    State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> STATE_HESSIAN_UX_FUNCTION =\n" + \
+            f"    {state_hessian_ux_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::StateFunctionHessian_UU_Object<\n" + \
+            "    State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> STATE_HESSIAN_UU_FUNCTION =\n" + \
+            f"    {state_hessian_uu_file_name_no_extension}::Function<" + \
+            "X_Type, U_Type, Parameter_Type>::function;\n\n"
+
+        code_text += "static PythonOptimization::MeasurementFunctionHessian_XX_Object<\n" + \
+            "    Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> MEASUREMENT_HESSIAN_XX_FUNCTION =\n" + \
+            f"    {measurement_hessian_xx_file_name_no_extension}::Function<" + \
             "X_Type, U_Type, Parameter_Type>::function;\n\n"
 
         code_text += "} // namespace " + namespace_name + "\n\n"
