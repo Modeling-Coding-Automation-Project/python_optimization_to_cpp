@@ -2,13 +2,10 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-import re
+
 import inspect
-import ast
-import astor
 import numpy as np
-import sympy as sp
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 
 from optimization_utility.common_optimization_deploy import MinMaxCodeGenerator
 from optimization_utility.common_optimization_deploy import get_active_array
@@ -17,9 +14,7 @@ from external_libraries.MCAP_python_optimization.optimization_utility.sqp_matrix
 from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import NumpyDeploy
 from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import python_to_cpp_types
 from external_libraries.MCAP_python_control.python_control.control_deploy import ControlDeploy
-from external_libraries.MCAP_python_control.python_control.control_deploy import ExpressionDeploy
 from external_libraries.MCAP_python_control.python_control.control_deploy import FunctionExtractor
-from external_libraries.MCAP_python_control.python_control.control_deploy import IntegerPowerReplacer
 from external_libraries.python_control_to_cpp.python_control.kalman_filter_deploy import FunctionToCppVisitor
 
 
