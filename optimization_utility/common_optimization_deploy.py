@@ -40,7 +40,7 @@ class MinMaxCodeGenerator:
             Initializes the generator with min/max values and configuration.
         generate_active_set(is_active_function=None, is_active_array=None):
             Generates the active set array using a function or a boolean array.
-        create_limits_code(data_type, variable_name, caller_file_name_without_ext):
+        create_limits_code(data_type, variable_name, caller_file_name_no_extension):
             Generates C++ code for the limits and returns the file name and its base name.
         write_limits_code(code_text, type_name):
             Appends code for setting active limits to the provided code text.
@@ -110,7 +110,7 @@ class MinMaxCodeGenerator:
             self,
             data_type,
             variable_name: str,
-            caller_file_name_without_ext: str
+            caller_file_name_no_extension: str
     ):
         """
         Generates C++ code for the active set limits and returns
@@ -119,7 +119,7 @@ class MinMaxCodeGenerator:
         Args:
             data_type: The desired NumPy data type for the active set array.
             variable_name (str): The base name for the variable to store the active set.
-            caller_file_name_without_ext (str): The file name
+            caller_file_name_no_extension (str): The file name
               (without extension) to use for the generated C++ code.
 
         Returns:
@@ -140,7 +140,7 @@ class MinMaxCodeGenerator:
 
         file_name = eval(
             f"NumpyDeploy.generate_matrix_cpp_code(matrix_in={variable_name}_" +
-            self.min_max_name + ", file_name=caller_file_name_without_ext)")
+            self.min_max_name + ", file_name=caller_file_name_no_extension)")
 
         self.file_name_no_extension = file_name.split(".")[0]
 

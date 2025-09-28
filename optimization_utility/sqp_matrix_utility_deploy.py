@@ -63,14 +63,14 @@ def create_sparse_matrix_code(
 def create_and_write_parameter_class_code(
         parameter_object,
         value_type_name: str,
-        file_name_without_extension: str
+        file_name_no_extension: str
 ):
 
     if not is_dataclass(parameter_object):
         raise TypeError("parameter_object must be a dataclass instance")
 
     file_path = ControlDeploy.find_file(
-        f"{file_name_without_extension}.py", os.getcwd())
+        f"{file_name_no_extension}.py", os.getcwd())
 
     try:
         value_type_name = python_to_cpp_types[value_type_name]
@@ -78,12 +78,12 @@ def create_and_write_parameter_class_code(
         pass
 
     code_text = ""
-    header_macro_text = "__" + file_name_without_extension.upper() + "_HPP__"
+    header_macro_text = "__" + file_name_no_extension.upper() + "_HPP__"
 
     code_text += f"#ifndef {header_macro_text}\n"
     code_text += f"#define {header_macro_text}\n\n"
 
-    code_text += f"namespace {file_name_without_extension} {{\n\n"
+    code_text += f"namespace {file_name_no_extension} {{\n\n"
 
     code_text += "class Parameter {\n"
     code_text += "public:\n"
@@ -95,12 +95,12 @@ def create_and_write_parameter_class_code(
 
     code_text += "};\n\n"
 
-    code_text += f"}} // namespace {file_name_without_extension}\n\n"
+    code_text += f"}} // namespace {file_name_no_extension}\n\n"
 
     code_text += f"#endif // {header_macro_text}\n"
 
     saved_file_name = ControlDeploy.write_to_file(
-        code_text, f"{file_name_without_extension}.hpp")
+        code_text, f"{file_name_no_extension}.hpp")
 
     return saved_file_name
 
@@ -379,115 +379,118 @@ class SQP_MatrixUtilityDeploy:
         if file_name is None:
             caller_file_full_path = frame.f_code.co_filename
             caller_file_name = os.path.basename(caller_file_full_path)
-            caller_file_name_without_ext = os.path.splitext(caller_file_name)[
+            caller_file_name_no_extension = os.path.splitext(caller_file_name)[
                 0]
         else:
-            caller_file_name_without_ext = file_name
+            caller_file_name_no_extension = file_name
+
+        code_file_name = caller_file_name_no_extension + "_" + variable_name
+        code_file_name_ext = code_file_name + ".hpp"
 
         # %% generate functions code
         # parameter class code
-        parameter_class_file_name_without_ext = \
-            f"{caller_file_name_without_ext}_parameter"
+        parameter_class_file_name_no_extension = \
+            f"{caller_file_name_no_extension}_parameter"
 
         parameter_class_cpp_file_name = \
             create_and_write_parameter_class_code(
                 cost_matrices.state_space_parameters,
                 type_name,
-                parameter_class_file_name_without_ext)
+                parameter_class_file_name_no_extension)
 
         # state equation function code
-        state_function_file_name_without_ext = \
+        state_function_file_name_no_extension = \
             cost_matrices.state_function_code_file_name.split(".")[0]
 
         state_function_cpp_file_name = \
             create_and_write_state_function_code(
-                state_function_file_name_without_ext)
+                state_function_file_name_no_extension)
 
         # measurement equation function code
-        measurement_function_file_name_without_ext = \
+        measurement_function_file_name_no_extension = \
             cost_matrices.measurement_function_code_file_name.split(".")[0]
 
         measurement_function_cpp_file_name = \
             create_and_write_measurement_function_code(
-                measurement_function_file_name_without_ext)
+                measurement_function_file_name_no_extension)
 
         # state jacobian x function code
-        state_jacobian_x_file_name_without_ext = \
+        state_jacobian_x_file_name_no_extension = \
             cost_matrices.state_jacobian_x_code_file_name.split(".")[0]
 
         state_jacobian_x_cpp_file_name, state_jacobian_x_SparseAvailable_list = \
             create_and_write_state_measurement_jacobian_code(
-                state_jacobian_x_file_name_without_ext,
+                state_jacobian_x_file_name_no_extension,
                 "State_Jacobian_x_Type",
                 type_name)
 
         # state jacobian u function code
-        state_jacobian_u_file_name_without_ext = \
+        state_jacobian_u_file_name_no_extension = \
             cost_matrices.state_jacobian_u_code_file_name.split(".")[0]
 
         state_jacobian_u_cpp_file_name, state_jacobian_u_SparseAvailable_list = \
             create_and_write_state_measurement_jacobian_code(
-                state_jacobian_u_file_name_without_ext,
+                state_jacobian_u_file_name_no_extension,
                 "State_Jacobian_u_Type",
                 type_name)
 
         # measurement jacobian x function code
-        measurement_jacobian_x_file_name_without_ext = \
+        measurement_jacobian_x_file_name_no_extension = \
             cost_matrices.measurement_jacobian_x_code_file_name.split(".")[0]
 
         measurement_jacobian_x_cpp_file_name, measurement_jacobian_x_SparseAvailable_list = \
             create_and_write_state_measurement_jacobian_code(
-                measurement_jacobian_x_file_name_without_ext,
+                measurement_jacobian_x_file_name_no_extension,
                 "Measurement_Jacobian_x_Type",
                 type_name)
 
         # state hessian xx function code
-        state_hessian_xx_file_name_without_ext = \
+        state_hessian_xx_file_name_no_extension = \
             cost_matrices.state_hessian_xx_code_file_name.split(".")[0]
 
         state_hessian_xx_cpp_file_name, state_hessian_xx_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
-                state_hessian_xx_file_name_without_ext,
+                state_hessian_xx_file_name_no_extension,
                 "State_Hessian_xx_Type",
                 type_name)
 
         # state hessian xu function code
-        state_hessian_xu_file_name_without_ext = \
+        state_hessian_xu_file_name_no_extension = \
             cost_matrices.state_hessian_xu_code_file_name.split(".")[0]
 
         state_hessian_xu_cpp_file_name, state_hessian_xu_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
-                state_hessian_xu_file_name_without_ext,
+                state_hessian_xu_file_name_no_extension,
                 "State_Hessian_xu_Type",
                 type_name)
 
         # state hessian ux function code
-        state_hessian_ux_file_name_without_ext = \
+        state_hessian_ux_file_name_no_extension = \
             cost_matrices.state_hessian_ux_code_file_name.split(".")[0]
 
         state_hessian_ux_cpp_file_name, state_hessian_ux_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
-                state_hessian_ux_file_name_without_ext,
+                state_hessian_ux_file_name_no_extension,
                 "State_Hessian_ux_Type",
                 type_name)
 
         # state hessian uu function code
-        state_hessian_uu_file_name_without_ext = \
+        state_hessian_uu_file_name_no_extension = \
             cost_matrices.state_hessian_uu_code_file_name.split(".")[0]
 
         state_hessian_uu_cpp_file_name, state_hessian_uu_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
-                state_hessian_uu_file_name_without_ext,
+                state_hessian_uu_file_name_no_extension,
                 "State_Hessian_uu_Type",
                 type_name)
 
         # measurement hessian xx function code
-        measurement_hessian_xx_file_name_without_ext = \
+        measurement_hessian_xx_file_name_no_extension = \
             cost_matrices.measurement_hessian_xx_code_file_name.split(".")[0]
 
         measurement_hessian_xx_cpp_file_name, measurement_hessian_xx_SparseAvailable_list = \
             create_and_write_state_measurement_hessian_code(
-                measurement_hessian_xx_file_name_without_ext,
+                measurement_hessian_xx_file_name_no_extension,
                 "Measurement_Hessian_xx_Type",
                 type_name)
 
@@ -552,7 +555,7 @@ class SQP_MatrixUtilityDeploy:
             U_min_code_generator.create_limits_code(
                 data_type=data_type,
                 variable_name=variable_name,
-                caller_file_name_without_ext=caller_file_name_without_ext
+                caller_file_name_no_extension=caller_file_name_no_extension
             )
         deployed_file_names.append(U_min_file_name)
 
@@ -560,7 +563,7 @@ class SQP_MatrixUtilityDeploy:
             U_max_code_generator.create_limits_code(
                 data_type=data_type,
                 variable_name=variable_name,
-                caller_file_name_without_ext=caller_file_name_without_ext
+                caller_file_name_no_extension=caller_file_name_no_extension
             )
         deployed_file_names.append(U_max_file_name)
 
@@ -568,7 +571,7 @@ class SQP_MatrixUtilityDeploy:
             Y_min_code_generator.create_limits_code(
                 data_type=data_type,
                 variable_name=variable_name,
-                caller_file_name_without_ext=caller_file_name_without_ext
+                caller_file_name_no_extension=caller_file_name_no_extension
             )
         deployed_file_names.append(Y_min_file_name)
 
@@ -576,11 +579,60 @@ class SQP_MatrixUtilityDeploy:
             Y_max_code_generator.create_limits_code(
                 data_type=data_type,
                 variable_name=variable_name,
-                caller_file_name_without_ext=caller_file_name_without_ext
+                caller_file_name_no_extension=caller_file_name_no_extension
             )
         deployed_file_names.append(Y_max_file_name)
 
         # %% create cpp code
-        # code_text = ""
+        code_text = ""
 
-        pass
+        file_header_macro_name = "__" + code_file_name.upper() + "_HPP__"
+
+        code_text += "#ifndef " + file_header_macro_name + "\n"
+        code_text += "#define " + file_header_macro_name + "\n\n"
+
+        code_text += f"#include \"{parameter_class_cpp_file_name}\"\n"
+        code_text += f"#include \"{state_function_cpp_file_name}\"\n"
+        code_text += f"#include \"{measurement_function_cpp_file_name}\"\n"
+        code_text += f"#include \"{state_jacobian_x_cpp_file_name}\"\n"
+        code_text += f"#include \"{state_jacobian_u_cpp_file_name}\"\n"
+        code_text += f"#include \"{measurement_jacobian_x_cpp_file_name}\"\n"
+        code_text += f"#include \"{state_hessian_xx_cpp_file_name}\"\n"
+        code_text += f"#include \"{state_hessian_xu_cpp_file_name}\"\n"
+        code_text += f"#include \"{state_hessian_ux_cpp_file_name}\"\n"
+        code_text += f"#include \"{state_hessian_uu_cpp_file_name}\"\n"
+        code_text += f"#include \"{measurement_hessian_xx_cpp_file_name}\"\n\n"
+
+        code_text += f"#include \"{U_min_file_name}\"\n"
+        code_text += f"#include \"{U_max_file_name}\"\n"
+        code_text += f"#include \"{Y_min_file_name}\"\n"
+        code_text += f"#include \"{Y_max_file_name}\"\n\n"
+
+        code_text += "#include \"python_optimization.hpp\"\n\n"
+
+        namespace_name = code_file_name
+
+        code_text += "namespace " + namespace_name + " {\n\n"
+
+        code_text += "using namespace PythonNumpy;\n"
+        code_text += "using namespace PythonControl;\n"
+        code_text += "using namespace PythonOptimization;\n\n"
+
+        code_text += f"constexpr std::size_t NP = {cost_matrices.Np};\n\n"
+
+        code_text += f"constexpr std::size_t INPUT_SIZE = {cost_matrices.nu};\n"
+        code_text += f"constexpr std::size_t STATE_SIZE = {cost_matrices.nx};\n"
+        code_text += f"constexpr std::size_t OUTPUT_SIZE = {cost_matrices.ny};\n\n"
+
+        code_text += f"using Parameter_Type = {parameter_class_file_name_no_extension}::Parameter;\n\n"
+
+        code_text += "} // namespace " + namespace_name + "\n\n"
+
+        code_text += "#endif // " + file_header_macro_name + "\n"
+
+        code_file_name_ext = ControlDeploy.write_to_file(
+            code_text, code_file_name_ext)
+
+        deployed_file_names.append(code_file_name_ext)
+
+        return deployed_file_names
