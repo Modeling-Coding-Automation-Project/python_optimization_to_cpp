@@ -99,14 +99,12 @@ protected:
 
   using _T = Value_Type;
 
-  using _R_Full_Type =
-      PythonNumpy::DenseMatrix_Type<_T, INPUT_SIZE, INPUT_SIZE>;
-
   using _Mask_Type = U_Horizon_Type;
   using _Gradient_Type = U_Horizon_Type;
   using _V_Horizon_Type = U_Horizon_Type;
   using _HVP_Type = U_Horizon_Type;
   using _RHS_Type = U_Horizon_Type;
+  using _R_Full_Type = U_Horizon_Type;
   using _M_Inv_Type = U_Horizon_Type;
 
   using _ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
@@ -434,14 +432,10 @@ public:
           this->_diag_R_full, this->_lambda_factor);
 
       _M_Inv_Type M_inv;
-      for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        for (std::size_t j = 0; j < NP; ++j) {
-          M_inv(i, j) = static_cast<_T>(1) /
-                        Base::Utility::avoid_zero_divide(
-                            diag_R_full_lambda_factor(i, j),
-                            static_cast<_T>(AVOID_ZERO_DIVIDE_LIMIT));
-        }
-      }
+
+      MatrixOperation::solver_calculate_M_inv(
+          M_inv, diag_R_full_lambda_factor,
+          static_cast<_T>(AVOID_ZERO_DIVIDE_LIMIT));
 
       this->hvp_function = hvp_function_in;
 

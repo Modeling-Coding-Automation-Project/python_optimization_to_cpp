@@ -1430,6 +1430,97 @@ inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
                                             gtol, active_set);
 }
 
+/* solver calculate M_inv */
+
+namespace SolverCalculateMInv {
+
+// Column recursion for J (0..N-1), when J_idx > 0
+template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
+          std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
+struct Column {
+  static inline void compute(Out_Mat_Type &M_inv,
+                             const In_Mat_Type &diag_R_full_lambda_factor,
+                             const Value_Type &avoid_zero_limit) {
+
+    const auto denominator = Base::Utility::avoid_zero_divide(
+        diag_R_full_lambda_factor.template get<I, J_idx>(), avoid_zero_limit);
+
+    const auto value = static_cast<Value_Type>(1) / denominator;
+    M_inv.template set<I, J_idx>(value);
+
+    Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I,
+           (J_idx - 1)>::compute(M_inv, diag_R_full_lambda_factor,
+                                 avoid_zero_limit);
+  }
+};
+
+// Column recursion termination for J_idx == 0
+template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
+          std::size_t M, std::size_t N, std::size_t I>
+struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
+  static inline void compute(Out_Mat_Type &M_inv,
+                             const In_Mat_Type &diag_R_full_lambda_factor,
+                             const Value_Type &avoid_zero_limit) {
+
+    const auto denominator = Base::Utility::avoid_zero_divide(
+        diag_R_full_lambda_factor.template get<I, 0>(), avoid_zero_limit);
+
+    const auto value = static_cast<Value_Type>(1) / denominator;
+    M_inv.template set<I, 0>(value);
+  }
+};
+
+// Row recursion for I (0..M-1), when I_idx > 0
+template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
+          std::size_t M, std::size_t N, std::size_t I_idx>
+struct Row {
+  static inline void compute(Out_Mat_Type &M_inv,
+                             const In_Mat_Type &diag_R_full_lambda_factor,
+                             const Value_Type &avoid_zero_limit) {
+    Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I_idx,
+           (N - 1)>::compute(M_inv, diag_R_full_lambda_factor,
+                             avoid_zero_limit);
+
+    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, (I_idx - 1)>::compute(
+        M_inv, diag_R_full_lambda_factor, avoid_zero_limit);
+  }
+};
+
+// Row recursion termination for I_idx == 0
+template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
+          std::size_t M, std::size_t N>
+struct Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0> {
+  static inline void compute(Out_Mat_Type &M_inv,
+                             const In_Mat_Type &diag_R_full_lambda_factor,
+                             const Value_Type &avoid_zero_limit) {
+    Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0, (N - 1)>::compute(
+        M_inv, diag_R_full_lambda_factor, avoid_zero_limit);
+  }
+};
+
+} // namespace SolverCalculateMInv
+
+// Public wrapper to run the unrolled recursion for computing M_inv.
+// Note: M_inv should be a (INPUT_SIZE x NP) matrix; diag_R_full_lambda_factor
+// must be indexable with the same COLS/ROWS as M_inv for this implementation.
+template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type>
+inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
+                                   const In_Mat_Type &diag_R_full_lambda_factor,
+                                   const Value_Type &avoid_zero_limit) {
+  constexpr std::size_t M = Out_Mat_Type::COLS;
+  constexpr std::size_t N = Out_Mat_Type::ROWS;
+
+  static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
+  static_assert(In_Mat_Type::COLS == M,
+                "diag_R_full_lambda_factor COLS mismatch with M_inv");
+  static_assert(In_Mat_Type::ROWS == N,
+                "diag_R_full_lambda_factor ROWS mismatch with M_inv");
+
+  SolverCalculateMInv::Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N,
+                           (M - 1)>::compute(M_inv, diag_R_full_lambda_factor,
+                                             avoid_zero_limit);
+}
+
 } // namespace MatrixOperation
 
 } // namespace PythonOptimization
