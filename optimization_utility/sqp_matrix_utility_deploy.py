@@ -1,3 +1,20 @@
+"""
+File: sqp_matrix_utility_deploy.py
+
+This module provides utilities for deploying SQP (Sequential Quadratic Programming)
+matrix-related code from Python to C++ for NMPC
+(Nonlinear Model Predictive Control) applications.
+It automates the generation of C++ header files for cost matrices,
+state and measurement functions, Jacobians, Hessians, and constraint limits,
+based on Python data structures and code.
+
+Usage:
+------
+This module is intended to be used as part of a Python-to-C++ code
+generation pipeline for NMPC applications,
+where Python models and constraints are automatically
+translated into efficient C++ code for deployment.
+"""
 import os
 import sys
 sys.path.append(os.getcwd())
@@ -23,6 +40,24 @@ def create_sparse_matrix_code(
         type_name: str,
         matrix_name: str
 ):
+    """
+    Generates C++ code for defining a sparse matrix type using template metaprogramming.
+
+    The function creates C++ type aliases for a sparse matrix, where the sparsity pattern is
+    specified by a boolean numpy array. The generated code uses custom template types
+    (e.g., SparseAvailable, ColumnAvailable, SparseMatrix_Type) and includes the necessary
+    namespace declaration.
+
+    Args:
+        sparse_available_list (np.ndarray): A 2D numpy array of booleans indicating the
+            sparsity pattern of the matrix. Each element represents whether the corresponding
+            entry in the matrix is available (True) or not (False).
+        type_name (str): The C++ type name for the matrix elements (e.g., "double").
+        matrix_name (str): The desired name for the generated sparse matrix type.
+
+    Returns:
+        str: A string containing the generated C++ code for the sparse matrix type definition.
+    """
     code_text = ""
 
     code_text = "using namespace PythonNumpy;\n\n"
@@ -60,7 +95,27 @@ def create_and_write_parameter_class_code(
         value_type_name: str,
         file_name_no_extension: str
 ):
+    """
+    Generates C++ header code for a parameter class based on a Python dataclass instance,
+    and writes it to a .hpp file.
 
+    The generated C++ class will have public member variables corresponding to the fields
+    of the provided dataclass, with their values initialized using static_cast to the specified
+    C++ type. The class is wrapped in a namespace named after the file name (without extension),
+    and include guards are added.
+
+    Args:
+        parameter_object: An instance of a Python dataclass containing parameter names and values.
+        value_type_name (str): The name of the value type (Python type) to be mapped to a C++ type.
+        file_name_no_extension (str): The base name for the output file
+          and namespace (without extension).
+
+    Returns:
+        str: The path to the saved .hpp file containing the generated C++ code.
+
+    Raises:
+        TypeError: If `parameter_object` is not a dataclass instance.
+    """
     if not is_dataclass(parameter_object):
         raise TypeError("parameter_object must be a dataclass instance")
 
@@ -101,6 +156,20 @@ def create_and_write_parameter_class_code(
 
 
 def create_and_write_state_function_code(function_name: str):
+    """
+    Generates and writes C++ header code for a state function based on extracted Python functions.
+
+    This function locates a Python file corresponding to the given function name, extracts its functions,
+    converts them to C++ code using a visitor pattern, and writes the resulting code to a C++ header file.
+    The generated header file includes necessary macros, namespace declarations, and class definitions
+    with static member functions representing the converted Python functions.
+
+    Args:
+        function_name (str): The base name of the Python file and the C++ namespace/class to generate.
+
+    Returns:
+        str: The path to the saved C++ header file.
+    """
 
     file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
@@ -154,7 +223,21 @@ def create_and_write_state_function_code(function_name: str):
 
 
 def create_and_write_measurement_function_code(function_name: str):
+    """
+    Generates C++ header code for measurement functions based on Python source code and writes it to a file.
 
+    This function locates the Python file corresponding to the given function name, extracts its functions,
+    converts them to C++ code using a visitor pattern, and generates a C++ header file with appropriate
+    macros, includes, namespace, and class structure. The generated header file contains static methods
+    for the measurement functions and is saved to disk.
+
+    Args:
+        function_name (str): The name of the measurement function (used to locate the Python file and
+                             as the namespace and header file name).
+
+    Returns:
+        str: The path to the saved C++ header file.
+    """
     file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
 
@@ -212,7 +295,24 @@ def create_and_write_state_measurement_jacobian_code(
         output_type: str,
         type_name: str,
 ):
+    """
+    Generates C++ header code for state measurement Jacobian functions from Python source code,
+    writes the generated code to a file, and returns the file name and sparse matrix availability.
 
+    This function locates the Python file containing the specified function, extracts its code,
+    converts the relevant functions to C++ using a visitor pattern, and generates a C++ header
+    file with appropriate namespace, includes, and class structure. It also handles sparse matrix
+    code generation if applicable.
+
+    Args:
+        function_name (str): The name of the function to process and generate code for.
+        output_type (str): The output type to be used in the generated C++ code.
+        type_name (str): The type name for matrix code generation.
+
+    Returns:
+        Tuple[str, List[Any]]: A tuple containing the name of the saved C++ header file and a list
+        indicating the availability of sparse matrix representations for the extracted functions.
+    """
     file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
 
@@ -279,7 +379,27 @@ def create_and_write_state_measurement_hessian_code(
         output_type: str,
         type_name: str,
 ):
+    """
+    Generates C++ header code for state measurement Hessian functions
+      from Python source code and writes it to a file.
 
+    This function locates the Python source file corresponding 
+    to the given function name, extracts its functions,
+    converts them to C++ code, and generates a header file (.hpp) 
+    containing the converted code. It also handles
+    sparse matrix code generation if applicable.
+
+    Args:
+        function_name (str): The name of the function whose code
+          should be extracted and converted.
+        output_type (str): The C++ output type to use in the generated code.
+        type_name (str): The C++ type name for matrix or vector types
+          in the generated code.
+
+    Returns:
+        Tuple[str, List[Any]]: A tuple containing the saved file name
+          and a list of sparse matrix availability flags.
+    """
     file_path = ControlDeploy.find_file(
         f"{function_name}.py", os.getcwd())
 
@@ -342,6 +462,56 @@ def create_and_write_state_measurement_hessian_code(
 
 
 class SQP_MatrixUtilityDeploy:
+    """
+    Utility class for deploying SQP (Sequential Quadratic Programming)
+      cost matrices and related functions from Python to C++ code.
+
+    This class provides a static method to generate C++ header files
+      that encapsulate the cost matrices, system functions, Jacobians,
+        Hessians, and constraints required for NMPC
+          (Nonlinear Model Predictive Control) optimization.
+            The generated code is tailored for integration with a C++ optimization framework.
+
+    Methods
+    -------
+    generate_cpp_code(cost_matrices: SQP_CostMatrices_NMPC, file_name: str = None)
+      -> list[str]:
+        Generates C++ header files for the provided cost matrices and associated functions.
+
+        Parameters
+        ----------
+        cost_matrices : SQP_CostMatrices_NMPC
+            An object containing all required matrices, functions,
+              and parameters for NMPC optimization.
+        file_name : str, optional
+            Custom base name for the generated C++ files. If not provided,
+              the caller's file name is used.
+
+        Returns
+        -------
+        deployed_file_names : list[str]
+            List of generated C++ header file names.
+
+        Functionality
+        -------------
+        - Inspects the caller's context to determine variable
+          and file names for code generation.
+        - Generates C++ code for:
+            - Parameter class
+            - State and measurement functions
+            - Jacobians and Hessians (state and measurement)
+            - Input and output constraints (min/max)
+        - Assembles all generated components into a single C++ header file
+          with appropriate includes and namespace.
+        - Writes the generated code to disk and returns the list of file names.
+
+    Notes
+    -----
+    - Relies on several helper functions and classes
+      (e.g., ControlDeploy, NumpyDeploy, MinMaxCodeGenerator) for code generation.
+    - Assumes that the cost_matrices object provides all necessary attributes and code file names.
+    - Designed for automated deployment of NMPC problem definitions from Python to C++.
+    """
 
     def __init__(self):
         pass
@@ -351,7 +521,43 @@ class SQP_MatrixUtilityDeploy:
         cost_matrices: SQP_CostMatrices_NMPC,
         file_name: str = None
     ):
+        """
+        Generates C++ code for deploying SQP cost matrices
+          and related functions for NMPC.
 
+        This static method takes an SQP_CostMatrices_NMPC object
+          and generates C++ header files
+        for all required matrix types, function objects,
+          and parameter classes used in nonlinear
+        model predictive control (NMPC).
+          The generated code includes definitions for cost matrices,
+        state and measurement functions, Jacobians, Hessians,
+        and input/output constraints.
+
+        Args:
+            cost_matrices (SQP_CostMatrices_NMPC): The cost matrices
+              and associated function/code file names
+                required for NMPC deployment.
+            file_name (str, optional): The base name for the generated
+              C++ header file. If None, the caller's
+                file name is used.
+
+        Returns:
+            List[str]: A list of deployed C++ file names generated during the process.
+
+        Raises:
+            ValueError: If the data type of the cost matrices is not supported.
+
+        Notes:
+            - The method inspects the caller's frame to determine the variable name
+              and file name for code generation.
+            - It generates code for parameter classes, state/measurement functions,
+              Jacobians, Hessians, and limits.
+            - The generated C++ code uses a namespace based on the caller's file
+              and variable name.
+            - The method writes the generated code to files and returns
+              the list of file names.
+        """
         deployed_file_names = []
 
         data_type = cost_matrices.Qx[0, 0].dtype.name

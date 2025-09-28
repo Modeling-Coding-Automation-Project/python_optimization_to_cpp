@@ -1,3 +1,27 @@
+/**
+ * @file python_optimization_sqp_active_set_pcg_pls.hpp
+ *
+ * @brief Sequential Quadratic Programming (SQP) Active Set solver with
+ * Preconditioned Conjugate Gradient (PCG) and Projected Line Search (PLS).
+ *
+ * This header defines the SQP_ActiveSet_PCG_PLS class template and related
+ * utilities for solving constrained optimization problems, typically arising in
+ * optimal control and model predictive control (MPC) applications. The solver
+ * uses an active set strategy to handle box constraints and employs a
+ * preconditioned conjugate gradient method for solving the quadratic
+ * subproblems, with a projected line search for robust step size selection.
+ *
+ * Key Features:
+ * - Active set management for box constraints on control inputs.
+ * - Preconditioned conjugate gradient (PCG) for efficient solution of large,
+ * sparse quadratic problems.
+ * - Projected line search (PLS) for step size selection and constraint
+ * satisfaction.
+ * - Flexible cost, gradient, and Hessian-vector product function interfaces via
+ * std::function.
+ * - Customizable solver parameters (tolerances, iteration limits,
+ * regularization factors).
+ */
 #ifndef __PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP__
 #define __PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP__
 
@@ -37,10 +61,22 @@ static constexpr double LAMBDA_FACTOR_DEFAULT = 1e-6;
 
 namespace MatrixOperation {
 
+/**
+ * @brief Adds a scalar value to each element of the given matrix.
+ *
+ * This function creates a copy of the input matrix and adds the specified
+ * scalar to every element. The resulting matrix is returned.
+ *
+ * @tparam Matrix_Type Type of the matrix, which must define COLS, ROWS,
+ * Value_Type, and operator().
+ * @param matrix The input matrix to which the scalar will be added.
+ * @param scalar The scalar value to add to each element of the matrix.
+ * @return A new matrix with the scalar added to each element.
+ */
 template <typename Matrix_Type>
-inline auto add_scalar_to_matrix(Matrix_Type &matrix,
-                                 typename Matrix_Type::Value_Type scalar)
-    -> Matrix_Type {
+inline auto
+add_scalar_to_matrix(Matrix_Type &matrix,
+                     typename Matrix_Type::Value_Type scalar) -> Matrix_Type {
 
   Matrix_Type out = matrix;
 
@@ -72,6 +108,16 @@ using HVP_Function_Object = std::function<HVP_Type(
 
 /* SQP Active Set with PCG and PLS */
 
+/**
+ * @brief Sequential Quadratic Programming (SQP) solver using Active Set,
+ * Preconditioned Conjugate Gradient (PCG), and Projected Line Search (PLS).
+ *
+ * This class implements an SQP-based optimization algorithm for solving
+ * constrained nonlinear problems, typically arising in optimal control and
+ * trajectory planning. It leverages an active set strategy for handling
+ * constraints, a preconditioned conjugate gradient method for solving the
+ * quadratic subproblems, and a projected line search for step size selection.
+ */
 template <typename CostMatrices_Type_In> class SQP_ActiveSet_PCG_PLS {
 public:
   /* Constant */
@@ -296,8 +342,8 @@ public:
   }
 
   /* Getter */
-  inline auto get_solver_step_iterated_number(void) const
-      -> const std::size_t & {
+  inline auto
+  get_solver_step_iterated_number(void) const -> const std::size_t & {
     return this->_solver_step_iterated_number;
   }
 
@@ -305,12 +351,33 @@ public:
     return this->_pcg_step_iterated_number;
   }
 
-  inline auto get_line_search_step_iterated_number(void) const
-      -> const std::size_t & {
+  inline auto
+  get_line_search_step_iterated_number(void) const -> const std::size_t & {
     return this->_line_search_step_iterated_number;
   }
 
   /* Function */
+
+  /**
+   * @brief Solves a linear system using the Preconditioned Conjugate Gradient
+   * (PCG) method.
+   *
+   * This function implements the PCG algorithm to solve a system of equations
+   * of the form Hx = rhs, where H is implicitly defined by the Hessian-vector
+   * product function (`hvp_function`) and regularization. The method uses a
+   * preconditioner (`M_inv`) to accelerate convergence, and operates only on
+   * the active set.
+   *
+   * @tparam U_Horizon_Type Type of the input horizon variable.
+   * @tparam _RHS_Type Type of the right-hand side vector.
+   * @tparam _M_Inv_Type Type of the preconditioner matrix/vector.
+   *
+   * @param U_horizon_in Input horizon variable for the Hessian-vector product.
+   * @param rhs Right-hand side vector of the linear system.
+   * @param M_inv Preconditioner matrix/vector (inverse of the diagonal or
+   * block-diagonal approximation of H).
+   * @return Solution vector `d` that approximately solves Hx = rhs.
+   */
   inline auto
   preconditioned_conjugate_gradient(const U_Horizon_Type U_horizon_in,
                                     const _RHS_Type &rhs,
@@ -377,6 +444,30 @@ public:
     return d;
   }
 
+  /**
+   * @brief Computes the mask of free variables in the optimization horizon.
+   *
+   * This function determines which variables in the input horizon are "free"
+   * (not at their bounds) based on the provided minimum and maximum matrices,
+   * absolute tolerance, and gradient tolerance. It updates the internal active
+   * set with indices of variables at their bounds.
+   *
+   * @tparam U_Horizon_Type Type of the optimization horizon variable.
+   * @tparam _Gradient_Type Type of the gradient vector.
+   * @tparam _U_Min_Matrix_Type Type of the minimum bound matrix.
+   * @tparam _U_Max_Matrix_Type Type of the maximum bound matrix.
+   * @tparam _T Scalar type for tolerance values.
+   * @tparam _Mask_Type Type of the mask returned.
+   *
+   * @param U_horizon_in Input optimization horizon variable.
+   * @param gradient Gradient vector.
+   * @param U_min_matrix Minimum bound matrix.
+   * @param U_max_matrix Maximum bound matrix.
+   * @param atol Absolute tolerance for bound checking.
+   * @param gtol Gradient tolerance for active set determination.
+   * @return _Mask_Type Mask indicating free variables (typically 1 for free, 0
+   * for active).
+   */
   inline auto free_mask(U_Horizon_Type &U_horizon_in, _Gradient_Type &gradient,
                         const _U_Min_Matrix_Type &U_min_matrix,
                         const _U_Max_Matrix_Type &U_max_matrix, const _T &atol,
@@ -397,6 +488,39 @@ public:
     return m;
   }
 
+  /**
+   * @brief Solves an optimization problem using SQP with active set, PCG, and
+   * PLS methods.
+   *
+   * This function iteratively optimizes the control horizon vector
+   * `U_horizon_store` given initial values, cost and gradient functions,
+   * Hessian-vector product function, and constraints. It performs
+   * gradient-based updates, applies a preconditioned conjugate gradient method,
+   * and uses line search with projection to ensure constraints are satisfied.
+   * The process continues until convergence or maximum iterations are reached.
+   *
+   * @tparam U_Horizon_Type Type representing the control horizon vector.
+   * @tparam _Cost_And_Gradient_Function_Object_Type Type of the cost and
+   * gradient function object.
+   * @tparam _Cost_Function_Object_Type Type of the cost function object.
+   * @tparam _HVP_Function_Object_Type Type of the Hessian-vector product
+   * function object.
+   * @tparam X_Type Type representing the initial state vector.
+   * @tparam _U_Min_Matrix_Type Type representing the minimum constraint matrix
+   * for control horizon.
+   * @tparam _U_Max_Matrix_Type Type representing the maximum constraint matrix
+   * for control horizon.
+   *
+   * @param U_horizon_initial Initial control horizon vector.
+   * @param cost_and_gradient_function Function object to compute cost and
+   * gradient.
+   * @param cost_function Function object to compute cost.
+   * @param hvp_function_in Hessian-vector product function object.
+   * @param X_initial_in Initial state vector.
+   * @param U_min_matrix Minimum constraint matrix for control horizon.
+   * @param U_max_matrix Maximum constraint matrix for control horizon.
+   * @return Optimized control horizon vector.
+   */
   inline auto solve(
       const U_Horizon_Type &U_horizon_initial,
       const _Cost_And_Gradient_Function_Object_Type &cost_and_gradient_function,
@@ -516,13 +640,36 @@ protected:
 };
 
 /* make SQP_ActiveSetPCG_PLS */
+/**
+ * @brief Factory function to create an instance of SQP_ActiveSet_PCG_PLS.
+ *
+ * This function template constructs and returns a default-initialized
+ * SQP_ActiveSet_PCG_PLS object parameterized by the specified
+ * CostMatrices_Type.
+ *
+ * @tparam CostMatrices_Type The type representing cost matrices used in the SQP
+ * algorithm.
+ * @return SQP_ActiveSet_PCG_PLS<CostMatrices_Type> A new instance of
+ * SQP_ActiveSet_PCG_PLS.
+ */
 template <typename CostMatrices_Type>
-inline auto make_SQP_ActiveSet_PCG_PLS(void)
-    -> SQP_ActiveSet_PCG_PLS<CostMatrices_Type> {
+inline auto
+make_SQP_ActiveSet_PCG_PLS(void) -> SQP_ActiveSet_PCG_PLS<CostMatrices_Type> {
   return SQP_ActiveSet_PCG_PLS<CostMatrices_Type>();
 }
 
 /* SQP_ActiveSetPCG_PLS Type */
+/**
+ * @brief Alias template for SQP_ActiveSet_PCG_PLS with specified cost matrices
+ * type.
+ *
+ * This alias simplifies the usage of the SQP_ActiveSet_PCG_PLS class template
+ * by allowing users to refer to it as SQP_ActiveSet_PCG_PLS_Type with a given
+ * CostMatrices_Type.
+ *
+ * @tparam CostMatrices_Type The type representing the cost matrices used in the
+ * SQP algorithm.
+ */
 template <typename CostMatrices_Type>
 using SQP_ActiveSet_PCG_PLS_Type = SQP_ActiveSet_PCG_PLS<CostMatrices_Type>;
 
