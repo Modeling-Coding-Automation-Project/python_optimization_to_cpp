@@ -4,14 +4,17 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build Active File",
+      "label": "Build Active C++ File",
       "type": "shell",
       "command": "/usr/bin/g++",
       "args": [
         "-g",
+        "-O0",
         "-std=c++11",
         "-I${workspaceFolder}",
         "-I${workspaceFolder}/python_optimization",
+        "-I${workspaceFolder}/optimization_utility",
+        "-I${workspaceFolder}/external_libraries/python_control_to_cpp/python_control",
         "-I${workspaceFolder}/external_libraries/python_numpy_to_cpp/python_numpy",
         "-I${workspaceFolder}/external_libraries/python_numpy_to_cpp/base_matrix",
         "-I${workspaceFolder}/external_libraries/python_math_to_cpp/base_math",
@@ -26,7 +29,34 @@
         "isDefault": true
       },
       "problemMatcher": ["$gcc"],
-      "detail": "Build the active C++ file"
+      "detail": "Build Active C++ File"
+    },
+    {
+      "label": "Build without Debug Active C++ File",
+      "type": "shell",
+      "command": "/usr/bin/g++",
+      "args": [
+        "-O2",
+        "-std=c++11",
+        "-I${workspaceFolder}",
+        "-I${workspaceFolder}/python_optimization",
+        "-I${workspaceFolder}/optimization_utility",
+        "-I${workspaceFolder}/external_libraries/python_control_to_cpp/python_control",
+        "-I${workspaceFolder}/external_libraries/python_numpy_to_cpp/python_numpy",
+        "-I${workspaceFolder}/external_libraries/python_numpy_to_cpp/base_matrix",
+        "-I${workspaceFolder}/external_libraries/python_math_to_cpp/base_math",
+        "-I${workspaceFolder}/external_libraries/python_math_to_cpp/python_math",
+        "-I${workspaceFolder}/external_libraries/base_utility_cpp/base_utility",
+        "${file}",
+        "-o",
+        "${workspaceFolder}/${fileBasenameNoExtension}"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"],
+      "detail": "Build without Debug Active C++ File"
     }
   ]
 }
