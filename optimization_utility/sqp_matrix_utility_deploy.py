@@ -624,7 +624,29 @@ class SQP_MatrixUtilityDeploy:
         code_text += f"constexpr std::size_t STATE_SIZE = {cost_matrices.nx};\n"
         code_text += f"constexpr std::size_t OUTPUT_SIZE = {cost_matrices.ny};\n\n"
 
+        code_text += f"using X_Type = StateSpaceState_Type<{type_name}, STATE_SIZE>;\n"
+        code_text += f"using U_Type = StateSpaceInput_Type<{type_name}, INPUT_SIZE>;\n"
+        code_text += f"using Y_Type = StateSpaceOutput_Type<{type_name}, OUTPUT_SIZE>;\n\n"
+
         code_text += f"using Parameter_Type = {parameter_class_file_name_no_extension}::Parameter;\n\n"
+
+        code_text += f"using State_Jacobian_X_Matrix_Type = {state_jacobian_x_file_name_no_extension}" + \
+            "::State_Jacobian_x_Type;\n"
+        code_text += f"using State_Jacobian_U_Matrix_Type = {state_jacobian_u_file_name_no_extension}" + \
+            "::State_Jacobian_u_Type;\n"
+        code_text += f"using Measurement_Jacobian_X_Matrix_Type = {measurement_jacobian_x_file_name_no_extension}" + \
+            "::Measurement_Jacobian_x_Type;\n\n"
+
+        code_text += f"using State_Hessian_XX_Matrix_Type = {state_hessian_xx_file_name_no_extension}" + \
+            "::State_Hessian_xx_Type;\n"
+        code_text += f"using State_Hessian_XU_Matrix_Type = {state_hessian_xu_file_name_no_extension}" + \
+            "::State_Hessian_xu_Type;\n"
+        code_text += f"using State_Hessian_UX_Matrix_Type = {state_hessian_ux_file_name_no_extension}" + \
+            "::State_Hessian_ux_Type;\n"
+        code_text += f"using State_Hessian_UU_Matrix_Type = {state_hessian_uu_file_name_no_extension}" + \
+            "::State_Hessian_uu_Type;\n"
+        code_text += f"using Measurement_Hessian_XX_Matrix_Type = {measurement_hessian_xx_file_name_no_extension}" + \
+            "::Measurement_Hessian_xx_Type;\n\n"
 
         code_text += "} // namespace " + namespace_name + "\n\n"
 
