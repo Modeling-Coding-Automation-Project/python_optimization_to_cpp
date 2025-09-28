@@ -1521,6 +1521,110 @@ inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
                                              avoid_zero_limit);
 }
 
+/* saturate U_horizon */
+
+namespace SaturateU_Horizon {
+
+// Column recursion for J (0..N-1), when J_idx > 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
+          std::size_t I, std::size_t J_idx>
+struct Column {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+
+    const auto u_min = U_min_matrix.template get<I, J_idx>();
+    const auto u_max = U_max_matrix.template get<I, J_idx>();
+    const auto u_val = U_candidate.template get<I, J_idx>();
+
+    if (u_val < u_min) {
+      U_candidate.template set<I, J_idx>(u_min);
+    } else if (u_val > u_max) {
+      U_candidate.template set<I, J_idx>(u_max);
+    }
+
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I,
+           (J_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+  }
+};
+
+// Column recursion termination for J_idx == 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
+          std::size_t I>
+struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+
+    const auto u_min = U_min_matrix.template get<I, 0>();
+    const auto u_max = U_max_matrix.template get<I, 0>();
+    const auto u_val = U_candidate.template get<I, 0>();
+
+    if (u_val < u_min) {
+      U_candidate.template set<I, 0>(u_min);
+    } else if (u_val > u_max) {
+      U_candidate.template set<I, 0>(u_max);
+    }
+  }
+};
+
+// Row recursion for I (0..M-1), when I_idx > 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
+          std::size_t I_idx>
+struct Row {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I_idx,
+           (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
+        (I_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+  }
+};
+
+// Row recursion termination for I_idx == 0
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type, std::size_t M, std::size_t N>
+struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0,
+           (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+  }
+};
+
+} // namespace SaturateU_Horizon
+
+// Public wrapper to run the unrolled recursion for saturating U_horizon.
+// Note: U_candidate is modified in-place based on [U_min, U_max].
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename U_Max_Matrix_Type>
+inline void saturate_U_horizon(U_Mat_Type &U_candidate,
+                               const U_Min_Matrix_Type &U_min_matrix,
+                               const U_Max_Matrix_Type &U_max_matrix) {
+  constexpr std::size_t M = U_Mat_Type::COLS; // INPUT_SIZE
+  constexpr std::size_t N = U_Mat_Type::ROWS; // NP
+
+  static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
+  static_assert(U_Min_Matrix_Type::COLS == M,
+                "U_min_matrix COLS mismatch with U_candidate");
+  static_assert(U_Min_Matrix_Type::ROWS == N,
+                "U_min_matrix ROWS mismatch with U_candidate");
+  static_assert(U_Max_Matrix_Type::COLS == M,
+                "U_max_matrix COLS mismatch with U_candidate");
+  static_assert(U_Max_Matrix_Type::ROWS == N,
+                "U_max_matrix ROWS mismatch with U_candidate");
+
+  SaturateU_Horizon::Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
+                         (M - 1)>::compute(U_candidate, U_min_matrix,
+                                           U_max_matrix);
+}
+
 } // namespace MatrixOperation
 
 } // namespace PythonOptimization

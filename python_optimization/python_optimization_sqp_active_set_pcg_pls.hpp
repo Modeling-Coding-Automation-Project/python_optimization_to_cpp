@@ -456,15 +456,8 @@ public:
            ++line_search_iteration) {
         auto U_candidate = U_horizon_new + alpha * d;
 
-        for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-          for (std::size_t j = 0; j < NP; ++j) {
-            if (U_candidate(i, j) < U_min_matrix(i, j)) {
-              U_candidate(i, j) = U_min_matrix(i, j);
-            } else if (U_candidate(i, j) > U_max_matrix(i, j)) {
-              U_candidate(i, j) = U_max_matrix(i, j);
-            }
-          }
-        }
+        MatrixOperation::saturate_U_horizon(U_candidate, U_min_matrix,
+                                            U_max_matrix);
 
         auto J_candidate = cost_function(X_initial, U_candidate);
 
