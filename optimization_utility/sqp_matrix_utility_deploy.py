@@ -770,6 +770,21 @@ class SQP_MatrixUtilityDeploy:
             "            Measurement_Hessian_XX_Matrix_Type>(\n" + \
             "                Qx, R, Qy, U_min, U_max, Y_min, Y_max);\n\n"
 
+        code_text += "    cost_matrices.set_function_objects(\n"
+        code_text += "        STATE_FUNCTION,\n"
+        code_text += "        MEASUREMENT_FUNCTION,\n"
+        code_text += "        STATE_JACOBIAN_X_FUNCTION,\n"
+        code_text += "        STATE_JACOBIAN_U_FUNCTION,\n"
+        code_text += "        MEASUREMENT_JACOBIAN_X_FUNCTION,\n"
+        code_text += "        STATE_HESSIAN_XX_FUNCTION,\n"
+        code_text += "        STATE_HESSIAN_XU_FUNCTION,\n"
+        code_text += "        STATE_HESSIAN_UX_FUNCTION,\n"
+        code_text += "        STATE_HESSIAN_UU_FUNCTION,\n"
+        code_text += "        MEASUREMENT_HESSIAN_XX_FUNCTION\n"
+        code_text += "    );\n\n"
+
+        code_text += "    return cost_matrices;\n\n"
+
         code_text += "}\n\n"
 
         code_text += "} // namespace " + namespace_name + "\n\n"
