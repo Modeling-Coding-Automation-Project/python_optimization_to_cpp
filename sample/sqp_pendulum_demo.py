@@ -19,73 +19,62 @@ from optimization_utility.sqp_matrix_utility_deploy import SQP_MatrixUtilityDepl
 
 
 def create_plant_model():
-    """Return sympy expressions for the 2-mass spring-damper discrete dynamics.
+    theta, omega, u0, dt, a, b, c, d = sp.symbols(
+        'theta omega u0 dt a b c d', real=True)
 
-    States: x1, v1, x2, v2
-    Inputs: u1, u2
-    Discrete dynamics use Euler integration with time-step dt.
-    Returns (f, h, x_syms, u_syms) matching the sqp conventions.
-    """
-    x1, v1, x2, v2, u1, u2, dt_s, m1_s, m2_s, k1_s, k2_s, k3_s, b1_s, b2_s, b3_s = \
-        sp.symbols('x1 v1 x2 v2 u1 u2 dt m1 m2 k1 k2 k3 b1 b2 b3', real=True)
+    theta_next = theta + dt * omega
+    omega_dot = -a * sp.sin(theta) - b * omega + c * \
+        sp.cos(theta) * u0 + d * (u0 ** 2)
+    omega_next = omega + dt * omega_dot
 
-    # continuous-time accelerations
-    v1_dot = (-k1_s * x1 - b1_s * v1 - k2_s *
-              (x1 - x2) - b2_s * (v1 - v2) + u1) / m1_s
-    v2_dot = (-k3_s * x2 - b3_s * v2 - k2_s *
-              (x2 - x1) - b2_s * (v2 - v1) + u2) / m2_s
+    f = sp.Matrix([theta_next, omega_next])
+    h = sp.Matrix([[theta]])
 
-    # discrete-time update (Euler)
-    x1_next = x1 + dt_s * v1
-    v1_next = v1 + dt_s * v1_dot
-    x2_next = x2 + dt_s * v2
-    v2_next = v2 + dt_s * v2_dot
-
-    f = sp.Matrix([x1_next, v1_next, x2_next, v2_next])
-
-    # measurement: for this demo we can measure positions only
-    h = sp.Matrix([[x1], [x2]])
-
-    x_syms = sp.Matrix([[x1], [v1], [x2], [v2]])
-    u_syms = sp.Matrix([[u1], [u2]])
+    x_syms = sp.Matrix([[theta], [omega]])
+    u_syms = sp.Matrix([[u0]])
 
     return f, h, x_syms, u_syms
 
 
-# --- NMPC Problem Definition (2-Mass Spring-Damper System) ---
+# --- Nonlinear NMPC Problem (Pendulum-like with nonlinear actuator) ---
+nx = 2   # [theta, omega]
+nu = 1   # scalar input
+ny = 1   # scalar output (theta)
+N = 20   # Prediction Horizon
 
-nx = 4   # State dimension
-nu = 2   # Input dimension
-N = 10   # Prediction Horizon
+dt = 0.05
 
-dt = 0.1
+# dynamics params
+a = 9.81     # gravity/l over I scaling
+b = 0.3      # damping
+c = 1.2      # state-dependent control effectiveness: cos(theta)*u
+d = 0.10     # actuator nonlinearity: u^2
 
 
 @dataclass
 class Parameters:
-    m1: float = 1.0
-    m2: float = 1.0
-    k1: float = 10.0
-    k2: float = 15.0
-    k3: float = 10.0
-    b1: float = 1.0
-    b2: float = 2.0
-    b3: float = 1.0
+    a: float = a
+    b: float = b
+    c: float = c
+    d: float = d
     dt: float = dt
 
 
 state_space_parameters = Parameters()
 
 # cost weights
-Qx = np.diag([0.5, 0.1, 0.5, 0.1])
-Qy = np.diag([0.5, 0.5])
-R = np.diag([0.1, 0.1])
+Qx = np.diag([2.5, 0.5])
+Qy = np.diag([2.5])
+R = np.diag([0.05])
+Px = Qx.copy()
+Py = Qy.copy()
 
-u_min = np.array([[-1.0], [-1.0]])
-u_max = np.array([[1.0], [1.0]])
+# input bounds
+u_min = np.array([[-2.0]])
+u_max = np.array([[2.0]])
 
 # reference
-reference = np.array([0.0])
+reference = np.array([[0.0]])
 reference_trajectory = np.tile(reference, (1, N + 1))
 
 # Create symbolic plant model
@@ -110,17 +99,14 @@ sqp_cost_matrices.state_space_parameters = state_space_parameters
 sqp_cost_matrices.reference_trajectory = reference_trajectory
 
 
-X_initial = np.array([[5.0], [0.0], [5.0], [0.0]])
+# initial state
+X_initial = np.array([[np.pi / 4.0], [0.0]])
 U_horizon_initial = np.zeros((nu, N))
 
 solver = SQP_ActiveSet_PCG_PLS(
     U_size=(nu, N)
 )
-solver.set_solver_max_iteration(20)
-
-# You can create cpp header which can easily define SQP_CostMatrices_NMPC as C++ code
-SQP_MatrixUtilityDeploy.generate_cpp_code(
-    cost_matrices=sqp_cost_matrices)
+solver.set_solver_max_iteration(30)
 
 U_opt = solver.solve(
     U_horizon_initial=U_horizon_initial,
