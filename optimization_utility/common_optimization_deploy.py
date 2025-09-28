@@ -1,3 +1,11 @@
+"""
+File: common_optimization_deploy.py
+
+Description: This file contains utility functions and classes for generating
+C++ code for optimization problems, particularly focusing on min/max limits
+and their active sets. It includes functionality to create C++ code snippets
+for these limits, which can be used in Model Predictive Control (MPC) deployments.
+"""
 import os
 import sys
 sys.path.append(os.getcwd())
@@ -13,7 +21,21 @@ VALUE_IS_ZERO_TOL = 1e-30
 
 def get_active_array(
         min_max_array: np.ndarray) -> np.ndarray:
+    """
+    Generates a boolean array indicating which elements in the input array are finite.
 
+    Parameters
+    ----------
+    min_max_array : np.ndarray
+        A 2D NumPy array containing numerical values.
+
+    Returns
+    -------
+    np.ndarray
+        A boolean array of the same shape as `min_max_array`,
+          where each element is True if the corresponding element in `min_max_array`
+            is finite, and False otherwise.
+    """
     is_active_array = np.zeros_like(min_max_array, dtype=bool)
 
     if min_max_array is not None:
