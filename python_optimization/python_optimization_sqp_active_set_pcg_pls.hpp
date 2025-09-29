@@ -58,6 +58,7 @@ static constexpr double ALPHA_DECAY_RATE_DEFAULT = 0.5;
 static constexpr std::size_t SOLVER_MAX_ITERATION_DEFAULT = 100;
 
 static constexpr double LAMBDA_FACTOR_DEFAULT = 1e-6;
+static constexpr double STEP_NORM_ZERO_LIMIT_DEFAULT = 1e-12;
 
 namespace MatrixOperation {
 
@@ -74,9 +75,9 @@ namespace MatrixOperation {
  * @return A new matrix with the scalar added to each element.
  */
 template <typename Matrix_Type>
-inline auto
-add_scalar_to_matrix(Matrix_Type &matrix,
-                     typename Matrix_Type::Value_Type scalar) -> Matrix_Type {
+inline auto add_scalar_to_matrix(Matrix_Type &matrix,
+                                 typename Matrix_Type::Value_Type scalar)
+    -> Matrix_Type {
 
   Matrix_Type out = matrix;
 
@@ -191,6 +192,7 @@ public:
         _line_search_max_iteration(LINE_SEARCH_MAX_ITERATION_DEFAULT),
         _pcg_tol(static_cast<_T>(PCG_TOL_DEFAULT)),
         _lambda_factor(static_cast<_T>(LAMBDA_FACTOR_DEFAULT)),
+        _step_norm_zero_limit(static_cast<_T>(STEP_NORM_ZERO_LIMIT_DEFAULT)),
         _diag_R_full(_R_Full_Type::ones()), _mask(), _active_set(),
         _solver_step_iterated_number(0), _pcg_step_iterated_number(0),
         _line_search_step_iterated_number(0), _J_optimal(static_cast<_T>(0)) {}
@@ -206,6 +208,7 @@ public:
         _pcg_max_iteration(input._pcg_max_iteration),
         _line_search_max_iteration(input._line_search_max_iteration),
         _pcg_tol(input._pcg_tol), _lambda_factor(input._lambda_factor),
+        _step_norm_zero_limit(input._step_norm_zero_limit),
         _diag_R_full(input._diag_R_full), _mask(input._mask),
         _active_set(input._active_set),
         _solver_step_iterated_number(input._solver_step_iterated_number),
@@ -231,6 +234,7 @@ public:
 
       this->_pcg_tol = input._pcg_tol;
       this->_lambda_factor = input._lambda_factor;
+      this->_step_norm_zero_limit = input._step_norm_zero_limit;
 
       this->_diag_R_full = input._diag_R_full;
 
@@ -259,6 +263,7 @@ public:
         _pcg_max_iteration(input._pcg_max_iteration),
         _line_search_max_iteration(input._line_search_max_iteration),
         _pcg_tol(input._pcg_tol), _lambda_factor(input._lambda_factor),
+        _step_norm_zero_limit(input._step_norm_zero_limit),
         _diag_R_full(std::move(input._diag_R_full)),
         _mask(std::move(input._mask)),
         _active_set(std::move(input._active_set)),
@@ -285,6 +290,7 @@ public:
 
       this->_pcg_tol = input._pcg_tol;
       this->_lambda_factor = input._lambda_factor;
+      this->_step_norm_zero_limit = input._step_norm_zero_limit;
 
       this->_diag_R_full = std::move(input._diag_R_full);
 
@@ -337,13 +343,17 @@ public:
     this->_lambda_factor = factor;
   }
 
+  inline void set_step_norm_zero_limit(const _T &limit) {
+    this->_step_norm_zero_limit = limit;
+  }
+
   inline void set_diag_R_full(const _R_Full_Type &diag_R_full) {
     this->_diag_R_full = diag_R_full;
   }
 
   /* Getter */
-  inline auto
-  get_solver_step_iterated_number(void) const -> const std::size_t & {
+  inline auto get_solver_step_iterated_number(void) const
+      -> const std::size_t & {
     return this->_solver_step_iterated_number;
   }
 
@@ -351,8 +361,8 @@ public:
     return this->_pcg_step_iterated_number;
   }
 
-  inline auto
-  get_line_search_step_iterated_number(void) const -> const std::size_t & {
+  inline auto get_line_search_step_iterated_number(void) const
+      -> const std::size_t & {
     return this->_line_search_step_iterated_number;
   }
 
@@ -382,7 +392,6 @@ public:
   preconditioned_conjugate_gradient(const U_Horizon_Type U_horizon_in,
                                     const _RHS_Type &rhs,
                                     const _M_Inv_Type &M_inv) -> _RHS_Type {
-
     _RHS_Type d;
 
     auto rhs_norm = ActiveSet2D_MatrixOperator::norm(rhs, this->_active_set);
@@ -472,7 +481,6 @@ public:
                         const _U_Min_Matrix_Type &U_min_matrix,
                         const _U_Max_Matrix_Type &U_max_matrix, const _T &atol,
                         const _T &gtol) -> _Mask_Type {
-
     auto m = _Mask_Type::ones();
 
     this->_active_set.clear();
@@ -528,7 +536,6 @@ public:
       const _HVP_Function_Object_Type &hvp_function_in,
       const X_Type &X_initial_in, const _U_Min_Matrix_Type &U_min_matrix,
       const _U_Max_Matrix_Type &U_max_matrix) -> U_Horizon_Type {
-
     this->X_initial = X_initial_in;
     U_Horizon_Type U_horizon_store = U_horizon_initial;
 
@@ -565,6 +572,11 @@ public:
 
       auto d =
           this->preconditioned_conjugate_gradient(U_horizon_store, rhs, M_inv);
+
+      auto norm_d = ActiveSet2D_MatrixOperator.norm(d, this->_active_set);
+      if (norm_d < this->_step_norm_zero_limit) {
+        break;
+      }
 
       /*
        * line search and projection
@@ -626,6 +638,7 @@ protected:
 
   _T _pcg_tol;
   _T _lambda_factor;
+  _T _step_norm_zero_limit;
 
   _R_Full_Type _diag_R_full;
 
@@ -653,8 +666,8 @@ protected:
  * SQP_ActiveSet_PCG_PLS.
  */
 template <typename CostMatrices_Type>
-inline auto
-make_SQP_ActiveSet_PCG_PLS(void) -> SQP_ActiveSet_PCG_PLS<CostMatrices_Type> {
+inline auto make_SQP_ActiveSet_PCG_PLS(void)
+    -> SQP_ActiveSet_PCG_PLS<CostMatrices_Type> {
   return SQP_ActiveSet_PCG_PLS<CostMatrices_Type>();
 }
 
