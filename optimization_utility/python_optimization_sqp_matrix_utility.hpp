@@ -1042,9 +1042,10 @@ public:
    * @return X_Horizon_Type The matrix containing the state trajectory over the
    * horizon.
    */
-  inline auto
-  simulate_trajectory(const X_Type &X_initial, const U_Horizon_Type &U_horizon,
-                      const _Parameter_Type &parameter) -> X_Horizon_Type {
+  inline auto simulate_trajectory(const X_Type &X_initial,
+                                  const U_Horizon_Type &U_horizon,
+                                  const _Parameter_Type &parameter)
+      -> X_Horizon_Type {
 
     X_Horizon_Type X_horizon;
     X_Type X = X_initial;
@@ -1074,8 +1075,8 @@ public:
    * @return Y_Horizon_Type The resulting penalty matrix for Y horizon limit
    * violations.
    */
-  inline auto
-  calculate_Y_limit_penalty(const Y_Horizon_Type &Y_horizon) -> Y_Horizon_Type {
+  inline auto calculate_Y_limit_penalty(const Y_Horizon_Type &Y_horizon)
+      -> Y_Horizon_Type {
     Y_Horizon_Type Y_limit_penalty;
 
     MatrixOperation::calculate_Y_limit_penalty(
@@ -1457,8 +1458,10 @@ public:
     auto CX_N_T_Py_Cx_N_dx = PythonNumpy::ATranspose_mul_B(
         Cx_N, (static_cast<_T>(2) * this->_Py * Cx_N_dx));
 
-    auto YN_limit_active_CX_N_dx = MatrixOperation::element_wise_multiply(
-        MatrixOperation::get_row(Y_limit_active, NP), Cx_N_dx);
+    Y_Type YN_limit_active_CX_N_dx;
+    PythonNumpy::element_wise_multiply(
+        YN_limit_active_CX_N_dx, MatrixOperation::get_row(Y_limit_active, NP),
+        Cx_N_dx);
 
     auto Y_min_max_rho_YN_limit_active_CX_N_dx =
         static_cast<_T>(2) * this->_Y_min_max_rho * YN_limit_active_CX_N_dx;
@@ -1506,8 +1509,10 @@ public:
           static_cast<_T>(2) * this->_Py * ek_y,
           MatrixOperation::get_row(dx, k));
 
-      auto YN_limit_active_CX_k_dx = MatrixOperation::element_wise_multiply(
-          MatrixOperation::get_row(Y_limit_active, k), Cx_dx_k);
+      Y_Type YN_limit_active_CX_k_dx;
+      PythonNumpy::element_wise_multiply(
+          YN_limit_active_CX_k_dx, MatrixOperation::get_row(Y_limit_active, k),
+          Cx_dx_k);
 
       auto Y_min_max_rho_Yk_limit_active_Cx_dx_k =
           static_cast<_T>(2) * this->_Y_min_max_rho * YN_limit_active_CX_k_dx;

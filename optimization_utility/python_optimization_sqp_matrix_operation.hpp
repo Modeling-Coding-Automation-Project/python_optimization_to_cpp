@@ -196,50 +196,6 @@ inline auto get_row(const Matrix_In_Type &in_matrix,
 }
 
 /**
- * @brief Performs element-wise multiplication of two matrices.
- *
- * This function takes two matrices, A and B, of the same dimensions and returns
- * a new matrix where each element is the product of the corresponding elements
- * in A and B.
- *
- * @tparam Matrix_A_Type Type of the first input matrix. Must define Value_Type,
- * COLS, and ROWS.
- * @tparam Matrix_B_Type Type of the second input matrix. Must define COLS and
- * ROWS.
- * @param A The first input matrix.
- * @param B The second input matrix.
- * @return PythonNumpy::DenseMatrix_Type<typename Matrix_A_Type::Value_Type,
- * Matrix_A_Type::COLS, Matrix_A_Type::ROWS> A matrix containing the
- * element-wise products of A and B.
- *
- * @note The function enforces at compile time that both matrices have the same
- * dimensions.
- */
-template <typename Matrix_A_Type, typename Matrix_B_Type>
-inline auto element_wise_multiply(const Matrix_A_Type &A,
-                                  const Matrix_B_Type &B)
-    -> PythonNumpy::DenseMatrix_Type<typename Matrix_A_Type::Value_Type,
-                                     Matrix_A_Type::COLS, Matrix_A_Type::ROWS> {
-
-  static_assert(Matrix_A_Type::COLS == Matrix_B_Type::COLS,
-                "Matrix_A_Type::COLS != Matrix_B_Type::COLS");
-  static_assert(Matrix_A_Type::ROWS == Matrix_B_Type::ROWS,
-                "Matrix_A_Type::ROWS != Matrix_B_Type::ROWS");
-
-  PythonNumpy::DenseMatrix_Type<typename Matrix_A_Type::Value_Type,
-                                Matrix_A_Type::COLS, Matrix_A_Type::ROWS>
-      out;
-
-  for (std::size_t i = 0; i < Matrix_A_Type::COLS; i++) {
-    for (std::size_t j = 0; j < Matrix_A_Type::ROWS; j++) {
-      out(i, j) = A(i, j) * B(i, j);
-    }
-  }
-
-  return out;
-}
-
-/**
  * @brief Calculates the quadratic form X * W * X^T for a given row vector X and
  * matrix W.
  *
