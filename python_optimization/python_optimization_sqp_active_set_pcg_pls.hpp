@@ -573,7 +573,7 @@ public:
       auto d =
           this->preconditioned_conjugate_gradient(U_horizon_store, rhs, M_inv);
 
-      auto norm_d = ActiveSet2D_MatrixOperator.norm(d, this->_active_set);
+      auto norm_d = ActiveSet2D_MatrixOperator::norm(d, this->_active_set);
       if (norm_d < this->_step_norm_zero_limit) {
         break;
       }
@@ -598,7 +598,7 @@ public:
         auto J_candidate = cost_function(X_initial, U_candidate);
 
         this->_line_search_step_iterated_number = line_search_iteration + 1;
-        if (J_candidate <= J || alpha < this->_alpha_small_limit) {
+        if (J_candidate < J || alpha < this->_alpha_small_limit) {
           U_horizon_new = U_candidate;
           J = J_candidate;
           U_updated_flag = true;
