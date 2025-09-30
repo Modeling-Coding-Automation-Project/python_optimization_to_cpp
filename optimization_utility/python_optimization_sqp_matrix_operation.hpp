@@ -252,6 +252,200 @@ inline auto calculate_quadratic_no_weighted(const X_Type &X) ->
 
 namespace CalculateY_LimitPenalty {
 
+/**
+ * @brief Template struct for conditional minimum matrix operation in SQP
+ * optimization.
+ *
+ * This struct serves as a template for performing conditional minimum
+ * operations on matrices, typically used within Sequential Quadratic
+ * Programming (SQP) optimization utilities. The actual implementation is
+ * expected to be provided via template specialization.
+ *
+ * @tparam Y_Mat_Type         The type representing the input matrix.
+ * @tparam Y_Min_Matrix_Type  The type representing the matrix to store minimum
+ * values.
+ * @tparam Out_Type           The output type for the operation.
+ * @tparam I                  The number of rows (or a specific row index,
+ * depending on usage).
+ * @tparam J_idx              The number of columns (or a specific column index,
+ * depending on usage).
+ * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
+ * enabled.
+ */
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type, typename Out_Type,
+          std::size_t I, std::size_t J_idx, bool limit_valid_flag>
+struct MinConditional {};
+
+/**
+ * @brief Specialization of MinConditional for conditional minimum penalty
+ * computation.
+ *
+ * This struct template computes a penalty when an element in the Y_horizon
+ * matrix is less than the corresponding element in the Y_min_matrix. If the
+ * condition is met, it sets the penalty in the Y_limit_penalty output matrix at
+ * the same index.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix
+ * Y_min_matrix.
+ * @tparam Out_Type           Type of the output penalty matrix Y_limit_penalty.
+ * @tparam I                  Row index (compile-time constant).
+ * @tparam J_idx              Column index (compile-time constant).
+ *
+ * @param Y_horizon           Input matrix containing values to be checked.
+ * @param Y_min_matrix        Matrix containing minimum allowed values.
+ * @param Y_limit_penalty     Output matrix where penalty is set if condition is
+ * met.
+ *
+ * The penalty is computed as (y - y_min) and set only if y < y_min.
+ */
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type, typename Out_Type,
+          std::size_t I, std::size_t J_idx>
+struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx, true> {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      Out_Type &Y_limit_penalty) {
+
+    const auto y = Y_horizon.template get<I, J_idx>();
+    const auto y_min = Y_min_matrix.template get<I, J_idx>();
+
+    if (y < y_min) {
+      Y_limit_penalty.template set<I, J_idx>(y - y_min);
+    }
+  }
+};
+
+/**
+ * @brief Specialization of MinConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a no-op implementation of the compute function.
+ * When the boolean template parameter is false, this struct's compute method
+ * does nothing and simply ignores its arguments.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Min_Matrix_Type  Type of the input matrix Y_min_matrix.
+ * @tparam Out_Type           Type of the output Y_limit_penalty.
+ * @tparam I                  Row index or size parameter.
+ * @tparam J_idx              Column index or size parameter.
+ *
+ * @param Y_horizon           Input matrix (unused).
+ * @param Y_min_matrix        Input matrix (unused).
+ * @param Y_limit_penalty     Output parameter (unused).
+ */
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type, typename Out_Type,
+          std::size_t I, std::size_t J_idx>
+struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx,
+                      false> {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Min_Matrix_Type &Y_min_matrix,
+                      Out_Type &Y_limit_penalty) {
+
+    static_cast<void>(Y_horizon);
+    static_cast<void>(Y_min_matrix);
+    static_cast<void>(Y_limit_penalty);
+    /* Do Nothing */
+  }
+};
+
+/**
+ * @brief Template struct for conditional maximum matrix operations.
+ *
+ * This struct template is designed to perform conditional maximum operations
+ * on matrices, with customizable types and compile-time parameters.
+ *
+ * @tparam Y_Mat_Type         The type representing the input matrix.
+ * @tparam Y_Max_Matrix_Type  The type representing the matrix used for maximum
+ * value comparison.
+ * @tparam Out_Type           The type representing the output/result.
+ * @tparam I                  Compile-time row index or dimension parameter.
+ * @tparam J_idx              Compile-time column index or dimension parameter.
+ * @tparam limit_valid_flag   Boolean flag indicating whether a limit condition
+ * is valid.
+ */
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type, typename Out_Type,
+          std::size_t I, std::size_t J_idx, bool limit_valid_flag>
+struct MaxConditional {};
+
+/**
+ * @brief Specialization of MaxConditional for applying a conditional maximum
+ * penalty.
+ *
+ * This struct template provides a static compute function that compares an
+ * element at position (I, J_idx) in the input matrix Y_horizon with the
+ * corresponding element in Y_max_matrix. If the value in Y_horizon exceeds the
+ * maximum allowed value in Y_max_matrix, the difference (penalty) is set in the
+ * output matrix Y_limit_penalty at the same position.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Max_Matrix_Type  Type of the matrix containing maximum allowed
+ * values.
+ * @tparam Out_Type           Type of the output matrix for storing penalties.
+ * @tparam I                  Row index (compile-time constant).
+ * @tparam J_idx              Column index (compile-time constant).
+ *
+ * @note This specialization is enabled when the last template parameter is
+ * true.
+ *
+ * @param Y_horizon       Input matrix containing current values.
+ * @param Y_max_matrix    Matrix containing maximum allowed values.
+ * @param Y_limit_penalty Output matrix where the penalty is set if the limit is
+ * exceeded.
+ */
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type, typename Out_Type,
+          std::size_t I, std::size_t J_idx>
+struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx, true> {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Type &Y_limit_penalty) {
+
+    const auto y = Y_horizon.template get<I, J_idx>();
+    const auto y_max = Y_max_matrix.template get<I, J_idx>();
+
+    if (y > y_max) {
+      Y_limit_penalty.template set<I, J_idx>(y - y_max);
+    }
+  }
+};
+
+/**
+ * @brief Specialization of MaxConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a static compute function that takes three
+ * parameters:
+ * - Y_horizon: A constant reference to a matrix or data structure representing
+ * the horizon values.
+ * - Y_max_matrix: A constant reference to a matrix or data structure
+ * representing the maximum values.
+ * - Y_limit_penalty: A reference to an output variable for storing the penalty
+ * or result.
+ *
+ * When the condition is false, this function performs no operation (no-op) on
+ * the inputs. The parameters are explicitly marked as unused to avoid compiler
+ * warnings.
+ *
+ * @tparam Y_Mat_Type         Type of the horizon matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum matrix.
+ * @tparam Out_Type           Type of the output variable.
+ * @tparam I                  Compile-time index or size parameter.
+ * @tparam J_idx              Compile-time index or size parameter.
+ */
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type, typename Out_Type,
+          std::size_t I, std::size_t J_idx>
+struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx,
+                      false> {
+  static void compute(const Y_Mat_Type &Y_horizon,
+                      const Y_Max_Matrix_Type &Y_max_matrix,
+                      Out_Type &Y_limit_penalty) {
+
+    static_cast<void>(Y_horizon);
+    static_cast<void>(Y_max_matrix);
+    static_cast<void>(Y_limit_penalty);
+    /* Do Nothing */
+  }
+};
+
 // Column recursion when J_idx > 0
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
@@ -262,17 +456,13 @@ struct Column {
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Type &Y_limit_penalty) {
 
-    const auto y = Y_horizon.template get<I, J_idx>();
-    const auto y_min = Y_min_matrix.template get<I, J_idx>();
-    const auto y_max = Y_max_matrix.template get<I, J_idx>();
+    MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx,
+                   Y_Min_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(Y_horizon, Y_min_matrix, Y_limit_penalty);
 
-    if (y < y_min) {
-      Y_limit_penalty.template set<I, J_idx>(y - y_min);
-    } else if (y > y_max) {
-      Y_limit_penalty.template set<I, J_idx>(y - y_max);
-    } else {
-      /* Do Nothing */
-    }
+    MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx,
+                   Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(Y_horizon, Y_max_matrix, Y_limit_penalty);
 
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, I,
            (J_idx - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
@@ -291,17 +481,13 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Type &Y_limit_penalty) {
 
-    const auto y = Y_horizon.template get<I, 0>();
-    const auto y_min = Y_min_matrix.template get<I, 0>();
-    const auto y_max = Y_max_matrix.template get<I, 0>();
+    MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, 0,
+                   Y_Min_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(Y_horizon, Y_min_matrix, Y_limit_penalty);
 
-    if (y < y_min) {
-      Y_limit_penalty.template set<I, 0>(y - y_min);
-    } else if (y > y_max) {
-      Y_limit_penalty.template set<I, 0>(y - y_max);
-    } else {
-      /* Do Nothing */
-    }
+    MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, 0,
+                   Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(Y_horizon, Y_max_matrix, Y_limit_penalty);
   }
 };
 
@@ -387,6 +573,94 @@ inline void calculate_Y_limit_penalty(const Y_Mat_Type &Y_horizon,
 
 namespace CalculateY_LimitPenaltyAndActive {
 
+// Per-element conditional for Y_min with penalty+active update
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MinConditional {};
+
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, true> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Min_Matrix_Type &Y_min_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+
+    const auto y = Y_horizon.template get<I, J_idx>();
+    const auto y_min = Y_min_matrix.template get<I, J_idx>();
+
+    if (y < y_min) {
+      Y_limit_penalty.template set<I, J_idx>(y - y_min);
+      Y_limit_active.template set<I, J_idx>(
+          static_cast<typename Active_Type::Value_Type>(1));
+    }
+  }
+};
+
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, false> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Min_Matrix_Type &Y_min_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+    static_cast<void>(Y_horizon);
+    static_cast<void>(Y_min_matrix);
+    static_cast<void>(Y_limit_penalty);
+    static_cast<void>(Y_limit_active);
+    /* Do Nothing */
+  }
+};
+
+// Per-element conditional for Y_max with penalty+active update
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MaxConditional {};
+
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, true> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Max_Matrix_Type &Y_max_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+
+    const auto y = Y_horizon.template get<I, J_idx>();
+    const auto y_max = Y_max_matrix.template get<I, J_idx>();
+
+    if (y > y_max) {
+      Y_limit_penalty.template set<I, J_idx>(y - y_max);
+      Y_limit_active.template set<I, J_idx>(
+          static_cast<typename Active_Type::Value_Type>(1));
+    }
+  }
+};
+
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, false> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Max_Matrix_Type &Y_max_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+    static_cast<void>(Y_horizon);
+    static_cast<void>(Y_max_matrix);
+    static_cast<void>(Y_limit_penalty);
+    static_cast<void>(Y_limit_active);
+    /* Do Nothing */
+  }
+};
+
 // Column recursion when J_idx > 0
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
@@ -399,21 +673,15 @@ struct Column {
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
 
-    const auto y = Y_horizon.template get<I, J_idx>();
-    const auto y_min = Y_min_matrix.template get<I, J_idx>();
-    const auto y_max = Y_max_matrix.template get<I, J_idx>();
+    MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, J_idx,
+                   Y_Min_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(Y_horizon, Y_min_matrix, Y_limit_penalty, Y_limit_active);
 
-    if (y < y_min) {
-      Y_limit_penalty.template set<I, J_idx>(y - y_min);
-      Y_limit_active.template set<I, J_idx>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else if (y > y_max) {
-      Y_limit_penalty.template set<I, J_idx>(y - y_max);
-      Y_limit_active.template set<I, J_idx>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else {
-      /* Do Nothing */
-    }
+    MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, J_idx,
+                   Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(Y_horizon, Y_max_matrix, Y_limit_penalty, Y_limit_active);
 
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, I, (J_idx - 1)>::compute(Y_horizon, Y_min_matrix,
@@ -435,21 +703,13 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
 
-    const auto y = Y_horizon.template get<I, 0>();
-    const auto y_min = Y_min_matrix.template get<I, 0>();
-    const auto y_max = Y_max_matrix.template get<I, 0>();
+    MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, 0, Y_Min_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(Y_horizon, Y_min_matrix, Y_limit_penalty, Y_limit_active);
 
-    if (y < y_min) {
-      Y_limit_penalty.template set<I, 0>(y - y_min);
-      Y_limit_active.template set<I, 0>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else if (y > y_max) {
-      Y_limit_penalty.template set<I, 0>(y - y_max);
-      Y_limit_active.template set<I, 0>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else {
-      /* Do Nothing */
-    }
+    MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, 0, Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(Y_horizon, Y_max_matrix, Y_limit_penalty, Y_limit_active);
   }
 };
 
@@ -1398,6 +1658,88 @@ compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
 
 namespace FreeMaskAtCheck {
 
+// Per-element conditional for lower-bound proximity check
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename AtLower_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct LowerConditional {};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename AtLower_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type,
+                        I, J_idx, true> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower) {
+
+    const auto u = U_horizon_in.template get<I, J_idx>();
+    const auto u_min = U_min_matrix.template get<I, J_idx>();
+
+    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
+      at_lower.template set<I, J_idx>(true);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename AtLower_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type,
+                        I, J_idx, false> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower) {
+
+    static_cast<void>(U_horizon_in);
+    static_cast<void>(U_min_matrix);
+    static_cast<void>(atol);
+    static_cast<void>(at_lower);
+    /* Do Nothing */
+  }
+};
+
+// Per-element conditional for upper-bound proximity check
+template <typename U_Mat_Type, typename U_Max_Matrix_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct UpperConditional {};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
+                        I, J_idx, true> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtUpper_Type &at_upper) {
+
+    const auto u = U_horizon_in.template get<I, J_idx>();
+    const auto u_max = U_max_matrix.template get<I, J_idx>();
+
+    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
+      at_upper.template set<I, J_idx>(true);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
+                        I, J_idx, false> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtUpper_Type &at_upper) {
+
+    static_cast<void>(U_horizon_in);
+    static_cast<void>(U_max_matrix);
+    static_cast<void>(atol);
+    static_cast<void>(at_upper);
+    /* Do Nothing */
+  }
+};
+
 // Column recursion for J (0..N-1), when J_idx > 0
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
@@ -1410,17 +1752,15 @@ struct Column {
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
 
-    const auto u = U_horizon_in.template get<I, J_idx>();
-    const auto u_min = U_min_matrix.template get<I, J_idx>();
-    const auto u_max = U_max_matrix.template get<I, J_idx>();
+    LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type, I,
+                     J_idx,
+                     U_Min_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(U_horizon_in, U_min_matrix, atol, at_lower);
 
-    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
-      at_lower.template set<I, J_idx>(true);
-    }
-
-    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
-      at_upper.template set<I, J_idx>(true);
-    }
+    UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type, I,
+                     J_idx,
+                     U_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(U_horizon_in, U_max_matrix, atol, at_upper);
 
     Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
            AtUpper_Type, Value_Type, M, N, I,
@@ -1442,17 +1782,13 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
 
-    const auto u = U_horizon_in.template get<I, 0>();
-    const auto u_min = U_min_matrix.template get<I, 0>();
-    const auto u_max = U_max_matrix.template get<I, 0>();
+    LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type, I,
+                     0, U_Min_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(U_horizon_in, U_min_matrix, atol, at_lower);
 
-    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
-      at_lower.template set<I, 0>(true);
-    }
-
-    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
-      at_upper.template set<I, 0>(true);
-    }
+    UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type, I,
+                     0, U_Max_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(U_horizon_in, U_max_matrix, atol, at_upper);
   }
 };
 
@@ -1833,6 +2169,68 @@ inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
 
 namespace SaturateU_Horizon {
 
+// Min-limit conditional saturator based on compile-time availability
+template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MinSaturateConditional {};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, true> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix) {
+
+    const auto u_min = U_min_matrix.template get<I, J_idx>();
+    const auto u_val = U_candidate.template get<I, J_idx>();
+    if (u_val < u_min) {
+      U_candidate.template set<I, J_idx>(u_min);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, false> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix) {
+
+    static_cast<void>(U_candidate);
+    static_cast<void>(U_min_matrix);
+    /* Do Nothing. */
+  }
+};
+
+// Max-limit conditional saturator based on compile-time availability
+template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MaxSaturateConditional {};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, true> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+
+    const auto u_max = U_max_matrix.template get<I, J_idx>();
+    const auto u_val = U_candidate.template get<I, J_idx>();
+    if (u_val > u_max) {
+      U_candidate.template set<I, J_idx>(u_max);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, false> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+
+    static_cast<void>(U_candidate);
+    static_cast<void>(U_max_matrix);
+    /* Do Nothing. */
+  }
+};
+
 // Column recursion for J (0..N-1), when J_idx > 0
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
@@ -1842,15 +2240,15 @@ struct Column {
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
 
-    const auto u_min = U_min_matrix.template get<I, J_idx>();
-    const auto u_max = U_max_matrix.template get<I, J_idx>();
-    const auto u_val = U_candidate.template get<I, J_idx>();
+    MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx,
+                           (U_Min_Matrix_Type::SparseAvailable_Type::lists
+                                [I][J_idx])>::compute(U_candidate,
+                                                      U_min_matrix);
 
-    if (u_val < u_min) {
-      U_candidate.template set<I, J_idx>(u_min);
-    } else if (u_val > u_max) {
-      U_candidate.template set<I, J_idx>(u_max);
-    }
+    MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx,
+                           (U_Max_Matrix_Type::SparseAvailable_Type::lists
+                                [I][J_idx])>::compute(U_candidate,
+                                                      U_max_matrix);
 
     Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I,
            (J_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
@@ -1866,15 +2264,13 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
 
-    const auto u_min = U_min_matrix.template get<I, 0>();
-    const auto u_max = U_max_matrix.template get<I, 0>();
-    const auto u_val = U_candidate.template get<I, 0>();
+    MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, 0,
+                           (U_Min_Matrix_Type::SparseAvailable_Type::lists
+                                [I][0])>::compute(U_candidate, U_min_matrix);
 
-    if (u_val < u_min) {
-      U_candidate.template set<I, 0>(u_min);
-    } else if (u_val > u_max) {
-      U_candidate.template set<I, 0>(u_max);
-    }
+    MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, 0,
+                           (U_Max_Matrix_Type::SparseAvailable_Type::lists
+                                [I][0])>::compute(U_candidate, U_max_matrix);
   }
 };
 

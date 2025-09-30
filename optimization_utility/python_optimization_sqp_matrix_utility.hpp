@@ -379,13 +379,14 @@ public:
                         const _Qy_Type &Qy, const U_Min_Type &U_min,
                         const U_Max_Type &U_max, const Y_Min_Type &Y_min,
                         const Y_Max_Type &Y_max)
-      : _Y_min_max_rho(), _Y_offset(), _Qx(Qx), _R(R), _Qy(Qy), _Px(Qx),
-        _Py(Qy), _U_min_matrix(), _U_max_matrix(), _Y_min_matrix(),
-        _Y_max_matrix(), _state_function(), _measurement_function(),
-        _state_function_jacobian_x(), _state_function_jacobian_u(),
-        _measurement_function_jacobian_x(), _state_function_hessian_xx(),
-        _state_function_hessian_xu(), _state_function_hessian_ux(),
-        _state_function_hessian_uu(), _measurement_function_hessian_xx() {
+      : _Y_min_max_rho(static_cast<_T>(Y_MIN_MAX_RHO_FACTOR_DEFAULT)),
+        _Y_offset(), _Qx(Qx), _R(R), _Qy(Qy), _Px(Qx), _Py(Qy), _U_min_matrix(),
+        _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(), _state_function(),
+        _measurement_function(), _state_function_jacobian_x(),
+        _state_function_jacobian_u(), _measurement_function_jacobian_x(),
+        _state_function_hessian_xx(), _state_function_hessian_xu(),
+        _state_function_hessian_ux(), _state_function_hessian_uu(),
+        _measurement_function_hessian_xx() {
 
     this->set_U_min(U_min);
     this->set_U_max(U_max);
@@ -611,6 +612,10 @@ public:
   inline void set_Qy(const _Qy_Type &Qy) {
     this->_Qy = Qy;
     this->_Py = Qy;
+  }
+
+  inline void set_Y_min_max_rho(const _T &Y_min_max_rho) {
+    this->_Y_min_max_rho = Y_min_max_rho;
   }
 
   /* Getters */
