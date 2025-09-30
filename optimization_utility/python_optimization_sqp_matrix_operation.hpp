@@ -252,10 +252,53 @@ inline auto calculate_quadratic_no_weighted(const X_Type &X) ->
 
 namespace CalculateY_LimitPenalty {
 
+/**
+ * @brief Template struct for conditional minimum matrix operation in SQP
+ * optimization.
+ *
+ * This struct serves as a template for performing conditional minimum
+ * operations on matrices, typically used within Sequential Quadratic
+ * Programming (SQP) optimization utilities. The actual implementation is
+ * expected to be provided via template specialization.
+ *
+ * @tparam Y_Mat_Type         The type representing the input matrix.
+ * @tparam Y_Min_Matrix_Type  The type representing the matrix to store minimum
+ * values.
+ * @tparam Out_Type           The output type for the operation.
+ * @tparam I                  The number of rows (or a specific row index,
+ * depending on usage).
+ * @tparam J_idx              The number of columns (or a specific column index,
+ * depending on usage).
+ * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
+ * enabled.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type, typename Out_Type,
           std::size_t I, std::size_t J_idx, bool limit_valid_flag>
 struct MinConditional {};
 
+/**
+ * @brief Specialization of MinConditional for conditional minimum penalty
+ * computation.
+ *
+ * This struct template computes a penalty when an element in the Y_horizon
+ * matrix is less than the corresponding element in the Y_min_matrix. If the
+ * condition is met, it sets the penalty in the Y_limit_penalty output matrix at
+ * the same index.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix
+ * Y_min_matrix.
+ * @tparam Out_Type           Type of the output penalty matrix Y_limit_penalty.
+ * @tparam I                  Row index (compile-time constant).
+ * @tparam J_idx              Column index (compile-time constant).
+ *
+ * @param Y_horizon           Input matrix containing values to be checked.
+ * @param Y_min_matrix        Matrix containing minimum allowed values.
+ * @param Y_limit_penalty     Output matrix where penalty is set if condition is
+ * met.
+ *
+ * The penalty is computed as (y - y_min) and set only if y < y_min.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type, typename Out_Type,
           std::size_t I, std::size_t J_idx>
 struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx, true> {
@@ -272,6 +315,24 @@ struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx, true> {
   }
 };
 
+/**
+ * @brief Specialization of MinConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a no-op implementation of the compute function.
+ * When the boolean template parameter is false, this struct's compute method
+ * does nothing and simply ignores its arguments.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Min_Matrix_Type  Type of the input matrix Y_min_matrix.
+ * @tparam Out_Type           Type of the output Y_limit_penalty.
+ * @tparam I                  Row index or size parameter.
+ * @tparam J_idx              Column index or size parameter.
+ *
+ * @param Y_horizon           Input matrix (unused).
+ * @param Y_min_matrix        Input matrix (unused).
+ * @param Y_limit_penalty     Output parameter (unused).
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type, typename Out_Type,
           std::size_t I, std::size_t J_idx>
 struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx,
@@ -287,10 +348,50 @@ struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx,
   }
 };
 
+/**
+ * @brief Template struct for conditional maximum matrix operations.
+ *
+ * This struct template is designed to perform conditional maximum operations
+ * on matrices, with customizable types and compile-time parameters.
+ *
+ * @tparam Y_Mat_Type         The type representing the input matrix.
+ * @tparam Y_Max_Matrix_Type  The type representing the matrix used for maximum
+ * value comparison.
+ * @tparam Out_Type           The type representing the output/result.
+ * @tparam I                  Compile-time row index or dimension parameter.
+ * @tparam J_idx              Compile-time column index or dimension parameter.
+ * @tparam limit_valid_flag   Boolean flag indicating whether a limit condition
+ * is valid.
+ */
 template <typename Y_Mat_Type, typename Y_Max_Matrix_Type, typename Out_Type,
           std::size_t I, std::size_t J_idx, bool limit_valid_flag>
 struct MaxConditional {};
 
+/**
+ * @brief Specialization of MaxConditional for applying a conditional maximum
+ * penalty.
+ *
+ * This struct template provides a static compute function that compares an
+ * element at position (I, J_idx) in the input matrix Y_horizon with the
+ * corresponding element in Y_max_matrix. If the value in Y_horizon exceeds the
+ * maximum allowed value in Y_max_matrix, the difference (penalty) is set in the
+ * output matrix Y_limit_penalty at the same position.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Max_Matrix_Type  Type of the matrix containing maximum allowed
+ * values.
+ * @tparam Out_Type           Type of the output matrix for storing penalties.
+ * @tparam I                  Row index (compile-time constant).
+ * @tparam J_idx              Column index (compile-time constant).
+ *
+ * @note This specialization is enabled when the last template parameter is
+ * true.
+ *
+ * @param Y_horizon       Input matrix containing current values.
+ * @param Y_max_matrix    Matrix containing maximum allowed values.
+ * @param Y_limit_penalty Output matrix where the penalty is set if the limit is
+ * exceeded.
+ */
 template <typename Y_Mat_Type, typename Y_Max_Matrix_Type, typename Out_Type,
           std::size_t I, std::size_t J_idx>
 struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx, true> {
@@ -307,6 +408,29 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx, true> {
   }
 };
 
+/**
+ * @brief Specialization of MaxConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a static compute function that takes three
+ * parameters:
+ * - Y_horizon: A constant reference to a matrix or data structure representing
+ * the horizon values.
+ * - Y_max_matrix: A constant reference to a matrix or data structure
+ * representing the maximum values.
+ * - Y_limit_penalty: A reference to an output variable for storing the penalty
+ * or result.
+ *
+ * When the condition is false, this function performs no operation (no-op) on
+ * the inputs. The parameters are explicitly marked as unused to avoid compiler
+ * warnings.
+ *
+ * @tparam Y_Mat_Type         Type of the horizon matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum matrix.
+ * @tparam Out_Type           Type of the output variable.
+ * @tparam I                  Compile-time index or size parameter.
+ * @tparam J_idx              Compile-time index or size parameter.
+ */
 template <typename Y_Mat_Type, typename Y_Max_Matrix_Type, typename Out_Type,
           std::size_t I, std::size_t J_idx>
 struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx,
