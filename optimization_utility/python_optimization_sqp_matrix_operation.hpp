@@ -573,6 +573,94 @@ inline void calculate_Y_limit_penalty(const Y_Mat_Type &Y_horizon,
 
 namespace CalculateY_LimitPenaltyAndActive {
 
+// Per-element conditional for Y_min with penalty+active update
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MinConditional {};
+
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, true> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Min_Matrix_Type &Y_min_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+
+    const auto y = Y_horizon.template get<I, J_idx>();
+    const auto y_min = Y_min_matrix.template get<I, J_idx>();
+
+    if (y < y_min) {
+      Y_limit_penalty.template set<I, J_idx>(y - y_min);
+      Y_limit_active.template set<I, J_idx>(
+          static_cast<typename Active_Type::Value_Type>(1));
+    }
+  }
+};
+
+template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, false> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Min_Matrix_Type &Y_min_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+    static_cast<void>(Y_horizon);
+    static_cast<void>(Y_min_matrix);
+    static_cast<void>(Y_limit_penalty);
+    static_cast<void>(Y_limit_active);
+    /* Do Nothing */
+  }
+};
+
+// Per-element conditional for Y_max with penalty+active update
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MaxConditional {};
+
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, true> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Max_Matrix_Type &Y_max_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+
+    const auto y = Y_horizon.template get<I, J_idx>();
+    const auto y_max = Y_max_matrix.template get<I, J_idx>();
+
+    if (y > y_max) {
+      Y_limit_penalty.template set<I, J_idx>(y - y_max);
+      Y_limit_active.template set<I, J_idx>(
+          static_cast<typename Active_Type::Value_Type>(1));
+    }
+  }
+};
+
+template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
+          typename Out_Penalty_Type, typename Active_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+                      Active_Type, I, J_idx, false> {
+  static inline void compute(const Y_Mat_Type &Y_horizon,
+                             const Y_Max_Matrix_Type &Y_max_matrix,
+                             Out_Penalty_Type &Y_limit_penalty,
+                             Active_Type &Y_limit_active) {
+    static_cast<void>(Y_horizon);
+    static_cast<void>(Y_max_matrix);
+    static_cast<void>(Y_limit_penalty);
+    static_cast<void>(Y_limit_active);
+    /* Do Nothing */
+  }
+};
+
 // Column recursion when J_idx > 0
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
@@ -585,21 +673,15 @@ struct Column {
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
 
-    const auto y = Y_horizon.template get<I, J_idx>();
-    const auto y_min = Y_min_matrix.template get<I, J_idx>();
-    const auto y_max = Y_max_matrix.template get<I, J_idx>();
+    MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, J_idx,
+                   Y_Min_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(Y_horizon, Y_min_matrix, Y_limit_penalty, Y_limit_active);
 
-    if (y < y_min) {
-      Y_limit_penalty.template set<I, J_idx>(y - y_min);
-      Y_limit_active.template set<I, J_idx>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else if (y > y_max) {
-      Y_limit_penalty.template set<I, J_idx>(y - y_max);
-      Y_limit_active.template set<I, J_idx>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else {
-      /* Do Nothing */
-    }
+    MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, J_idx,
+                   Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(Y_horizon, Y_max_matrix, Y_limit_penalty, Y_limit_active);
 
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, I, (J_idx - 1)>::compute(Y_horizon, Y_min_matrix,
@@ -621,21 +703,13 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
 
-    const auto y = Y_horizon.template get<I, 0>();
-    const auto y_min = Y_min_matrix.template get<I, 0>();
-    const auto y_max = Y_max_matrix.template get<I, 0>();
+    MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, 0, Y_Min_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(Y_horizon, Y_min_matrix, Y_limit_penalty, Y_limit_active);
 
-    if (y < y_min) {
-      Y_limit_penalty.template set<I, 0>(y - y_min);
-      Y_limit_active.template set<I, 0>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else if (y > y_max) {
-      Y_limit_penalty.template set<I, 0>(y - y_max);
-      Y_limit_active.template set<I, 0>(
-          static_cast<typename Active_Type::Value_Type>(1));
-    } else {
-      /* Do Nothing */
-    }
+    MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type, Active_Type,
+                   I, 0, Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(Y_horizon, Y_max_matrix, Y_limit_penalty, Y_limit_active);
   }
 };
 
