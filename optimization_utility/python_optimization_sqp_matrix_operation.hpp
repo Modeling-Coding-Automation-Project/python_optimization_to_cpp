@@ -2169,6 +2169,68 @@ inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
 
 namespace SaturateU_Horizon {
 
+// Min-limit conditional saturator based on compile-time availability
+template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MinSaturateConditional {};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, true> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix) {
+
+    const auto u_min = U_min_matrix.template get<I, J_idx>();
+    const auto u_val = U_candidate.template get<I, J_idx>();
+    if (u_val < u_min) {
+      U_candidate.template set<I, J_idx>(u_min);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, false> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Min_Matrix_Type &U_min_matrix) {
+
+    static_cast<void>(U_candidate);
+    static_cast<void>(U_min_matrix);
+    /* Do Nothing. */
+  }
+};
+
+// Max-limit conditional saturator based on compile-time availability
+template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct MaxSaturateConditional {};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, true> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+
+    const auto u_max = U_max_matrix.template get<I, J_idx>();
+    const auto u_val = U_candidate.template get<I, J_idx>();
+    if (u_val > u_max) {
+      U_candidate.template set<I, J_idx>(u_max);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
+          std::size_t J_idx>
+struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, false> {
+  static inline void compute(U_Mat_Type &U_candidate,
+                             const U_Max_Matrix_Type &U_max_matrix) {
+
+    static_cast<void>(U_candidate);
+    static_cast<void>(U_max_matrix);
+    /* Do Nothing. */
+  }
+};
+
 // Column recursion for J (0..N-1), when J_idx > 0
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
@@ -2178,15 +2240,15 @@ struct Column {
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
 
-    const auto u_min = U_min_matrix.template get<I, J_idx>();
-    const auto u_max = U_max_matrix.template get<I, J_idx>();
-    const auto u_val = U_candidate.template get<I, J_idx>();
+    MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx,
+                           (U_Min_Matrix_Type::SparseAvailable_Type::lists
+                                [I][J_idx])>::compute(U_candidate,
+                                                      U_min_matrix);
 
-    if (u_val < u_min) {
-      U_candidate.template set<I, J_idx>(u_min);
-    } else if (u_val > u_max) {
-      U_candidate.template set<I, J_idx>(u_max);
-    }
+    MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx,
+                           (U_Max_Matrix_Type::SparseAvailable_Type::lists
+                                [I][J_idx])>::compute(U_candidate,
+                                                      U_max_matrix);
 
     Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I,
            (J_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
@@ -2202,15 +2264,13 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
 
-    const auto u_min = U_min_matrix.template get<I, 0>();
-    const auto u_max = U_max_matrix.template get<I, 0>();
-    const auto u_val = U_candidate.template get<I, 0>();
+    MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, 0,
+                           (U_Min_Matrix_Type::SparseAvailable_Type::lists
+                                [I][0])>::compute(U_candidate, U_min_matrix);
 
-    if (u_val < u_min) {
-      U_candidate.template set<I, 0>(u_min);
-    } else if (u_val > u_max) {
-      U_candidate.template set<I, 0>(u_max);
-    }
+    MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, 0,
+                           (U_Max_Matrix_Type::SparseAvailable_Type::lists
+                                [I][0])>::compute(U_candidate, U_max_matrix);
   }
 };
 
