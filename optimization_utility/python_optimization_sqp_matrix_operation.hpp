@@ -1930,10 +1930,34 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+/**
+ * @brief Computes the operation for the last column in a matrix
+ * operation sequence.
+ *
+ * This static method delegates the computation to the Column
+ * specialization for the last column (from index 0 to INPUT_SIZE -
+ * 1). It processes the provided Hessian matrix block (`Hf_ux`), the
+ * delta vector (`dX`), the weight or multiplier for the next step
+ * (`lam_next`), and writes the result to the output parameter
+ * (`out`).
+ *
+ * @tparam Fuxx_Type   Type of the Hessian matrix block.
+ * @tparam dX_Type     Type of the delta vector.
+ * @tparam Weight_Type Type of the weight or multiplier.
+ * @tparam Out_Type    Type of the output.
+ * @tparam STATE_SIZE  Size of the state vector.
+ * @tparam INPUT_SIZE  Size of the input vector.
+ *
+ * @param Hf_ux     The Hessian matrix block for the current step.
+ * @param dX        The delta vector for the current step.
+ * @param lam_next  The weight or multiplier for the next step.
+ * @param out       Output parameter to store the computation result.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
 struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
            0> {
+
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
@@ -2003,6 +2027,27 @@ compute_fu_xx_lambda_contract(const Fuxx_Type &Hf_ux, const dX_Type &dX,
 namespace FuuuLambdaContract {
 
 // K-accumulation: recursively accumulate over k (INPUT_SIZE dimension)
+/**
+ * @brief Recursively accumulates the product of elements from Hf_uu and dU into
+ * acc for a fixed I, J over K_idx.
+ *
+ * This struct template defines a static compute function that recursively
+ * multiplies the element at position (I * INPUT_SIZE + J, K_idx) of Hf_uu with
+ * the element at (K_idx, 0) of dU, and adds the result to the accumulator acc.
+ * The recursion proceeds by decrementing K_idx.
+ *
+ * @tparam Fuu_Type    Type of the Hf_uu matrix-like object, must support
+ * template get<row, col>().
+ * @tparam dU_Type     Type of the dU matrix-like object, must support template
+ * get<row, col>().
+ * @tparam Value_Type  Type of the accumulator variable.
+ * @tparam STATE_SIZE  Size of the state vector (not directly used in this
+ * struct).
+ * @tparam INPUT_SIZE  Size of the input vector, used for index calculation.
+ * @tparam I           Row index parameter for accumulation.
+ * @tparam J           Column index parameter for accumulation.
+ * @tparam K_idx       Current index for recursion and accumulation.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Value_Type,
           std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
           std::size_t J, std::size_t K_idx>
@@ -2017,6 +2062,26 @@ struct AccumulateK {
 };
 
 // K-accumulation termination (K_idx == 0)
+/**
+ * @brief Specialization of the AccumulateK struct for the case when the last
+ * index is 0.
+ *
+ * This struct provides a static compute function that accumulates the product
+ * of a specific element from the Hf_uu matrix and a specific element from the
+ * dU vector into the acc variable.
+ *
+ * @tparam Fuu_Type   Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type    Type of the delta input vector (dU).
+ * @tparam Value_Type Type of the accumulator (acc).
+ * @tparam STATE_SIZE Number of states in the system.
+ * @tparam INPUT_SIZE Number of inputs in the system.
+ * @tparam I          Row index for the matrix operation.
+ * @tparam J          Column index for the matrix operation.
+ *
+ * @param Hf_uu Reference to the Hessian matrix.
+ * @param dU    Reference to the delta input vector.
+ * @param acc   Reference to the accumulator where the result is stored.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Value_Type,
           std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
           std::size_t J>
@@ -2030,6 +2095,33 @@ struct AccumulateK<Fuu_Type, dU_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, J,
 };
 
 // Column recursion over j (INPUT_SIZE): computes contribution to out(j,0)
+/**
+ * @brief Computes and updates a column of an output matrix using provided
+ * Hessian, delta input, and weight.
+ *
+ * This struct template recursively computes the contribution of a specific
+ * column (indexed by J_idx) for a given row (indexed by I) in an output matrix.
+ * It accumulates the result of multiplying the Hessian matrix (Hf_uu) and the
+ * delta input vector (dU), scales it by the corresponding weight from lam_next,
+ * and updates the output matrix (out) at position (J_idx, 0). The recursion
+ * proceeds until all columns are processed.
+ *
+ * @tparam Fuu_Type    Type of the Hessian matrix.
+ * @tparam dU_Type     Type of the delta input vector.
+ * @tparam Weight_Type Type of the weight vector/matrix.
+ * @tparam Out_Type    Type of the output matrix.
+ * @tparam STATE_SIZE  Number of states in the system.
+ * @tparam INPUT_SIZE  Number of inputs in the system.
+ * @tparam I           Row index being processed.
+ * @tparam J_idx       Current column index being processed (recursively
+ * decremented).
+ *
+ * @param Hf_uu     The Hessian matrix of second derivatives with respect to
+ * inputs.
+ * @param dU        The delta input vector.
+ * @param lam_next  The weight vector/matrix for the next step.
+ * @param out       The output matrix to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I, std::size_t J_idx>
@@ -2051,11 +2143,38 @@ struct Column {
 };
 
 // Column recursion termination for j == 0
+
+/**
+ * @brief Computes and accumulates a weighted sum for a specific index in the
+ * output matrix.
+ *
+ * This static function performs the following operations:
+ * - Accumulates a value (`acc`) by applying the `AccumulateK` functor over the
+ * provided Hessian matrix (`Hf_uu`) and delta input vector (`dU`) for the
+ * specified template indices.
+ * - Retrieves a weight (`w`) from the `lam_next` object for the current index.
+ * - Updates the output matrix (`out`) at position <0, 0> by adding the product
+ * of the weight and the accumulated value.
+ *
+ * @tparam Fuu_Type Type of the Hessian matrix input.
+ * @tparam dU_Type Type of the delta input vector.
+ * @tparam Weight_Type Type of the weight parameter.
+ * @tparam Out_Type Type of the output matrix.
+ * @tparam STATE_SIZE Number of states (used for template recursion).
+ * @tparam INPUT_SIZE Number of inputs (used for template recursion).
+ * @tparam I Current index for recursion.
+ *
+ * @param Hf_uu The Hessian matrix with respect to the inputs.
+ * @param dU The delta input vector.
+ * @param lam_next The weight parameter for the next step.
+ * @param out The output matrix to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I>
 struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
               I, 0> {
+
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -2070,6 +2189,34 @@ struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 };
 
 // Row recursion over i (STATE_SIZE): iterates the outer state index
+/**
+ * @brief Recursive template struct to compute a row operation for SQP matrix
+ * operations.
+ *
+ * This struct recursively processes a row of a matrix operation, typically used
+ * in Sequential Quadratic Programming (SQP) optimization routines. For each row
+ * index (I_idx), it calls the corresponding Column computation and then
+ * recurses to the previous row index until the base case is reached.
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix block (second derivatives
+ * w.r.t. inputs).
+ * @tparam dU_Type      Type of the input increment vector.
+ * @tparam Weight_Type  Type of the weighting or multiplier (e.g., Lagrange
+ * multipliers).
+ * @tparam Out_Type     Type of the output container for the result.
+ * @tparam STATE_SIZE   Number of states in the system.
+ * @tparam INPUT_SIZE   Number of inputs in the system.
+ * @tparam I_idx        Current row index being processed (compile-time
+ * constant).
+ *
+ * @note This struct assumes the existence of a corresponding Column struct
+ * template with a compatible interface.
+ *
+ * @param Hf_uu     The Hessian matrix block with respect to inputs.
+ * @param dU        The input increment vector.
+ * @param lam_next  The weighting or multiplier for the next stage.
+ * @param out       Output container to store the computed result.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
@@ -2084,6 +2231,29 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+
+/**
+ * @brief Specialization of the Row struct for the case where the row index is
+ * 0.
+ *
+ * This struct provides a static compute function that delegates the computation
+ * to the corresponding Column specialization for row 0 and columns ranging from
+ * 0 to INPUT_SIZE - 1.
+ *
+ * @tparam Fuu_Type    Type representing the Hessian or second derivative
+ * matrix.
+ * @tparam dU_Type     Type representing the control input increment vector.
+ * @tparam Weight_Type Type representing the weight or multiplier (e.g.,
+ * Lagrange multiplier).
+ * @tparam Out_Type    Type representing the output container.
+ * @tparam STATE_SIZE  Size of the state vector.
+ * @tparam INPUT_SIZE  Size of the input vector.
+ *
+ * @param Hf_uu     Reference to the Hessian or second derivative matrix.
+ * @param dU        Reference to the control input increment vector.
+ * @param lam_next  Reference to the weight or multiplier for the next step.
+ * @param out       Reference to the output container where results are stored.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
 struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
@@ -2095,11 +2265,50 @@ struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
   }
 };
 
+/**
+ * @brief Template struct for conditional operations based on activation flag.
+ *
+ * This struct serves as a template for conditional logic, typically used in
+ * optimization or matrix operations where certain computations are enabled or
+ * disabled at compile time via the `Activate` boolean template parameter.
+ *
+ * @tparam Fuu_Type      Type representing the function or matrix Fuu.
+ * @tparam dU_Type       Type representing the input delta or update vector.
+ * @tparam Weight_Type   Type representing the weight or scaling factor.
+ * @tparam Out_Type      Type representing the output or result.
+ * @tparam STATE_SIZE    Compile-time constant for the state vector size.
+ * @tparam INPUT_SIZE    Compile-time constant for the input vector size.
+ * @tparam I_idx         Compile-time constant index parameter.
+ * @tparam Activate      Boolean flag to activate or deactivate the operation.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx, bool Activate>
 struct Conditional {};
 
+/**
+ * @brief Specialization of the Conditional struct for the case when the last
+ * template parameter is true.
+ *
+ * This struct provides a static compute function that performs a computation
+ * involving the provided Hessian matrix (Hf_uu), control increment (dU), next
+ * step weight (lam_next), and outputs the result to the given output parameter
+ * (out). The computation is delegated to the Row struct's compute function,
+ * specifically for the (STATE_SIZE - 1) row.
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix block.
+ * @tparam dU_Type      Type of the control increment vector.
+ * @tparam Weight_Type  Type of the weight parameter.
+ * @tparam Out_Type     Type of the output parameter.
+ * @tparam STATE_SIZE   Number of states in the system.
+ * @tparam INPUT_SIZE   Number of inputs in the system.
+ * @tparam I_idx        Index parameter for template specialization.
+ *
+ * @param Hf_uu     The Hessian matrix block with respect to control inputs.
+ * @param dU        The control increment vector.
+ * @param lam_next  The weight parameter for the next step.
+ * @param out       Output parameter to store the result of the computation.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
@@ -2113,6 +2322,31 @@ struct Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE,
   }
 };
 
+/**
+ * @brief Specialization of the Conditional struct for the case when the last
+ * template parameter is false.
+ *
+ * This specialization provides a static compute function that takes four
+ * parameters:
+ * - Hf_uu: The Hessian or second derivative matrix (unused in this
+ * specialization).
+ * - dU: The control input increment (unused in this specialization).
+ * - lam_next: The next step's weight or multiplier (unused in this
+ * specialization).
+ * - out: The output variable to store results (unused in this specialization).
+ *
+ * In this specialization, the compute function performs no operation and simply
+ * marks all parameters as unused. This is typically used to disable certain
+ * computations at compile time based on template parameters.
+ *
+ * @tparam Fuu_Type      Type of the Hessian or second derivative matrix.
+ * @tparam dU_Type       Type of the control input increment.
+ * @tparam Weight_Type   Type of the weight or multiplier.
+ * @tparam Out_Type      Type of the output variable.
+ * @tparam STATE_SIZE    Size of the state vector.
+ * @tparam INPUT_SIZE    Size of the input vector.
+ * @tparam I_idx         Index parameter for specialization.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
@@ -2194,6 +2428,30 @@ compute_fu_uu_lambda_contract(const Fuu_Type &Hf_uu, const dU_Type &dU,
 namespace HxxLambdaContract {
 
 // K-accumulation: recursively accumulate over k (STATE_SIZE dimension)
+/**
+ * @brief Recursive template struct to accumulate the product of elements from
+ * two matrices.
+ *
+ * This struct recursively computes the sum of products between elements of the
+ * Hh_xx and dX matrices, accumulating the result in the provided accumulator
+ * variable `acc`. The recursion proceeds by decrementing the template parameter
+ * K_idx until the base case is reached (not shown in this snippet).
+ *
+ * @tparam Hxx_Type    Type of the Hh_xx matrix-like object, expected to provide
+ * a templated get<I, J>() method.
+ * @tparam dX_Type     Type of the dX matrix-like object, expected to provide a
+ * templated get<I, J>() method.
+ * @tparam Value_Type  Type of the accumulator variable.
+ * @tparam OUTPUT_SIZE Size of the output (not directly used in this struct).
+ * @tparam STATE_SIZE  Size of the state (used for index calculation).
+ * @tparam I           Row index for the output.
+ * @tparam J           Column index for the output.
+ * @tparam K_idx       Current index for accumulation (recursion parameter).
+ *
+ * @note This struct is intended to be used as part of a recursive template
+ * metaprogramming pattern, where the base case specialization for K_idx == 0
+ * must be provided elsewhere.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
           std::size_t J, std::size_t K_idx>
@@ -2208,11 +2466,27 @@ struct AccumulateK {
 };
 
 // K-accumulation termination (K_idx == 0)
+/**
+ * @brief Computes and accumulates the product of a specific element from the
+ * Hh_xx matrix and the first element of the dX vector.
+ *
+ * @tparam Hxx_Type Type of the Hh_xx matrix.
+ * @tparam dX_Type Type of the dX vector.
+ * @tparam Value_Type Type of the accumulator.
+ * @param Hh_xx The input matrix from which an element is selected.
+ * @param dX The input vector from which the first element is selected.
+ * @param acc The accumulator to which the computed product is added.
+ *
+ * This static function accesses the element at position (I * STATE_SIZE + J, 0)
+ * in the Hh_xx matrix and multiplies it by the element at position (0, 0) in
+ * the dX vector, then adds the result to acc.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
           std::size_t J>
 struct AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
                    0> {
+
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       Value_Type &acc) {
     acc +=
@@ -2221,6 +2495,28 @@ struct AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
 };
 
 // Column recursion over j (STATE_SIZE): computes contribution to out(j,0)
+/**
+ * @brief Computes and updates a column of the output matrix using weighted
+ * accumulation.
+ *
+ * This struct template recursively processes columns of the output matrix by
+ * accumulating weighted products of elements from the input matrices/vectors.
+ * The computation is performed for a specific column index `J_idx` and row
+ * index `I`, and then recursively continues for the next column (`J_idx - 1`).
+ *
+ * @tparam Hxx_Type    Type of the input matrix Hh_xx.
+ * @tparam dX_Type     Type of the input vector dX.
+ * @tparam Weight_Type Type of the weight matrix.
+ * @tparam Out_Type    Type of the output matrix.
+ * @tparam OUTPUT_SIZE Number of output rows.
+ * @tparam STATE_SIZE  Number of state variables (columns).
+ * @tparam I           Current row index being processed.
+ * @tparam J_idx       Current column index being processed (recursively
+ * decremented).
+ *
+ * @note This struct is intended to be used as part of a recursive template
+ * metaprogramming pattern for efficient compile-time matrix operations.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I, std::size_t J_idx>
@@ -2242,6 +2538,31 @@ struct Column {
 };
 
 // Column recursion termination for j == 0
+/**
+ * @brief Specialization of the Column struct for matrix operation with I and J
+ * indices.
+ *
+ * This specialization handles the case where the column index J is 0. It
+ * computes a weighted accumulation of the product of the Hh_xx matrix and the
+ * dX vector, and updates the output matrix at position (0, 0).
+ *
+ * @tparam Hxx_Type     Type of the Hh_xx matrix.
+ * @tparam dX_Type      Type of the dX vector.
+ * @tparam Weight_Type  Type of the weight matrix or accessor.
+ * @tparam Out_Type     Type of the output matrix.
+ * @tparam OUTPUT_SIZE  Number of rows in the output matrix.
+ * @tparam STATE_SIZE   Number of columns in the state matrix/vector.
+ * @tparam I            Row index for the operation.
+ *
+ * @note This struct is typically used in template metaprogramming for
+ * compile-time matrix operations, such as those found in optimization
+ * algorithms.
+ *
+ * @param Hh_xx   The input matrix for the operation.
+ * @param dX      The input vector for the operation.
+ * @param weight  The weighting accessor or matrix.
+ * @param out     The output matrix to be updated.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I>
@@ -2261,6 +2582,25 @@ struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 };
 
 // Row recursion over i (OUTPUT_SIZE): iterates outputs
+/**
+ * @brief Recursive template struct to compute a row-wise operation for matrix
+ * optimization.
+ *
+ * This struct recursively processes each row of a matrix operation by invoking
+ * the corresponding Column computation for the current row index (I_idx), and
+ * then recursing to the previous row.
+ *
+ * @tparam Hxx_Type     Type of the input matrix Hh_xx.
+ * @tparam dX_Type      Type of the input vector dX.
+ * @tparam Weight_Type  Type of the weight parameter.
+ * @tparam Out_Type     Type of the output container.
+ * @tparam OUTPUT_SIZE  Number of output elements.
+ * @tparam STATE_SIZE   Number of state elements (matrix rows/columns).
+ * @tparam I_idx        Current row index being processed (recursion parameter).
+ *
+ * @note This struct assumes that a specialization exists for the base case
+ * (I_idx == 0) to terminate the recursion.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I_idx>
@@ -2275,10 +2615,33 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+/**
+ * @brief Computes a matrix operation for a specific column in the SQP
+ * optimization process.
+ *
+ * This static method delegates the computation to the Column class template,
+ * specifying the range of columns to process (from 0 to STATE_SIZE - 1). It
+ * takes as input the Hessian matrix block (Hh_xx), the direction vector (dX), a
+ * weighting factor (weight), and writes the result to the output parameter
+ * (out).
+ *
+ * @tparam Hxx_Type   Type of the Hessian matrix block.
+ * @tparam dX_Type    Type of the direction vector.
+ * @tparam Weight_Type Type of the weighting factor.
+ * @tparam Out_Type   Type of the output.
+ * @tparam OUTPUT_SIZE Size of the output.
+ * @tparam STATE_SIZE Size of the state.
+ *
+ * @param Hh_xx   The Hessian matrix block.
+ * @param dX      The direction vector.
+ * @param weight  The weighting factor.
+ * @param out     Output parameter to store the result.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
 struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            0> {
+
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
     Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
