@@ -1658,6 +1658,88 @@ compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
 
 namespace FreeMaskAtCheck {
 
+// Per-element conditional for lower-bound proximity check
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename AtLower_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct LowerConditional {};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename AtLower_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type,
+                        I, J_idx, true> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower) {
+
+    const auto u = U_horizon_in.template get<I, J_idx>();
+    const auto u_min = U_min_matrix.template get<I, J_idx>();
+
+    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
+      at_lower.template set<I, J_idx>(true);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Min_Matrix_Type,
+          typename AtLower_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type,
+                        I, J_idx, false> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Min_Matrix_Type &U_min_matrix,
+                             const Value_Type &atol, AtLower_Type &at_lower) {
+
+    static_cast<void>(U_horizon_in);
+    static_cast<void>(U_min_matrix);
+    static_cast<void>(atol);
+    static_cast<void>(at_lower);
+    /* Do Nothing */
+  }
+};
+
+// Per-element conditional for upper-bound proximity check
+template <typename U_Mat_Type, typename U_Max_Matrix_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx, bool limit_valid_flag>
+struct UpperConditional {};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
+                        I, J_idx, true> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtUpper_Type &at_upper) {
+
+    const auto u = U_horizon_in.template get<I, J_idx>();
+    const auto u_max = U_max_matrix.template get<I, J_idx>();
+
+    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
+      at_upper.template set<I, J_idx>(true);
+    }
+  }
+};
+
+template <typename U_Mat_Type, typename U_Max_Matrix_Type,
+          typename AtUpper_Type, typename Value_Type, std::size_t I,
+          std::size_t J_idx>
+struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
+                        I, J_idx, false> {
+  static inline void compute(const U_Mat_Type &U_horizon_in,
+                             const U_Max_Matrix_Type &U_max_matrix,
+                             const Value_Type &atol, AtUpper_Type &at_upper) {
+
+    static_cast<void>(U_horizon_in);
+    static_cast<void>(U_max_matrix);
+    static_cast<void>(atol);
+    static_cast<void>(at_upper);
+    /* Do Nothing */
+  }
+};
+
 // Column recursion for J (0..N-1), when J_idx > 0
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
@@ -1670,17 +1752,15 @@ struct Column {
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
 
-    const auto u = U_horizon_in.template get<I, J_idx>();
-    const auto u_min = U_min_matrix.template get<I, J_idx>();
-    const auto u_max = U_max_matrix.template get<I, J_idx>();
+    LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type, I,
+                     J_idx,
+                     U_Min_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(U_horizon_in, U_min_matrix, atol, at_lower);
 
-    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
-      at_lower.template set<I, J_idx>(true);
-    }
-
-    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
-      at_upper.template set<I, J_idx>(true);
-    }
+    UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type, I,
+                     J_idx,
+                     U_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
+        compute(U_horizon_in, U_max_matrix, atol, at_upper);
 
     Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
            AtUpper_Type, Value_Type, M, N, I,
@@ -1702,17 +1782,13 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
 
-    const auto u = U_horizon_in.template get<I, 0>();
-    const auto u_min = U_min_matrix.template get<I, 0>();
-    const auto u_max = U_max_matrix.template get<I, 0>();
+    LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type, I,
+                     0, U_Min_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(U_horizon_in, U_min_matrix, atol, at_lower);
 
-    if ((u >= (u_min - atol)) && (u <= (u_min + atol))) {
-      at_lower.template set<I, 0>(true);
-    }
-
-    if ((u >= (u_max - atol)) && (u <= (u_max + atol))) {
-      at_upper.template set<I, 0>(true);
-    }
+    UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type, I,
+                     0, U_Max_Matrix_Type::SparseAvailable_Type::lists[I][0]>::
+        compute(U_horizon_in, U_max_matrix, atol, at_upper);
   }
 };
 
