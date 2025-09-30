@@ -601,6 +601,18 @@ public:
 
   inline void set_Y_offset(Y_Type Y_offset) { this->_Y_offset = Y_offset; }
 
+  inline void set_Qx(const _Qx_Type &Qx) {
+    this->_Qx = Qx;
+    this->_Px = Qx;
+  }
+
+  inline void set_R(const _R_Type &R) { this->_R = R; }
+
+  inline void set_Qy(const _Qy_Type &Qy) {
+    this->_Qy = Qy;
+    this->_Py = Qy;
+  }
+
   /* Getters */
   inline _U_Min_Matrix_Type get_U_min_matrix(void) const {
     return this->_U_min_matrix;
@@ -617,6 +629,12 @@ public:
   inline _Y_Max_Matrix_Type get_Y_max_matrix(void) const {
     return this->_Y_max_matrix;
   }
+
+  inline _Qx_Type get_Qx(void) const { return this->_Qx; }
+
+  inline _R_Type get_R(void) const { return this->_R; }
+
+  inline _Qy_Type get_Qy(void) const { return this->_Qy; }
 
   /* Function */
   /**
