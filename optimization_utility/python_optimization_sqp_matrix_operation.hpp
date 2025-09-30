@@ -2712,11 +2712,55 @@ compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
 namespace FreeMaskAtCheck {
 
 // Per-element conditional for lower-bound proximity check
+/**
+ * @brief Template struct for conditional operations on lower matrix elements.
+ *
+ * This struct is designed to provide conditional logic for operations involving
+ * the lower part of a matrix, typically used in optimization routines.
+ *
+ * @tparam U_Mat_Type         The type representing the main matrix.
+ * @tparam U_Min_Matrix_Type  The type representing the minimum matrix or a
+ * related matrix type.
+ * @tparam AtLower_Type       The type used to indicate or process lower matrix
+ * elements.
+ * @tparam Value_Type         The value type used in computations (e.g., double,
+ * float).
+ * @tparam I                  The row index or a compile-time constant for row.
+ * @tparam J_idx              The column index or a compile-time constant for
+ * column.
+ * @tparam limit_valid_flag   Boolean flag indicating if a limit condition is
+ * valid.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtLower_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx, bool limit_valid_flag>
 struct LowerConditional {};
 
+/**
+ * @brief Specialization of LowerConditional for checking if a matrix element is
+ * at its lower bound within a tolerance.
+ *
+ * This struct provides a static compute function that checks whether the
+ * element at position (I, J_idx) in the input matrix U_horizon_in is within a
+ * specified absolute tolerance (atol) of the corresponding lower bound value in
+ * U_min_matrix. If the condition is met, it sets the corresponding entry in
+ * at_lower to true.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix containing current
+ * values.
+ * @tparam U_Min_Matrix_Type  Type of the matrix containing lower bound values.
+ * @tparam AtLower_Type       Type of the matrix indicating if the lower bound
+ * is active.
+ * @tparam Value_Type         Type of the scalar values (e.g., double, float).
+ * @tparam I                  Row index (compile-time constant).
+ * @tparam J_idx              Column index (compile-time constant).
+ *
+ * @param U_horizon_in  The input matrix containing current values.
+ * @param U_min_matrix  The matrix containing lower bound values.
+ * @param atol          The absolute tolerance for comparison.
+ * @param at_lower      The matrix to update, indicating if the lower bound is
+ * active at (I, J_idx).
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtLower_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -2735,6 +2779,25 @@ struct LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type,
   }
 };
 
+/**
+ * @brief Specialization of the LowerConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a no-op implementation of the compute function,
+ * which takes the input matrices and parameters but does not perform any
+ * operations. All parameters are explicitly marked as unused to avoid compiler
+ * warnings.
+ *
+ * @tparam U_Mat_Type        Type of the input matrix U_horizon_in.
+ * @tparam U_Min_Matrix_Type Type of the input matrix U_min_matrix.
+ * @tparam AtLower_Type      Type of the at_lower parameter.
+ * @tparam Value_Type        Type of the atol parameter.
+ * @tparam I                 Compile-time index parameter.
+ * @tparam J_idx             Compile-time index parameter.
+ *
+ * @note This specialization is selected when the boolean template parameter is
+ * false.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtLower_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -2758,6 +2821,31 @@ template <typename U_Mat_Type, typename U_Max_Matrix_Type,
           std::size_t J_idx, bool limit_valid_flag>
 struct UpperConditional {};
 
+/**
+ * @brief Specialization of the UpperConditional struct for handling the case
+ * when the upper bound condition is enabled.
+ *
+ * This struct provides a static inline function `compute` that checks if the
+ * element at position (I, J_idx) in the input matrix `U_horizon_in` is within a
+ * specified absolute tolerance (`atol`) of the corresponding upper bound value
+ * in `U_max_matrix`. If the condition is satisfied, it sets the corresponding
+ * entry in `at_upper` to true.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix containing horizon
+ * values.
+ * @tparam U_Max_Matrix_Type  Type of the matrix containing upper bound values.
+ * @tparam AtUpper_Type       Type of the matrix or structure used to record if
+ * the upper bound is active.
+ * @tparam Value_Type         Type of the values (e.g., double, float).
+ * @tparam I                  Row index (compile-time constant).
+ * @tparam J_idx              Column index (compile-time constant).
+ *
+ * @param U_horizon_in   Input matrix containing the current horizon values.
+ * @param U_max_matrix   Matrix containing the upper bound values.
+ * @param atol           Absolute tolerance for comparing values.
+ * @param at_upper       Output structure to record if the upper bound is active
+ * at (I, J_idx).
+ */
 template <typename U_Mat_Type, typename U_Max_Matrix_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -2776,6 +2864,26 @@ struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
   }
 };
 
+/**
+ * @brief Specialization of the UpperConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a static compute function that takes the input
+ * matrices and parameters, but performs no operation ("Do Nothing"). All
+ * parameters are marked as unused to avoid compiler warnings.
+ *
+ * @tparam U_Mat_Type        Type of the input matrix U_horizon_in.
+ * @tparam U_Max_Matrix_Type Type of the maximum matrix U_max_matrix.
+ * @tparam AtUpper_Type      Type of the at_upper parameter.
+ * @tparam Value_Type        Type of the tolerance parameter atol.
+ * @tparam I                 Compile-time row index.
+ * @tparam J_idx             Compile-time column index.
+ *
+ * @param U_horizon_in Input matrix (unused).
+ * @param U_max_matrix Maximum matrix (unused).
+ * @param atol         Absolute tolerance value (unused).
+ * @param at_upper     Output parameter (unused).
+ */
 template <typename U_Mat_Type, typename U_Max_Matrix_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -2794,6 +2902,34 @@ struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
 };
 
 // Column recursion for J (0..N-1), when J_idx > 0
+/**
+ * @brief Recursively processes a column of matrix operations for optimization
+ * constraints.
+ *
+ * This struct template defines a static compute function that applies lower and
+ * upper bound conditional checks for a specific column (indexed by J_idx) and
+ * row (indexed by I) of the input matrices. It uses template recursion to
+ * process each column from J_idx down to 0.
+ *
+ * @tparam U_Mat_Type         Type of the input horizon matrix.
+ * @tparam U_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam U_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam AtLower_Type       Type for storing lower bound activation results.
+ * @tparam AtUpper_Type       Type for storing upper bound activation results.
+ * @tparam Value_Type         Scalar value type (e.g., double, float).
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
+ * @tparam I                  Current row index being processed.
+ * @tparam J_idx              Current column index being processed (recursively
+ * decremented).
+ *
+ * @param U_horizon_in  The input horizon matrix.
+ * @param U_min_matrix  The matrix containing minimum constraint values.
+ * @param U_max_matrix  The matrix containing maximum constraint values.
+ * @param atol          Absolute tolerance for constraint checking.
+ * @param at_lower      Output parameter for lower bound activation results.
+ * @param at_upper      Output parameter for upper bound activation results.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -2823,6 +2959,36 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+/**
+ * @brief Specialization of the Column struct for the case when J = 0.
+ *
+ * This struct provides a static compute function that applies lower and upper
+ * bound conditional operations for a specific column (J = 0) and row (I) of the
+ * input matrices.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix U_horizon_in.
+ * @tparam U_Min_Matrix_Type  Type of the minimum bound matrix U_min_matrix.
+ * @tparam U_Max_Matrix_Type  Type of the maximum bound matrix U_max_matrix.
+ * @tparam AtLower_Type       Type for storing lower bound results.
+ * @tparam AtUpper_Type       Type for storing upper bound results.
+ * @tparam Value_Type         Scalar value type (e.g., double, float).
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
+ * @tparam I                  Row index for which the operation is performed.
+ *
+ * The compute function:
+ *   - Applies LowerConditional and UpperConditional operations for the (I, 0)
+ * element.
+ *   - Updates at_lower and at_upper with the results.
+ *   - Uses sparsity information from U_Min_Matrix_Type and U_Max_Matrix_Type.
+ *
+ * @param U_horizon_in  The input matrix containing current values.
+ * @param U_min_matrix  The matrix containing minimum bounds.
+ * @param U_max_matrix  The matrix containing maximum bounds.
+ * @param atol          Absolute tolerance for bound checks.
+ * @param at_lower      Output parameter for lower bound results.
+ * @param at_upper      Output parameter for upper bound results.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -2846,6 +3012,31 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
 };
 
 // Row recursion for I (0..M-1), when I_idx > 0
+/**
+ * @brief Recursive template struct to perform operations on a specific row of
+ * matrices.
+ *
+ * This struct template recursively processes each column of the row indexed by
+ * I_idx in the provided matrices, using the Column struct for column-wise
+ * operations. After processing all columns in the current row, it recursively
+ * processes the previous row.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix U_horizon_in.
+ * @tparam U_Min_Matrix_Type  Type of the minimum constraint matrix
+ * U_min_matrix.
+ * @tparam U_Max_Matrix_Type  Type of the maximum constraint matrix
+ * U_max_matrix.
+ * @tparam AtLower_Type       Type for the lower bound result/output.
+ * @tparam AtUpper_Type       Type for the upper bound result/output.
+ * @tparam Value_Type         Scalar value type (e.g., double, float).
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
+ * @tparam I_idx              Current row index being processed (compile-time
+ * constant).
+ *
+ * @note This struct is intended to be used in conjunction with a specialization
+ *       that terminates the recursion when I_idx reaches a base case.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -2871,6 +3062,34 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+/**
+ * @brief Specialization of the Row struct for the case where the row index is
+ * 0.
+ *
+ * This struct provides a static inline compute function that processes the
+ * first row (row index 0) of the input matrices for the SQP (Sequential
+ * Quadratic Programming) matrix operation. It delegates the computation to the
+ * corresponding Column specialization for the first row and all columns (from 0
+ * to N-1).
+ *
+ * @tparam U_Mat_Type         Type of the input matrix U_horizon_in.
+ * @tparam U_Min_Matrix_Type  Type of the minimum constraint matrix
+ * U_min_matrix.
+ * @tparam U_Max_Matrix_Type  Type of the maximum constraint matrix
+ * U_max_matrix.
+ * @tparam AtLower_Type       Type for the lower bound output at_lower.
+ * @tparam AtUpper_Type       Type for the upper bound output at_upper.
+ * @tparam Value_Type         Scalar value type (e.g., double, float).
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
+ *
+ * @param U_horizon_in  The input matrix representing the control horizon.
+ * @param U_min_matrix  The matrix containing minimum constraints for U.
+ * @param U_max_matrix  The matrix containing maximum constraints for U.
+ * @param atol          Absolute tolerance value for constraint comparison.
+ * @param at_lower      Output parameter for lower bound activation.
+ * @param at_upper      Output parameter for upper bound activation.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -2964,6 +3183,42 @@ inline void free_mask_at_check(const U_Mat_Type &U_horizon_in,
 namespace FreeMaskPushActive {
 
 // Column recursion for J (0..N-1), when J_idx > 0
+/**
+ * @brief Recursively processes a column of a matrix for active set selection in
+ * SQP optimization.
+ *
+ * This struct template defines a static compute function that iterates over the
+ * elements of a column (indexed by J_idx) in a matrix, applying active set
+ * logic based on gradient values and lower/upper bound activity. For each
+ * element at position (I, J_idx):
+ *   - If the variable is at its lower bound and the gradient exceeds the
+ * tolerance (gtol), or at its upper bound and the gradient is less than the
+ * negative tolerance, the corresponding mask entry is set to false.
+ *   - Otherwise, the variable is added to the active set.
+ * The function then recursively processes the next element in the column by
+ * decrementing J_idx.
+ *
+ * @tparam Mask_Type      Type representing the mask matrix.
+ * @tparam Gradient_Type  Type representing the gradient matrix.
+ * @tparam AtLower_Type   Type indicating which variables are at their lower
+ * bounds.
+ * @tparam AtUpper_Type   Type indicating which variables are at their upper
+ * bounds.
+ * @tparam ActiveSet_Type Type representing the active set container.
+ * @tparam Value_Type     Type of the gradient and tolerance values.
+ * @tparam M              Number of rows in the matrix.
+ * @tparam N              Number of columns in the matrix.
+ * @tparam I              Current row index being processed.
+ * @tparam J_idx          Current column index being processed (recursively
+ * decremented).
+ *
+ * @param m         Reference to the mask matrix to be updated.
+ * @param gradient  Reference to the gradient matrix.
+ * @param at_lower  Reference to the lower bound activity matrix.
+ * @param at_upper  Reference to the upper bound activity matrix.
+ * @param gtol      Gradient tolerance value.
+ * @param active_set Reference to the active set container to be updated.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
@@ -2992,6 +3247,40 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+/**
+ * @brief Specialization of the Column struct for the case where column index J
+ * is 0.
+ *
+ * This struct provides a static compute function that updates a mask and an
+ * active set based on the gradient and boundary conditions for a single element
+ * at position (I, 0).
+ *
+ * @tparam Mask_Type      Type of the mask object, supporting template get/set
+ * methods.
+ * @tparam Gradient_Type  Type of the gradient object, supporting template get
+ * method.
+ * @tparam AtLower_Type   Type indicating if the lower bound is active,
+ * supporting template get method.
+ * @tparam AtUpper_Type   Type indicating if the upper bound is active,
+ * supporting template get method.
+ * @tparam ActiveSet_Type Type of the active set, supporting push_active method.
+ * @tparam Value_Type     Type of the gradient tolerance value.
+ * @tparam M              Number of rows.
+ * @tparam N              Number of columns.
+ * @tparam I              Row index.
+ *
+ * The compute function checks if the current element at (I, 0) is at its lower
+ * or upper bound and whether the gradient exceeds the specified tolerance. If
+ * so, it updates the mask to false. Otherwise, it adds the element to the
+ * active set.
+ *
+ * @param m           Reference to the mask object to be updated.
+ * @param gradient    Reference to the gradient object.
+ * @param at_lower    Reference to the lower bound activity indicator.
+ * @param at_upper    Reference to the upper bound activity indicator.
+ * @param gtol        Gradient tolerance value.
+ * @param active_set  Reference to the active set to be updated.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I>
@@ -3016,6 +3305,37 @@ struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
 };
 
 // Row recursion for I (0..M-1), when I_idx > 0
+/**
+ * @brief Recursive template struct to perform row-wise computation for SQP
+ * matrix operations.
+ *
+ * This struct defines a static inline function `compute` that recursively
+ * processes each row of a matrix by invoking the corresponding column-wise
+ * computation and then recursing to the next row (with decremented row index).
+ *
+ * @tparam Mask_Type         Type representing the mask used in the computation.
+ * @tparam Gradient_Type     Type representing the gradient vector or matrix.
+ * @tparam AtLower_Type      Type indicating which variables are at their lower
+ * bounds.
+ * @tparam AtUpper_Type      Type indicating which variables are at their upper
+ * bounds.
+ * @tparam ActiveSet_Type    Type representing the active set of constraints.
+ * @tparam Value_Type        Scalar type for values (e.g., double, float).
+ * @tparam M                 Number of rows in the matrix.
+ * @tparam N                 Number of columns in the matrix.
+ * @tparam I_idx             Current row index for recursion.
+ *
+ * The `compute` function applies the column-wise computation for the current
+ * row and then recursively processes the previous row until the base case is
+ * reached.
+ *
+ * @param m           Reference to the mask object to be updated.
+ * @param gradient    Constant reference to the gradient data.
+ * @param at_lower    Constant reference to the lower bound indicator.
+ * @param at_upper    Constant reference to the upper bound indicator.
+ * @param gtol        Gradient tolerance value.
+ * @param active_set  Reference to the active set to be updated.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I_idx>
@@ -3038,6 +3358,31 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+/**
+ * @brief Specialization of the Row struct for the base case where the row index
+ * is 0.
+ *
+ * This struct provides a static inline compute function that processes the 0-th
+ * row of a matrix operation, typically as part of a recursive template
+ * metaprogramming pattern. It delegates the computation to the corresponding
+ * Column specialization for the 0-th row, iterating over columns from 0 to N-1.
+ *
+ * @tparam Mask_Type        Type representing the mask or selection matrix.
+ * @tparam Gradient_Type    Type representing the gradient vector or matrix.
+ * @tparam AtLower_Type     Type representing the lower bound indicator.
+ * @tparam AtUpper_Type     Type representing the upper bound indicator.
+ * @tparam ActiveSet_Type   Type representing the active set.
+ * @tparam Value_Type       Scalar value type (e.g., double, float).
+ * @tparam M                Number of rows in the matrix.
+ * @tparam N                Number of columns in the matrix.
+ *
+ * @param m           Reference to the mask or selection matrix.
+ * @param gradient    Constant reference to the gradient vector or matrix.
+ * @param at_lower    Constant reference to the lower bound indicator.
+ * @param at_upper    Constant reference to the upper bound indicator.
+ * @param gtol        Gradient tolerance value.
+ * @param active_set  Reference to the active set.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N>
@@ -3114,6 +3459,31 @@ inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
 namespace SolverCalculateMInv {
 
 // Column recursion for J (0..N-1), when J_idx > 0
+/**
+ * @brief Recursively computes and sets the elements of a specific column
+ * (J_idx) in the output matrix M_inv.
+ *
+ * This struct template is designed for use in template metaprogramming to
+ * perform compile-time recursion over matrix columns. For each recursion step,
+ * it computes the inverse of a diagonal element from diag_R_full_lambda_factor
+ * at position (I, J_idx), applies an "avoid zero divide" utility to prevent
+ * division by zero, and sets the computed value in M_inv at (I, J_idx). The
+ * recursion proceeds by decrementing J_idx until the base case is reached (not
+ * shown in this snippet).
+ *
+ * @tparam Out_Mat_Type Type of the output matrix (M_inv).
+ * @tparam In_Mat_Type Type of the input matrix (diag_R_full_lambda_factor).
+ * @tparam Value_Type Scalar value type used for computations.
+ * @tparam M Number of rows in the matrices.
+ * @tparam N Number of columns in the matrices.
+ * @tparam I Row index for the current operation.
+ * @tparam J_idx Column index for the current recursion step.
+ *
+ * @param M_inv Reference to the output matrix where the computed value is set.
+ * @param diag_R_full_lambda_factor Input matrix containing diagonal elements to
+ * invert.
+ * @param avoid_zero_limit Small value used to avoid division by zero.
+ */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
 struct Column {
