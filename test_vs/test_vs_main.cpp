@@ -579,29 +579,29 @@ void test_sqp_active_set_pcg_pls() {
         sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
         T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
 
-    static PythonOptimization::StateFunctionJacobian_X_Object<
+    PythonOptimization::StateFunctionJacobian_X_Object<
         State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    static PythonOptimization::StateFunctionJacobian_U_Object<
+    PythonOptimization::StateFunctionJacobian_U_Object<
         State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    static PythonOptimization::MeasurementFunctionJacobian_X_Object<
+    PythonOptimization::MeasurementFunctionJacobian_X_Object<
         Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
-    static PythonOptimization::StateFunctionHessian_XX_Object<
+    PythonOptimization::StateFunctionHessian_XX_Object<
         State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xx_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    static PythonOptimization::StateFunctionHessian_XU_Object<
+    PythonOptimization::StateFunctionHessian_XU_Object<
         State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xu_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    static PythonOptimization::StateFunctionHessian_UX_Object<
+    PythonOptimization::StateFunctionHessian_UX_Object<
         State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_ux_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    static PythonOptimization::StateFunctionHessian_UU_Object<
+    PythonOptimization::StateFunctionHessian_UU_Object<
         State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_uu_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    static PythonOptimization::MeasurementFunctionHessian_XX_Object<
+    PythonOptimization::MeasurementFunctionHessian_XX_Object<
         Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_hessian_xx_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
