@@ -1437,8 +1437,8 @@ public:
       auto Qy_ek_y = this->_Qy * ek_y;
       auto Y_min_max_rho_Yk_limit_penalty =
           this->_Y_min_max_rho * MatrixOperation::get_row(Y_limit_penalty, k);
-      auto A_k_T_lam =
-          PythonNumpy::ATranspose_mul_B(A_k, MatrixOperation::get_row(lam, k));
+      auto A_k_T_lam = PythonNumpy::ATranspose_mul_B(
+          A_k, MatrixOperation::get_row(lam, k + 1));
 
       auto lam_input_ =
           static_cast<_T>(2) *
