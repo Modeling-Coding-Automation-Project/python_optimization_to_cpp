@@ -139,7 +139,9 @@ public:
   static constexpr std::size_t OUTPUT_SIZE =
       Measurement_Jacobian_X_Matrix_Type_In::COLS;
 
-  static constexpr std::size_t NP = Np_In;
+  // static constexpr std::size_t NP = Np_In;
+  // To avoid ODR violation in C++11/14, use enum hack.
+  enum : std::size_t { NP = Np_In };
 
   static constexpr std::size_t STATE_JACOBIAN_X_COLS = STATE_SIZE;
   static constexpr std::size_t STATE_JACOBIAN_X_ROWS = STATE_SIZE;
