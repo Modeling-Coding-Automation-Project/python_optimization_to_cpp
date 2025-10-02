@@ -1260,6 +1260,7 @@ public:
 
     auto Y_limit_penalty = this->calculate_Y_limit_penalty(Y_horizon);
 
+    J = static_cast<_T>(0);
     for (std::size_t k = 0; k < NP; k++) {
       auto e_y_r = MatrixOperation::get_row(Y_horizon, k) -
                    MatrixOperation::get_row(this->reference_trajectory, k);
