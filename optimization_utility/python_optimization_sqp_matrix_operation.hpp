@@ -447,6 +447,37 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx,
 };
 
 // Column recursion when J_idx > 0
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization.
+ *
+ * This struct template performs conditional minimum and maximum operations on a
+ * specific column (indexed by J_idx) of the input matrices, and accumulates the
+ * results into the output penalty variable. The recursion proceeds by
+ * decrementing the column index (J_idx) until the base case is reached (not
+ * shown in this snippet).
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Type           Type of the output penalty accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I                  Current column index being processed.
+ * @tparam J_idx              Current row index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Applies MinConditional and MaxConditional operations for the current row
+ * and column.
+ *   - Recursively processes the next column by decrementing J_idx.
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I, std::size_t J_idx>
@@ -471,6 +502,32 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0.
+ *
+ * This struct template provides a static compute function that performs
+ * conditional minimum and maximum operations on the first column (J_idx == 0)
+ * of the input matrices. It serves as the termination case for the recursive
+ * processing of columns in the optimization utility.
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Type           Type of the output penalty accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I                  Current column index being processed.
+ *
+ * The compute() static method:
+ *   - Applies MinConditional and MaxConditional operations for the first row
+ *   and column (J_idx == 0).
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I>
@@ -492,6 +549,34 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
 };
 
 // Row recursion when I_idx > 0
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization.
+ *
+ * This struct template performs column-wise processing for a specific row
+ * (indexed by I_idx) of the input matrices, and accumulates the results into
+ * the output penalty variable. The recursion proceeds by decrementing the row
+ * index (I_idx) until the base case is reached (not shown in this snippet).
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Type           Type of the output penalty accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I_idx              Current column index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current row index.
+ *   - Recursively processes the next row by decrementing I_idx.
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I_idx>
@@ -510,6 +595,30 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first row (I_idx == 0) of the input matrices.
+ * It serves as the termination case for the recursive processing of rows in the
+ * optimization utility.
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Type           Type of the output penalty accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first row (I_idx == 0).
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N>
@@ -574,11 +683,63 @@ inline void calculate_Y_limit_penalty(const Y_Mat_Type &Y_horizon,
 namespace CalculateY_LimitPenaltyAndActive {
 
 // Per-element conditional for Y_min with penalty+active update
+
+/**
+ * @brief Template struct for conditional minimum matrix operation with penalty
+ * and active set update in SQP optimization.
+ *
+ * This struct serves as a template for performing conditional minimum
+ * operations on matrices, typically used within Sequential Quadratic
+ * Programming (SQP) optimization utilities. It includes functionality to
+ * update both penalty and active set matrices based on the condition. The
+ * actual implementation is expected to be provided via template specialization.
+ *
+ * @tparam Y_Mat_Type         The type representing the input matrix.
+ * @tparam Y_Min_Matrix_Type  The type representing the matrix to store minimum
+ * values.
+ * @tparam Out_Penalty_Type   The output type for the penalty operation.
+ * @tparam Active_Type        The type representing the active set matrix.
+ * @tparam I                  The number of columns (or a specific column index,
+ * depending on usage).
+ * @tparam J_idx              The number of rows (or a specific row index,
+ * depending on usage).
+ * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
+ * enabled.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Out_Penalty_Type, typename Active_Type, std::size_t I,
           std::size_t J_idx, bool limit_valid_flag>
 struct MinConditional {};
 
+/**
+ * @brief Specialization of MinConditional for conditional minimum penalty and
+ * active set computation.
+ *
+ * This struct template computes a penalty and updates the active set when an
+ * element in the Y_horizon matrix is less than the corresponding element in the
+ * Y_min_matrix. If the condition is met, it sets the penalty in the
+ * Y_limit_penalty output matrix and marks the corresponding entry in the
+ * Y_limit_active matrix.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix
+ * Y_min_matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty matrix
+ * Y_limit_penalty.
+ * @tparam Active_Type        Type of the active set matrix Y_limit_active.
+ * @tparam I                  Column index (compile-time constant).
+ * @tparam J_idx              Row index (compile-time constant).
+ *
+ * @param Y_horizon           Input matrix containing values to be checked.
+ * @param Y_min_matrix        Matrix containing minimum allowed values.
+ * @param Y_limit_penalty     Output matrix where penalty is set if condition is
+ * met.
+ * @param Y_limit_active      Output matrix where active set is updated if
+ * condition is met.
+ *
+ * The penalty is computed as (y - y_min) and set only if y < y_min. The active
+ * set entry is marked with a value of 1 in this case.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Out_Penalty_Type, typename Active_Type, std::size_t I,
           std::size_t J_idx>
@@ -600,6 +761,26 @@ struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type,
   }
 };
 
+/**
+ * @brief Specialization of MinConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a no-op implementation of the compute function.
+ * When the boolean template parameter is false, this struct's compute method
+ * does nothing and simply ignores its arguments.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Min_Matrix_Type  Type of the input matrix Y_min_matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty matrix Y_limit_penalty.
+ * @tparam Active_Type        Type of the active set matrix Y_limit_active.
+ * @tparam I                  Column index or size parameter.
+ * @tparam J_idx              Row index or size parameter.
+ *
+ * @param Y_horizon           Input matrix (unused).
+ * @param Y_min_matrix        Input matrix (unused).
+ * @param Y_limit_penalty     Output parameter (unused).
+ * @param Y_limit_active      Output parameter (unused).
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Out_Penalty_Type, typename Active_Type, std::size_t I,
           std::size_t J_idx>
@@ -618,11 +799,63 @@ struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type,
 };
 
 // Per-element conditional for Y_max with penalty+active update
+
+/**
+ * @brief Template struct for conditional maximum matrix operation with penalty
+ * and active set update in SQP optimization.
+ *
+ * This struct serves as a template for performing conditional maximum
+ * operations on matrices, typically used within Sequential Quadratic
+ * Programming (SQP) optimization utilities. It includes functionality to
+ * update both penalty and active set matrices based on the condition. The
+ * actual implementation is expected to be provided via template specialization.
+ *
+ * @tparam Y_Mat_Type         The type representing the input matrix.
+ * @tparam Y_Max_Matrix_Type  The type representing the matrix to store maximum
+ * values.
+ * @tparam Out_Penalty_Type   The output type for the penalty operation.
+ * @tparam Active_Type        The type representing the active set matrix.
+ * @tparam I                  The number of columns (or a specific column index,
+ * depending on usage).
+ * @tparam J_idx              The number of rows (or a specific row index,
+ * depending on usage).
+ * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
+ * enabled.
+ */
 template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
           typename Out_Penalty_Type, typename Active_Type, std::size_t I,
           std::size_t J_idx, bool limit_valid_flag>
 struct MaxConditional {};
 
+/**
+ * @brief Specialization of MaxConditional for conditional maximum penalty and
+ * active set computation.
+ *
+ * This struct template computes a penalty and updates the active set when an
+ * element in the Y_horizon matrix is greater than the corresponding element in
+ * the Y_max_matrix. If the condition is met, it sets the penalty in the
+ * Y_limit_penalty output matrix and marks the corresponding entry in the
+ * Y_limit_active matrix.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix
+ * Y_max_matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty matrix
+ * Y_limit_penalty.
+ * @tparam Active_Type        Type of the active set matrix Y_limit_active.
+ * @tparam I                  Column index (compile-time constant).
+ * @tparam J_idx              Row index (compile-time constant).
+ *
+ * @param Y_horizon           Input matrix containing values to be checked.
+ * @param Y_max_matrix        Matrix containing maximum allowed values.
+ * @param Y_limit_penalty     Output matrix where penalty is set if condition is
+ * met.
+ * @param Y_limit_active      Output matrix where active set is updated if
+ * condition is met.
+ *
+ * The penalty is computed as (y - y_max) and set only if y > y_max. The active
+ * set entry is marked with a value of 1 in this case.
+ */
 template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
           typename Out_Penalty_Type, typename Active_Type, std::size_t I,
           std::size_t J_idx>
@@ -644,6 +877,26 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
   }
 };
 
+/**
+ * @brief Specialization of MaxConditional struct for the case when the
+ * condition is false.
+ *
+ * This specialization provides a no-op implementation of the compute function.
+ * When the boolean template parameter is false, this struct's compute method
+ * does nothing and simply ignores its arguments.
+ *
+ * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
+ * @tparam Y_Max_Matrix_Type  Type of the input matrix Y_max_matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty matrix Y_limit_penalty.
+ * @tparam Active_Type        Type of the active set matrix Y_limit_active.
+ * @tparam I                  Column index or size parameter.
+ * @tparam J_idx              Row index or size parameter.
+ *
+ * @param Y_horizon           Input matrix (unused).
+ * @param Y_max_matrix        Input matrix (unused).
+ * @param Y_limit_penalty     Output parameter (unused).
+ * @param Y_limit_active      Output parameter (unused).
+ */
 template <typename Y_Mat_Type, typename Y_Max_Matrix_Type,
           typename Out_Penalty_Type, typename Active_Type, std::size_t I,
           std::size_t J_idx>
@@ -653,6 +906,7 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
                              const Y_Max_Matrix_Type &Y_max_matrix,
                              Out_Penalty_Type &Y_limit_penalty,
                              Active_Type &Y_limit_active) {
+
     static_cast<void>(Y_horizon);
     static_cast<void>(Y_max_matrix);
     static_cast<void>(Y_limit_penalty);
@@ -662,6 +916,40 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
 };
 
 // Column recursion when J_idx > 0
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating both penalty and active set.
+ *
+ * This struct template performs conditional minimum and maximum operations on
+ * a specific column (indexed by J_idx) of the input matrices, and accumulates
+ * the results into the output penalty and active set variables. The recursion
+ * proceeds by decrementing the column index (J_idx) until the base case is
+ * reached (not shown in this snippet).
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
+ * @tparam Active_Type        Type of the active set accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I                  Current column index being processed.
+ * @tparam J_idx              Current row index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Applies MinConditional and MaxConditional operations for the current row
+ *   and column, updating both penalty and active set.
+ *   - Recursively processes the next column by decrementing J_idx.
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ * @param Y_limit_active      The output variable accumulating active set
+ * values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I,
@@ -692,6 +980,37 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * updating both penalty and active set.
+ *
+ * This struct template provides a static compute function that performs
+ * conditional minimum and maximum operations on the first column (J_idx == 0)
+ * of the input matrices, updating both penalty and active set. It serves as the
+ * termination case for the recursive processing of columns in the optimization
+ * utility.
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
+ * @tparam Active_Type        Type of the active set accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I                  Current column index being processed.
+ *
+ * The compute() static method:
+ *   - Applies MinConditional and MaxConditional operations for the first row
+ *   and column (J_idx == 0), updating both penalty and active set.
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ * @param Y_limit_active      The output variable accumulating active set
+ * values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I>
@@ -714,6 +1033,39 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
 };
 
 // Row recursion when I_idx > 0
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating both penalty and active set.
+ *
+ * This struct template performs column-wise processing for a specific row
+ * (indexed by I_idx) of the input matrices, and accumulates the results into
+ * the output penalty and active set variables. The recursion proceeds by
+ * decrementing the row index (I_idx) until the base case is reached (not shown
+ * in this snippet).
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
+ * @tparam Active_Type        Type of the active set accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I_idx              Current column index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current row index, updating both
+ *   penalty and active set.
+ *   - Recursively processes the next row by decrementing I_idx.
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ * @param Y_limit_active      The output variable accumulating active set
+ * values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I_idx>
@@ -736,6 +1088,35 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating both penalty and active set.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first row (I_idx == 0) of the input matrices,
+ * updating both penalty and active set. It serves as the termination case for
+ * the recursive processing of rows in the optimization utility.
+ *
+ * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
+ * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
+ * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
+ * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
+ * @tparam Active_Type        Type of the active set accumulator.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first row (I_idx == 0), updating both
+ *   penalty and active set.
+ *
+ * @param Y_horizon           The main input matrix.
+ * @param Y_min_matrix        The matrix containing minimum constraints.
+ * @param Y_max_matrix        The matrix containing maximum constraints.
+ * @param Y_limit_penalty     The output variable accumulating penalty values.
+ * @param Y_limit_active      The output variable accumulating active set
+ * values.
+ */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N>
@@ -807,6 +1188,34 @@ inline void calculate_Y_limit_penalty_and_active(
 namespace FxxLambdaContract {
 
 // K-accumulation: recursively accumulate over k (STATE_SIZE dimension)
+
+/**
+ * @brief Template struct to recursively accumulate contributions over the K
+ * dimension for optimization.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_xx) and the state difference vector (dX) over the K dimension.
+ * The recursion proceeds by decrementing the K_idx until the base case is
+ * reached (K_idx == 0).
+ *
+ * @tparam Fxx_Type     Type of the Hessian matrix (Hf_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J            Current state index being processed.
+ * @tparam K_idx        Current K index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates the product of Hf_xx and dX for the current indices into acc.
+ *   - Recursively processes the next K index by decrementing K_idx.
+ *
+ * @param Hf_xx  The Hessian matrix.
+ * @param dX     The state difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fxx_Type, typename dX_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
           std::size_t J, std::size_t K_idx>
@@ -821,6 +1230,31 @@ struct AccumulateK {
 };
 
 // K-accumulation termination (K_idx == 0)
+
+/**
+ * @brief Specialization of AccumulateK struct for the base case when K_idx is
+ * 0.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation step when K_idx reaches 0. It adds the contribution from
+ * the Hessian matrix (Hf_xx) and the state difference vector (dX) for the
+ * current indices into the accumulator (acc).
+ *
+ * @tparam Fxx_Type     Type of the Hessian matrix (Hf_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J            Current state index being processed.
+ *
+ * The compute() static method:
+ *   - Adds the final contribution from Hf_xx and dX to acc for K_idx == 0.
+ *
+ * @param Hf_xx  The Hessian matrix.
+ * @param dX     The state difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fxx_Type, typename dX_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
           std::size_t J>
@@ -834,6 +1268,36 @@ struct AccumulateK<Fxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
 };
 
 // Column recursion over j (STATE_SIZE): computes contribution to out(j,0)
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating the output vector.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_xx) and the state difference vector (dX) for a specific output
+ * index (I) and state index (J_idx). The recursion proceeds by decrementing
+ * J_idx until the base case is reached (J_idx == 0).
+ *
+ * @tparam Fxx_Type     Type of the Hessian matrix (Hf_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J_idx        Current state index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK.
+ *   - Updates the output vector with the weighted accumulated value.
+ *   - Recursively processes the next J index by decrementing J_idx.
+ *
+ * @param Hf_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I, std::size_t J_idx>
@@ -855,6 +1319,35 @@ struct Column {
 };
 
 // Column recursion termination for j == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation and update step when J_idx reaches 0. It accumulates
+ * contributions from the Hessian matrix (Hf_xx) and the state difference
+ * vector (dX) for the current output index (I) and state index (0), and
+ * updates the output vector with the weighted accumulated value.
+ *
+ * @tparam Fxx_Type     Type of the Hessian matrix (Hf_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK for J_idx ==
+ *   0.
+ *   - Updates the output vector with the weighted accumulated value.
+ *
+ * @param Hf_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I>
@@ -874,6 +1367,35 @@ struct Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 };
 
 // Row recursion over i (OUTPUT_SIZE): iterates outputs
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating the output vector.
+ *
+ * This struct template performs column-wise processing for each output index
+ * (I_idx) of the input matrices, and accumulates the results into the output
+ * vector. The recursion proceeds by decrementing I_idx until the base case is
+ * reached (I_idx == 0).
+ *
+ * @tparam Fxx_Type     Type of the Hessian matrix (Hf_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I_idx        Current output index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current output index, updating the
+ *   output vector.
+ *   - Recursively processes the next output index by decrementing I_idx.
+ *
+ * @param Hf_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I_idx>
@@ -888,6 +1410,32 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first output index (I_idx == 0) of the input
+ * matrices, updating the output vector. It serves as the termination case for
+ * the recursive processing of output indices in the optimization utility.
+ *
+ * @tparam Fxx_Type     Type of the Hessian matrix (Hf_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first output index (I_idx == 0),
+ *   updating the output vector.
+ *
+ * @param Hf_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
 struct Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
@@ -963,6 +1511,35 @@ compute_fxx_lambda_contract(const Fxx_Type &Hf_xx, const dX_Type &dX,
 namespace FxuLambdaContract {
 
 // K-accumulation: recursively accumulate over k (INPUT_SIZE dimension)
+
+/**
+ * @brief Template struct to recursively accumulate contributions over the K
+ * dimension for optimization.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_xu) and the input difference vector (dU) over the K dimension.
+ * The recursion proceeds by decrementing the K_idx until the base case is
+ * reached (K_idx == 0).
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J            Current state index being processed.
+ * @tparam K_idx        Current K index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates the product of Hf_xu and dU for the current indices into acc.
+ *   - Recursively processes the next K index by decrementing K_idx.
+ *
+ * @param Hf_xu  The Hessian matrix.
+ * @param dU     The input difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I, std::size_t J,
@@ -978,6 +1555,32 @@ struct AccumulateK {
 };
 
 // K-accumulation termination (K_idx == 0)
+
+/**
+ * @brief Specialization of AccumulateK struct for the base case when K_idx is
+ * 0.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation step when K_idx reaches 0. It adds the contribution from
+ * the Hessian matrix (Hf_xu) and the input difference vector (dU) for the
+ * current indices into the accumulator (acc).
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J            Current state index being processed.
+ *
+ * The compute() static method:
+ *   - Adds the final contribution from Hf_xu and dU to acc for K_idx == 0.
+ *
+ * @param Hf_xu  The Hessian matrix.
+ * @param dU     The input difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I, std::size_t J>
@@ -991,6 +1594,37 @@ struct AccumulateK<Fxu_Type, dU_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE,
 };
 
 // Column recursion over j (STATE_SIZE): computes contribution to out(j,0)
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating the output vector.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_xu) and the input difference vector (dU) for a specific output
+ * index (I) and state index (J_idx). The recursion proceeds by decrementing
+ * J_idx until the base case is reached (J_idx == 0).
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J_idx        Current state index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK.
+ *   - Updates the output vector with the weighted accumulated value.
+ *   - Recursively processes the next J index by decrementing J_idx.
+ *
+ * @param Hf_xu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I, std::size_t J_idx>
@@ -1012,6 +1646,36 @@ struct Column {
 };
 
 // Column recursion termination for j == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation and update step when J_idx reaches 0. It accumulates
+ * contributions from the Hessian matrix (Hf_xu) and the input difference
+ * vector (dU) for the current output index (I) and state index (0), and
+ * updates the output vector with the weighted accumulated value.
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current output index being processed.
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK for J_idx ==
+ *   0.
+ *   - Updates the output vector with the weighted accumulated value.
+ *
+ * @param Hf_xu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I>
@@ -1019,6 +1683,7 @@ struct Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
               INPUT_SIZE, I, 0> {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
+
     using Value = typename Out_Type::Value_Type;
     Value acc = static_cast<Value>(0);
     AccumulateK<Fxu_Type, dU_Type, Value, OUTPUT_SIZE, STATE_SIZE, INPUT_SIZE,
@@ -1031,6 +1696,36 @@ struct Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 };
 
 // Row recursion over i (OUTPUT_SIZE): iterates outputs
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating the output vector.
+ *
+ * This struct template performs column-wise processing for each output index
+ * (I_idx) of the input matrices, and accumulates the results into the output
+ * vector. The recursion proceeds by decrementing I_idx until the base case is
+ * reached (I_idx == 0).
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current output index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current output index, updating the
+ *   output vector.
+ *   - Recursively processes the next output index by decrementing I_idx.
+ *
+ * @param Hf_xu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I_idx>
@@ -1046,6 +1741,33 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first output index (I_idx == 0) of the input
+ * matrices, updating the output vector. It serves as the termination case for
+ * the recursive processing of output indices in the optimization utility.
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first output index (I_idx == 0),
+ *   updating the output vector.
+ *
+ * @param Hf_xu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE>
@@ -1058,11 +1780,69 @@ struct Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
   }
 };
 
+/**
+ * @brief Conditional struct to enable or disable computation based on a
+ * compile-time boolean flag.
+ *
+ * This struct template provides a mechanism to conditionally execute the
+ * computation of the contraction of the Hessian matrix (Hf_xu) with the input
+ * vector (dU) and the weight vector (lam_next) based on a boolean template
+ * parameter (Activate). If Activate is true, the computation is performed;
+ * otherwise, the compute function does nothing.
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current output index being processed.
+ * @tparam Activate     Boolean flag to enable or disable computation.
+ *
+ * The compute() static method:
+ *   - If Activate is true, invokes Row processing to perform the contraction
+ *   computation.
+ *   - If Activate is false, does nothing.
+ *
+ * @param Hf_xu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I_idx, bool Activate>
 struct Conditional {};
 
+/**
+ * @brief Specialization of the Conditional struct for the case when Activate is
+ * true, enabling computation.
+ *
+ * This struct template provides a static compute function that performs the
+ * contraction of the Hessian matrix (Hf_xu) with the input vector (dU) and
+ * the weight vector (lam_next) when the Activate flag is true. It invokes the
+ * Row processing to carry out the computation and update the output vector
+ * (out).
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current output index being processed.
+ *
+ * The compute() static method:
+ *   - Invokes Row processing to perform the contraction computation and update
+ *   the output vector.
+ *
+ * @param Hf_xu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I_idx>
@@ -1076,6 +1856,32 @@ struct Conditional<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
   }
 };
 
+/**
+ * @brief Specialization of the Conditional struct for the case when Activate is
+ * false, disabling computation.
+ *
+ * This struct template provides a static compute function that does nothing
+ * when the Activate flag is false. It effectively disables the contraction
+ * computation of the Hessian matrix (Hf_xu) with the input vector (dU) and
+ * the weight vector (lam_next), leaving the output vector (out) unchanged.
+ *
+ * @tparam Fxu_Type     Type of the Hessian matrix (Hf_xu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current output index being processed.
+ *
+ * The compute() static method:
+ *   - Does nothing, effectively disabling the contraction computation.
+ *
+ * @param Hf_xu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated (remains unchanged).
+ */
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I_idx>
@@ -1159,6 +1965,34 @@ compute_fx_xu_lambda_contract(const Fxu_Type &Hf_xu, const dU_Type &dU,
 namespace FuxxLambdaContract {
 
 // J-accumulation: recursively accumulate over j (STATE_SIZE dimension)
+
+/**
+ * @brief Template struct to recursively accumulate contributions over the J
+ * dimension for optimization.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_ux) and the state difference vector (dX) over the J dimension.
+ * The recursion proceeds by decrementing the J_idx until the base case is
+ * reached (J_idx == 0).
+ *
+ * @tparam Fuxx_Type    Type of the Hessian matrix (Hf_ux).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ * @tparam K            Current input index being processed.
+ * @tparam J_idx        Current J index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates the product of Hf_ux and dX for the current indices into acc.
+ *   - Recursively processes the next J index by decrementing J_idx.
+ *
+ * @param Hf_ux  The Hessian matrix.
+ * @param dX     The state difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Value_Type,
           std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
           std::size_t K, std::size_t J_idx>
@@ -1173,6 +2007,31 @@ struct AccumulateJ {
 };
 
 // J-accumulation termination (J_idx == 0)
+
+/**
+ * @brief Specialization of AccumulateJ struct for the base case when J_idx is
+ * 0.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation step when J_idx reaches 0. It adds the contribution from
+ * the Hessian matrix (Hf_ux) and the state difference vector (dX) for the
+ * current indices into the accumulator (acc).
+ *
+ * @tparam Fuxx_Type    Type of the Hessian matrix (Hf_ux).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ * @tparam K            Current input index being processed.
+ *
+ * The compute() static method:
+ *   - Adds the final contribution from Hf_ux and dX to acc for J_idx == 0.
+ *
+ * @param Hf_ux  The Hessian matrix.
+ * @param dX     The state difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Value_Type,
           std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
           std::size_t K>
@@ -1186,6 +2045,36 @@ struct AccumulateJ<Fuxx_Type, dX_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, K,
 };
 
 // Column recursion over k (INPUT_SIZE): computes contribution to out(k,0)
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating the output vector.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_ux) and the state difference vector (dX) for a specific state
+ * index (I) and input index (K_idx). The recursion proceeds by decrementing
+ * K_idx until the base case is reached (K_idx == 0).
+ *
+ * @tparam Fuxx_Type    Type of the Hessian matrix (Hf_ux).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ * @tparam K_idx        Current input index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over J dimension using AccumulateJ.
+ *   - Updates the output vector with the weighted accumulated value.
+ *   - Recursively processes the next K index by decrementing K_idx.
+ *
+ * @param Hf_ux    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I, std::size_t K_idx>
@@ -1207,6 +2096,35 @@ struct Column {
 };
 
 // Column recursion termination for k == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when K_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation and update step when K_idx reaches 0. It accumulates
+ * contributions from the Hessian matrix (Hf_ux) and the state difference
+ * vector (dX) for the current state index (I) and input index (0), and
+ * updates the output vector with the weighted accumulated value.
+ *
+ * @tparam Fuxx_Type    Type of the Hessian matrix (Hf_ux).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over J dimension using AccumulateJ for K_idx ==
+ *   0.
+ *   - Updates the output vector with the weighted accumulated value.
+ *
+ * @param Hf_ux    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I>
@@ -1226,6 +2144,35 @@ struct Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 };
 
 // Row recursion over i (STATE_SIZE): iterates the outer state index
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating the output vector.
+ *
+ * This struct template performs column-wise processing for each state index
+ * (I_idx) of the input matrices, and accumulates the results into the output
+ * vector. The recursion proceeds by decrementing I_idx until the base case is
+ * reached (I_idx == 0).
+ *
+ * @tparam Fuxx_Type    Type of the Hessian matrix (Hf_ux).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current state index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current state index, updating the
+ *   output vector.
+ *   - Recursively processes the next state index by decrementing I_idx.
+ *
+ * @param Hf_ux    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
@@ -1240,6 +2187,32 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first state index (I_idx == 0) of the input
+ * matrices, updating the output vector. It serves as the termination case for
+ * the recursive processing of state indices in the optimization utility.
+ *
+ * @tparam Fuxx_Type    Type of the Hessian matrix (Hf_ux).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first state index (I_idx == 0),
+ *   updating the output vector.
+ *
+ * @param Hf_ux    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
 struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
@@ -1313,6 +2286,34 @@ compute_fu_xx_lambda_contract(const Fuxx_Type &Hf_ux, const dX_Type &dX,
 namespace FuuuLambdaContract {
 
 // K-accumulation: recursively accumulate over k (INPUT_SIZE dimension)
+
+/**
+ * @brief Template struct to recursively accumulate contributions over the K
+ * dimension for optimization.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_uu) and the input difference vector (dU) over the K dimension.
+ * The recursion proceeds by decrementing the K_idx until the base case is
+ * reached (K_idx == 0).
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ * @tparam J            Current input index being processed.
+ * @tparam K_idx        Current K index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates the product of Hf_uu and dU for the current indices into acc.
+ *   - Recursively processes the next K index by decrementing K_idx.
+ *
+ * @param Hf_uu  The Hessian matrix.
+ * @param dU     The input difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Value_Type,
           std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
           std::size_t J, std::size_t K_idx>
@@ -1327,6 +2328,31 @@ struct AccumulateK {
 };
 
 // K-accumulation termination (K_idx == 0)
+
+/**
+ * @brief Specialization of AccumulateK struct for the base case when K_idx is
+ * 0.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation step when K_idx reaches 0. It adds the contribution from
+ * the Hessian matrix (Hf_uu) and the input difference vector (dU) for the
+ * current indices into the accumulator (acc).
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ * @tparam J            Current input index being processed.
+ *
+ * The compute() static method:
+ *   - Adds the final contribution from Hf_uu and dU to acc for K_idx == 0.
+ *
+ * @param Hf_uu  The Hessian matrix.
+ * @param dU     The input difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Value_Type,
           std::size_t STATE_SIZE, std::size_t INPUT_SIZE, std::size_t I,
           std::size_t J>
@@ -1340,6 +2366,36 @@ struct AccumulateK<Fuu_Type, dU_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, J,
 };
 
 // Column recursion over j (INPUT_SIZE): computes contribution to out(j,0)
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating the output vector.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hf_uu) and the input difference vector (dU) for a specific state
+ * index (I) and input index (J_idx). The recursion proceeds by decrementing
+ * J_idx until the base case is reached (J_idx == 0).
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ * @tparam J_idx        Current input index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK.
+ *   - Updates the output vector with the weighted accumulated value.
+ *   - Recursively processes the next J index by decrementing J_idx.
+ *
+ * @param Hf_uu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I, std::size_t J_idx>
@@ -1361,6 +2417,35 @@ struct Column {
 };
 
 // Column recursion termination for j == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation and update step when J_idx reaches 0. It accumulates
+ * contributions from the Hessian matrix (Hf_uu) and the input difference
+ * vector (dU) for the current state index (I) and input index (0), and
+ * updates the output vector with the weighted accumulated value.
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I            Current state index being processed.
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK for J_idx ==
+ *   0.
+ *   - Updates the output vector with the weighted accumulated value.
+ *
+ * @param Hf_uu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I>
@@ -1380,6 +2465,35 @@ struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 };
 
 // Row recursion over i (STATE_SIZE): iterates the outer state index
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating the output vector.
+ *
+ * This struct template performs column-wise processing for each state index
+ * (I_idx) of the input matrices, and accumulates the results into the output
+ * vector. The recursion proceeds by decrementing I_idx until the base case is
+ * reached (I_idx == 0).
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current state index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current state index, updating the
+ *   output vector.
+ *   - Recursively processes the next state index by decrementing I_idx.
+ *
+ * @param Hf_uu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
@@ -1394,6 +2508,32 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first state index (I_idx == 0) of the input
+ * matrices, updating the output vector. It serves as the termination case for
+ * the recursive processing of state indices in the optimization utility.
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first state index (I_idx == 0),
+ *   updating the output vector.
+ *
+ * @param Hf_uu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
 struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
@@ -1405,11 +2545,63 @@ struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
   }
 };
 
+/**
+ * @brief Conditional struct to enable or disable computation based on a boolean
+ * template parameter.
+ *
+ * This struct template provides a mechanism to conditionally execute the
+ * computation of the Row struct based on the Activate boolean template
+ * parameter. If Activate is true, it invokes the Row computation; if false, it
+ * does nothing.
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current state index being processed.
+ * @tparam Activate     Boolean flag to enable or disable computation.
+ *
+ * The compute() static method:
+ *   - If Activate is true, invokes Row computation for the given parameters.
+ *   - If Activate is false, performs no operation.
+ *
+ * @param Hf_uu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx, bool Activate>
 struct Conditional {};
 
+/**
+ * @brief Specialization of the Conditional struct for the case when Activate is
+ * true, enabling computation.
+ *
+ * This struct template provides a static compute function that invokes the
+ * Row computation when the Activate boolean template parameter is true. It
+ * serves as the active case for conditional execution in the optimization
+ * utility.
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current state index being processed.
+ *
+ * The compute() static method:
+ *   - Invokes Row computation for the given parameters.
+ *
+ * @param Hf_uu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
@@ -1423,6 +2615,30 @@ struct Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE,
   }
 };
 
+/**
+ * @brief Specialization of the Conditional struct for the case when Activate is
+ * false, disabling computation.
+ *
+ * This struct template provides a static compute function that performs no
+ * operation when the Activate boolean template parameter is false. It serves as
+ * the inactive case for conditional execution in the optimization utility.
+ *
+ * @tparam Fuu_Type     Type of the Hessian matrix (Hf_uu).
+ * @tparam dU_Type      Type of the input difference vector (dU).
+ * @tparam Weight_Type  Type of the weight vector (lam_next).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam INPUT_SIZE   Number of input dimensions.
+ * @tparam I_idx        Current state index being processed.
+ *
+ * The compute() static method:
+ *   - Performs no operation.
+ *
+ * @param Hf_uu    The Hessian matrix.
+ * @param dU       The input difference vector.
+ * @param lam_next The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
@@ -1504,6 +2720,34 @@ compute_fu_uu_lambda_contract(const Fuu_Type &Hf_uu, const dU_Type &dU,
 namespace HxxLambdaContract {
 
 // K-accumulation: recursively accumulate over k (STATE_SIZE dimension)
+
+/**
+ * @brief Template struct to recursively accumulate contributions over the K
+ * dimension for optimization.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hh_xx) and the state difference vector (dX) over the K dimension.
+ * The recursion proceeds by decrementing the K_idx until the base case is
+ * reached (K_idx == 0).
+ *
+ * @tparam Hxx_Type     Type of the Hessian matrix (Hh_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J            Current state index being processed.
+ * @tparam K_idx        Current K index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates the product of Hh_xx and dX for the current indices into acc.
+ *   - Recursively processes the next K index by decrementing K_idx.
+ *
+ * @param Hh_xx  The Hessian matrix.
+ * @param dX     The state difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
           std::size_t J, std::size_t K_idx>
@@ -1518,6 +2762,31 @@ struct AccumulateK {
 };
 
 // K-accumulation termination (K_idx == 0)
+
+/**
+ * @brief Specialization of AccumulateK struct for the base case when K_idx is
+ * 0.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation step when K_idx reaches 0. It adds the contribution from
+ * the Hessian matrix (Hh_xx) and the state difference vector (dX) for the
+ * current indices into the accumulator (acc).
+ *
+ * @tparam Hxx_Type     Type of the Hessian matrix (Hh_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Value_Type   Type of the value being accumulated.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J            Current state index being processed.
+ *
+ * The compute() static method:
+ *   - Adds the final contribution from Hh_xx and dX to acc for K_idx == 0.
+ *
+ * @param Hh_xx  The Hessian matrix.
+ * @param dX     The state difference vector.
+ * @param acc    The accumulator for the result.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Value_Type,
           std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE, std::size_t I,
           std::size_t J>
@@ -1531,6 +2800,36 @@ struct AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
 };
 
 // Column recursion over j (STATE_SIZE): computes contribution to out(j,0)
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating the output vector.
+ *
+ * This struct template performs accumulation of contributions from the Hessian
+ * matrix (Hh_xx) and the state difference vector (dX) for a specific output
+ * index (I) and state index (J_idx). The recursion proceeds by decrementing
+ * J_idx until the base case is reached (J_idx == 0).
+ *
+ * @tparam Hxx_Type     Type of the Hessian matrix (Hh_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (weight).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ * @tparam J_idx        Current state index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK.
+ *   - Updates the output vector with the weighted accumulated value.
+ *   - Recursively processes the next J index by decrementing J_idx.
+ *
+ * @param Hh_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param weight   The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I, std::size_t J_idx>
@@ -1552,6 +2851,35 @@ struct Column {
 };
 
 // Column recursion termination for j == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that performs the
+ * final accumulation and update step when J_idx reaches 0. It accumulates
+ * contributions from the Hessian matrix (Hh_xx) and the state difference
+ * vector (dX) for the current output index (I) and state index (0), and
+ * updates the output vector with the weighted accumulated value.
+ *
+ * @tparam Hxx_Type     Type of the Hessian matrix (Hh_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (weight).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I            Current output index being processed.
+ *
+ * The compute() static method:
+ *   - Accumulates contributions over K dimension using AccumulateK for J_idx ==
+ *   0.
+ *   - Updates the output vector with the weighted accumulated value.
+ *
+ * @param Hh_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param weight   The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I>
@@ -1571,6 +2899,35 @@ struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 };
 
 // Row recursion over i (OUTPUT_SIZE): iterates outputs
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating the output vector.
+ *
+ * This struct template performs column-wise processing for each output index
+ * (I_idx) of the input matrices, and accumulates the results into the output
+ * vector. The recursion proceeds by decrementing I_idx until the base case is
+ * reached (I_idx == 0).
+ *
+ * @tparam Hxx_Type     Type of the Hessian matrix (Hh_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (weight).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ * @tparam I_idx        Current output index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current output index, updating the
+ *   output vector.
+ *   - Recursively processes the next output index by decrementing I_idx.
+ *
+ * @param Hh_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param weight   The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I_idx>
@@ -1585,6 +2942,32 @@ struct Row {
 };
 
 // Row recursion termination for i == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating the output vector.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first output index (I_idx == 0) of the input
+ * matrices, updating the output vector. It serves as the termination case for
+ * the recursive processing of output indices in the optimization utility.
+ *
+ * @tparam Hxx_Type     Type of the Hessian matrix (Hh_xx).
+ * @tparam dX_Type      Type of the state difference vector (dX).
+ * @tparam Weight_Type  Type of the weight vector (weight).
+ * @tparam Out_Type     Type of the output vector.
+ * @tparam OUTPUT_SIZE  Number of output dimensions.
+ * @tparam STATE_SIZE   Number of state dimensions.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first output index (I_idx == 0),
+ *   updating the output vector.
+ *
+ * @param Hh_xx    The Hessian matrix.
+ * @param dX       The state difference vector.
+ * @param weight   The weight vector.
+ * @param out      The output vector to be updated.
+ */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
 struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
@@ -1659,11 +3042,68 @@ compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
 namespace FreeMaskAtCheck {
 
 // Per-element conditional for lower-bound proximity check
+
+/**
+ * @brief Per-element conditional struct to check proximity to lower bounds.
+ *
+ * This struct template checks if an element of the input matrix
+ * (`U_horizon_in`) is within a specified tolerance (`atol`) of its
+ * corresponding lower bound from the `U_min_matrix`. If the condition is met,
+ * it sets the corresponding element in the `at_lower` matrix to true. The
+ * computation is enabled or disabled based on the `limit_valid_flag`.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Min_Matrix_Type  Type of the lower bound matrix (`U_min_matrix`).
+ * @tparam AtLower_Type       Type of the output boolean matrix (`at_lower`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam I                  Column index of the element being checked.
+ * @tparam J_idx              Row index of the element being checked.
+ * @tparam limit_valid_flag   Boolean flag to enable or disable computation.
+ *
+ * The compute() static method:
+ *   - If `limit_valid_flag` is true, checks if the element at (I, J_idx) in
+ *   `U_horizon_in` is within `atol` of the corresponding element in
+ *   `U_min_matrix`. If so, sets `at_lower(I, J_idx)` to true.
+ *   - If `limit_valid_flag` is false, performs no operation.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_min_matrix  The matrix containing lower bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_lower      The output boolean matrix indicating proximity to lower
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtLower_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx, bool limit_valid_flag>
 struct LowerConditional {};
 
+/** @brief Specialization of LowerConditional for the case when limit_valid_flag
+ * is true, enabling computation.
+ *
+ * This struct template provides a static compute function that checks if the
+ * element at (I, J_idx) in `U_horizon_in` is within `atol` of the corresponding
+ * element in `U_min_matrix`. If the condition is met, it sets
+ * `at_lower(I, J_idx)` to true. This specialization is used when
+ * `limit_valid_flag` is true, enabling the proximity check.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Min_Matrix_Type  Type of the lower bound matrix (`U_min_matrix`).
+ * @tparam AtLower_Type       Type of the output boolean matrix (`at_lower`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam I                  Column index of the element being checked.
+ * @tparam J_idx              Row index of the element being checked.
+ *
+ * The compute() static method:
+ *   - Checks if the element at (I, J_idx) in `U_horizon_in` is within `atol`
+ *   of the corresponding element in `U_min_matrix`. If so, sets
+ *   `at_lower(I, J_idx)` to true.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_min_matrix  The matrix containing lower bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_lower      The output boolean matrix indicating proximity to lower
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtLower_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -1682,6 +3122,29 @@ struct LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type,
   }
 };
 
+/** @brief Specialization of LowerConditional for the case when
+ * limit_valid_flag is false, disabling computation.
+ *
+ * This struct template provides a static compute function that performs no
+ * operation when `limit_valid_flag` is false. This specialization is used when
+ * `limit_valid_flag` is false, effectively disabling the proximity check.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Min_Matrix_Type  Type of the lower bound matrix (`U_min_matrix`).
+ * @tparam AtLower_Type       Type of the output boolean matrix (`at_lower`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam I                  Column index of the element being checked.
+ * @tparam J_idx              Row index of the element being checked.
+ *
+ * The compute() static method:
+ *   - Performs no operation.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_min_matrix  The matrix containing lower bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_lower      The output boolean matrix indicating proximity to lower
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtLower_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -1700,11 +3163,69 @@ struct LowerConditional<U_Mat_Type, U_Min_Matrix_Type, AtLower_Type, Value_Type,
 };
 
 // Per-element conditional for upper-bound proximity check
+
+/**
+ * @brief Per-element conditional struct to check proximity to upper bounds.
+ *
+ * This struct template checks if an element of the input matrix
+ * (`U_horizon_in`) is within a specified tolerance (`atol`) of its
+ * corresponding upper bound from the `U_max_matrix`. If the condition is met,
+ * it sets the corresponding element in the `at_upper` matrix to true. The
+ * computation is enabled or disabled based on the `limit_valid_flag`.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Max_Matrix_Type  Type of the upper bound matrix (`U_max_matrix`).
+ * @tparam AtUpper_Type       Type of the output boolean matrix (`at_upper`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam I                  Column index of the element being checked.
+ * @tparam J_idx              Row index of the element being checked.
+ * @tparam limit_valid_flag   Boolean flag to enable or disable computation.
+ *
+ * The compute() static method:
+ *   - If `limit_valid_flag` is true, checks if the element at (I, J_idx) in
+ *   `U_horizon_in` is within `atol` of the corresponding element in
+ *   `U_max_matrix`. If so, sets `at_upper(I, J_idx)` to true.
+ *   - If `limit_valid_flag` is false, performs no operation.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_max_matrix  The matrix containing upper bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_upper      The output boolean matrix indicating proximity to upper
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Max_Matrix_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx, bool limit_valid_flag>
 struct UpperConditional {};
 
+/**
+ * @brief Specialization of UpperConditional for the case when limit_valid_flag
+ * is true, enabling computation.
+ *
+ * This struct template provides a static compute function that checks if the
+ * element at (I, J_idx) in `U_horizon_in` is within `atol` of the corresponding
+ * element in `U_max_matrix`. If the condition is met, it sets
+ * `at_upper(I, J_idx)` to true. This specialization is used when
+ * `limit_valid_flag` is true, enabling the proximity check.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Max_Matrix_Type  Type of the upper bound matrix (`U_max_matrix`).
+ * @tparam AtUpper_Type       Type of the output boolean matrix (`at_upper`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam I                  Column index of the element being checked.
+ * @tparam J_idx              Row index of the element being checked.
+ *
+ * The compute() static method:
+ *   - Checks if the element at (I, J_idx) in `U_horizon_in` is within `atol`
+ *   of the corresponding element in `U_max_matrix`. If so, sets
+ *   `at_upper(I, J_idx)` to true.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_max_matrix  The matrix containing upper bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_upper      The output boolean matrix indicating proximity to upper
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Max_Matrix_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -1723,6 +3244,30 @@ struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
   }
 };
 
+/**
+ * @brief Specialization of UpperConditional for the case when
+ * limit_valid_flag is false, disabling computation.
+ *
+ * This struct template provides a static compute function that performs no
+ * operation when `limit_valid_flag` is false. This specialization is used when
+ * `limit_valid_flag` is false, effectively disabling the proximity check.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Max_Matrix_Type  Type of the upper bound matrix (`U_max_matrix`).
+ * @tparam AtUpper_Type       Type of the output boolean matrix (`at_upper`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam I                  Column index of the element being checked.
+ * @tparam J_idx              Row index of the element being checked.
+ *
+ * The compute() static method:
+ *   - Performs no operation.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_max_matrix  The matrix containing upper bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_upper      The output boolean matrix indicating proximity to upper
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Max_Matrix_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t I,
           std::size_t J_idx>
@@ -1741,6 +3286,45 @@ struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
 };
 
 // Column recursion for J (0..N-1), when J_idx > 0
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating boolean matrices indicating proximity to bounds.
+ *
+ * This struct template performs per-element checks for both lower and upper
+ * bounds on the input matrix (`U_horizon_in`) against the provided minimum
+ * (`U_min_matrix`) and maximum (`U_max_matrix`) matrices. The recursion
+ * proceeds by decrementing the J_idx until the base case is reached (J_idx ==
+ * 0).
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Min_Matrix_Type  Type of the lower bound matrix (`U_min_matrix`).
+ * @tparam U_Max_Matrix_Type  Type of the upper bound matrix (`U_max_matrix`).
+ * @tparam AtLower_Type       Type of the output boolean matrix for lower bounds
+ * (`at_lower`).
+ * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
+ * (`at_upper`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I                  Current column index being processed.
+ * @tparam J_idx              Current row index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes LowerConditional and UpperConditional to check proximity to
+ *   bounds for the current element (I, J_idx).
+ *   - Recursively processes the next row index by decrementing J_idx.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_min_matrix  The matrix containing lower bounds.
+ * @param U_max_matrix  The matrix containing upper bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_lower      The output boolean matrix indicating proximity to lower
+ * bounds.
+ * @param at_upper      The output boolean matrix indicating proximity to upper
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -1770,6 +3354,43 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * updating boolean matrices indicating proximity to bounds.
+ *
+ * This struct template provides a static compute function that performs the
+ * final per-element checks for both lower and upper bounds on the input matrix
+ * (`U_horizon_in`) against the provided minimum (`U_min_matrix`) and maximum
+ * (`U_max_matrix`) matrices for the current column index (I) and row index (0).
+ * It serves as the termination case for the recursive processing of row indices
+ * in the optimization utility.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Min_Matrix_Type  Type of the lower bound matrix (`U_min_matrix`).
+ * @tparam U_Max_Matrix_Type  Type of the upper bound matrix (`U_max_matrix`).
+ * @tparam AtLower_Type       Type of the output boolean matrix for lower bounds
+ * (`at_lower`).
+ * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
+ * (`at_upper`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I                  Current column index being processed.
+ *
+ * The compute() static method:
+ *   - Invokes LowerConditional and UpperConditional to check proximity to
+ *   bounds for the element (I, 0).
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_min_matrix  The matrix containing lower bounds.
+ * @param U_max_matrix  The matrix containing upper bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_lower      The output boolean matrix indicating proximity to lower
+ * bounds.
+ * @param at_upper      The output boolean matrix indicating proximity to upper
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -1793,6 +3414,43 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
 };
 
 // Row recursion for I (0..M-1), when I_idx > 0
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating boolean matrices indicating proximity to bounds.
+ *
+ * This struct template performs column-wise processing for each column index
+ * (I_idx) of the input matrices, and updates the boolean matrices indicating
+ * proximity to lower and upper bounds. The recursion proceeds by decrementing
+ * I_idx until the base case is reached (I_idx == 0).
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Min_Matrix_Type  Type of the lower bound matrix (`U_min_matrix`).
+ * @tparam U_Max_Matrix_Type  Type of the upper bound matrix (`U_max_matrix`).
+ * @tparam AtLower_Type       Type of the output boolean matrix for lower bounds
+ * (`at_lower`).
+ * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
+ * (`at_upper`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ * @tparam I_idx             Current column index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current column index, updating the
+ *   boolean matrices.
+ *   - Recursively processes the next column index by decrementing I_idx.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_min_matrix  The matrix containing lower bounds.
+ * @param U_max_matrix  The matrix containing upper bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_lower      The output boolean matrix indicating proximity to lower
+ * bounds.
+ * @param at_upper      The output boolean matrix indicating proximity to upper
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -1818,6 +3476,41 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating boolean matrices indicating proximity to bounds.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first column index (I_idx == 0) of the input
+ * matrices, updating the boolean matrices indicating proximity to lower and
+ * upper bounds. It serves as the termination case for the recursive processing
+ * of column indices in the optimization utility.
+ *
+ * @tparam U_Mat_Type         Type of the input matrix (`U_horizon_in`).
+ * @tparam U_Min_Matrix_Type  Type of the lower bound matrix (`U_min_matrix`).
+ * @tparam U_Max_Matrix_Type  Type of the upper bound matrix (`U_max_matrix`).
+ * @tparam AtLower_Type       Type of the output boolean matrix for lower bounds
+ * (`at_lower`).
+ * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
+ * (`at_upper`).
+ * @tparam Value_Type         Type of the values in the matrices.
+ * @tparam M                  Number of columns in the matrices.
+ * @tparam N                  Number of rows in the matrices.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   updating the boolean matrices.
+ *
+ * @param U_horizon_in  The input matrix to be checked.
+ * @param U_min_matrix  The matrix containing lower bounds.
+ * @param U_max_matrix  The matrix containing upper bounds.
+ * @param atol          The tolerance for proximity check.
+ * @param at_lower      The output boolean matrix indicating proximity to lower
+ * bounds.
+ * @param at_upper      The output boolean matrix indicating proximity to upper
+ * bounds.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
@@ -1911,6 +3604,43 @@ inline void free_mask_at_check(const U_Mat_Type &U_horizon_in,
 namespace FreeMaskPushActive {
 
 // Column recursion for J (0..N-1), when J_idx > 0
+
+/**
+ * @brief Template struct to recursively process a column of matrix operations
+ * for optimization, updating a mask and pushing active constraints.
+ *
+ * This struct template performs per-element checks on the gradient and bound
+ * status to update the mask and push active constraints into the active set.
+ * The recursion proceeds by decrementing the J_idx until the base case is
+ * reached (J_idx == 0).
+ *
+ * @tparam Mask_Type         Type of the mask matrix.
+ * @tparam Gradient_Type     Type of the gradient matrix.
+ * @tparam AtLower_Type      Type of the boolean matrix indicating lower bound
+ * status.
+ * @tparam AtUpper_Type      Type of the boolean matrix indicating upper bound
+ * status.
+ * @tparam ActiveSet_Type    Type of the active set structure.
+ * @tparam Value_Type        Type of the gradient tolerance value.
+ * @tparam M                 Number of columns in the matrices.
+ * @tparam N                 Number of rows in the matrices.
+ * @tparam I                 Current column index being processed.
+ * @tparam J_idx             Current row index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Checks if the current element is at its lower or upper bound and if the
+ *   gradient exceeds the tolerance. If so, it updates the mask and pushes the
+ *   index to the active set.
+ *   - Recursively processes the next row index by decrementing J_idx.
+ *
+ * @param m            The mask matrix to be updated.
+ * @param gradient     The gradient matrix for checking conditions.
+ * @param at_lower     The boolean matrix indicating lower bound status.
+ * @param at_upper     The boolean matrix indicating upper bound status.
+ * @param gtol         The gradient tolerance for condition checking.
+ * @param active_set   The active set structure to push active indices into.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
@@ -1939,6 +3669,41 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * updating a mask and pushing active constraints.
+ *
+ * This struct template provides a static compute function that performs the
+ * final per-element check on the gradient and bound status to update the mask
+ * and push active constraints into the active set for the current column index
+ * (I) and row index (0). It serves as the termination case for the recursive
+ * processing of row indices in the optimization utility.
+ *
+ * @tparam Mask_Type         Type of the mask matrix.
+ * @tparam Gradient_Type     Type of the gradient matrix.
+ * @tparam AtLower_Type      Type of the boolean matrix indicating lower bound
+ * status.
+ * @tparam AtUpper_Type      Type of the boolean matrix indicating upper bound
+ * status.
+ * @tparam ActiveSet_Type    Type of the active set structure.
+ * @tparam Value_Type        Type of the gradient tolerance value.
+ * @tparam M                 Number of columns in the matrices.
+ * @tparam N                 Number of rows in the matrices.
+ * @tparam I                 Current column index being processed.
+ *
+ * The compute() static method:
+ *   - Checks if the current element is at its lower or upper bound and if the
+ *   gradient exceeds the tolerance. If so, it updates the mask and pushes the
+ *   index to the active set.
+ *
+ * @param m            The mask matrix to be updated.
+ * @param gradient     The gradient matrix for checking conditions.
+ * @param at_lower     The boolean matrix indicating lower bound status.
+ * @param at_upper     The boolean matrix indicating upper bound status.
+ * @param gtol         The gradient tolerance for condition checking.
+ * @param active_set   The active set structure to push active indices into.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I>
@@ -1963,6 +3728,41 @@ struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
 };
 
 // Row recursion for I (0..M-1), when I_idx > 0
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * optimization, updating a mask and pushing active constraints.
+ *
+ * This struct template performs column-wise processing for each column index
+ * (I_idx) of the input matrices, and updates the mask and pushes active
+ * constraints into the active set. The recursion proceeds by decrementing I_idx
+ * until the base case is reached (I_idx == 0).
+ *
+ * @tparam Mask_Type         Type of the mask matrix.
+ * @tparam Gradient_Type     Type of the gradient matrix.
+ * @tparam AtLower_Type      Type of the boolean matrix indicating lower bound
+ * status.
+ * @tparam AtUpper_Type      Type of the boolean matrix indicating upper bound
+ * status.
+ * @tparam ActiveSet_Type    Type of the active set structure.
+ * @tparam Value_Type        Type of the gradient tolerance value.
+ * @tparam M                 Number of columns in the matrices.
+ * @tparam N                 Number of rows in the matrices.
+ * @tparam I_idx            Current column index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current column index, updating the
+ *   mask and pushing active constraints.
+ *   - Recursively processes the next column index by decrementing I_idx.
+ *
+ * @param m            The mask matrix to be updated.
+ * @param gradient     The gradient matrix for checking conditions.
+ * @param at_lower     The boolean matrix indicating lower bound status.
+ * @param at_upper     The boolean matrix indicating upper bound status.
+ * @param gtol         The gradient tolerance for condition checking.
+ * @param active_set   The active set structure to push active indices into.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I_idx>
@@ -1985,6 +3785,39 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * updating a mask and pushing active constraints.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first column index (I_idx == 0) of the input
+ * matrices, updating the mask and pushing active constraints into the active
+ * set. It serves as the termination case for the recursive processing of column
+ * indices in the optimization utility.
+ *
+ * @tparam Mask_Type         Type of the mask matrix.
+ * @tparam Gradient_Type     Type of the gradient matrix.
+ * @tparam AtLower_Type      Type of the boolean matrix indicating lower bound
+ * status.
+ * @tparam AtUpper_Type      Type of the boolean matrix indicating upper bound
+ * status.
+ * @tparam ActiveSet_Type    Type of the active set structure.
+ * @tparam Value_Type        Type of the gradient tolerance value.
+ * @tparam M                 Number of columns in the matrices.
+ * @tparam N                 Number of rows in the matrices.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   updating the mask and pushing active constraints.
+ *
+ * @param m            The mask matrix to be updated.
+ * @param gradient     The gradient matrix for checking conditions.
+ * @param at_lower     The boolean matrix indicating lower bound status.
+ * @param at_upper     The boolean matrix indicating upper bound status.
+ * @param gtol         The gradient tolerance for condition checking.
+ * @param active_set   The active set structure to push active indices into.
+ */
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N>
@@ -2061,6 +3894,37 @@ inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
 namespace SolverCalculateMInv {
 
 // Column recursion for J (0..N-1), when J_idx > 0
+
+/**
+ * @brief Template struct to recursively compute the inverse of a matrix M_inv
+ * using a diagonal matrix diag_R_full_lambda_factor.
+ *
+ * This struct template performs per-element computation of the inverse matrix
+ * by taking the reciprocal of the corresponding elements in the diagonal
+ * matrix, while avoiding division by zero using a specified limit. The
+ * recursion proceeds by decrementing the J_idx until the base case is reached
+ * (J_idx == 0).
+ *
+ * @tparam Out_Mat_Type     Type of the output matrix (M_inv).
+ * @tparam In_Mat_Type      Type of the input diagonal matrix
+ * (diag_R_full_lambda_factor).
+ * @tparam Value_Type       Type of the scalar values in the matrices.
+ * @tparam M                Number of columns in the matrices.
+ * @tparam N                Number of rows in the matrices.
+ * @tparam I                Current column index being processed.
+ * @tparam J_idx            Current row index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Computes the reciprocal of the corresponding element in the diagonal
+ *   matrix, avoiding division by zero using avoid_zero_limit.
+ *   - Recursively processes the next row index by decrementing J_idx.
+ *
+ * @param M_inv                        The output matrix to store the inverse.
+ * @param diag_R_full_lambda_factor    The input diagonal matrix used for
+ * inversion.
+ * @param avoid_zero_limit             Value used to avoid division by zero.
+ */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
 struct Column {
@@ -2081,6 +3945,34 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is 0,
+ * computing the inverse of a matrix element.
+ *
+ * This struct template provides a static compute function that performs the
+ * final per-element computation of the inverse matrix by taking the reciprocal
+ * of the corresponding element in the diagonal matrix, while avoiding division
+ * by zero using a specified limit. It serves as the termination case for the
+ * recursive processing of row indices in the optimization utility.
+ *
+ * @tparam Out_Mat_Type     Type of the output matrix (M_inv).
+ * @tparam In_Mat_Type      Type of the input diagonal matrix
+ * (diag_R_full_lambda_factor).
+ * @tparam Value_Type       Type of the scalar values in the matrices.
+ * @tparam M                Number of columns in the matrices.
+ * @tparam N                Number of rows in the matrices.
+ * @tparam I                Current column index being processed.
+ *
+ * The compute() static method:
+ *   - Computes the reciprocal of the corresponding element in the diagonal
+ *   matrix, avoiding division by zero using avoid_zero_limit.
+ *
+ * @param M_inv                        The output matrix to store the inverse.
+ * @param diag_R_full_lambda_factor    The input diagonal matrix used for
+ * inversion.
+ * @param avoid_zero_limit             Value used to avoid division by zero.
+ */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I>
 struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
@@ -2097,6 +3989,37 @@ struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
 };
 
 // Row recursion for I (0..M-1), when I_idx > 0
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * computing the inverse of a matrix M_inv using a diagonal matrix
+ * diag_R_full_lambda_factor.
+ *
+ * This struct template performs column-wise processing for each column index
+ * (I_idx) of the input matrices, and computes the inverse matrix by taking the
+ * reciprocal of the corresponding elements in the diagonal matrix. The
+ * recursion proceeds by decrementing I_idx until the base case is reached
+ * (I_idx == 0).
+ *
+ * @tparam Out_Mat_Type     Type of the output matrix (M_inv).
+ * @tparam In_Mat_Type      Type of the input diagonal matrix
+ * (diag_R_full_lambda_factor).
+ * @tparam Value_Type       Type of the scalar values in the matrices.
+ * @tparam M                Number of columns in the matrices.
+ * @tparam N                Number of rows in the matrices.
+ * @tparam I_idx           Current column index being processed (recursively
+ * decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current column index, computing the
+ *   inverse elements.
+ *   - Recursively processes the next column index by decrementing I_idx.
+ *
+ * @param M_inv                        The output matrix to store the inverse.
+ * @param diag_R_full_lambda_factor    The input diagonal matrix used for
+ * inversion.
+ * @param avoid_zero_limit             Value used to avoid division by zero.
+ */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I_idx>
 struct Row {
@@ -2113,6 +4036,34 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * computing the inverse of a matrix row.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first column index (I_idx == 0) of the input
+ * matrices, computing the inverse elements by taking the reciprocal of the
+ * corresponding elements in the diagonal matrix. It serves as the termination
+ * case for the recursive processing of column indices in the optimization
+ * utility.
+ *
+ * @tparam Out_Mat_Type     Type of the output matrix (M_inv).
+ * @tparam In_Mat_Type      Type of the input diagonal matrix
+ * (diag_R_full_lambda_factor).
+ * @tparam Value_Type       Type of the scalar values in the matrices.
+ * @tparam M                Number of columns in the matrices.
+ * @tparam N                Number of rows in the matrices.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   computing the inverse elements.
+ *
+ * @param M_inv                        The output matrix to store the inverse.
+ * @param diag_R_full_lambda_factor    The input diagonal matrix used for
+ * inversion.
+ * @param avoid_zero_limit             Value used to avoid division by zero.
+ */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N>
 struct Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0> {
@@ -2170,10 +4121,41 @@ inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
 namespace SaturateU_Horizon {
 
 // Min-limit conditional saturator based on compile-time availability
+
+/**
+ * @brief Min-limit conditional saturator based on compile-time availability.
+ *
+ * This struct template provides a mechanism to conditionally apply a minimum
+ * limit to elements of a matrix based on a compile-time boolean flag. If the
+ * flag is true, the specified element in the candidate matrix is compared to
+ * the corresponding element in the minimum matrix, and if it is less than the
+ * minimum, it is set to that minimum value. If the flag is false, no operation
+ * is performed.
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
+ * @tparam I Row index of the element to be processed.
+ * @tparam J_idx Column index of the element to be processed.
+ * @tparam limit_valid_flag Compile-time boolean flag indicating whether to
+ * apply the minimum limit.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
           std::size_t J_idx, bool limit_valid_flag>
 struct MinSaturateConditional {};
 
+/**
+ * @brief Specialization of MinSaturateConditional when limit_valid_flag is
+ * true.
+ *
+ * This specialization implements the logic to apply the minimum limit to the
+ * specified element in the candidate matrix. If the element is less than the
+ * corresponding element in the minimum matrix, it is set to that minimum value.
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
+ * @tparam I Row index of the element to be processed.
+ * @tparam J_idx Column index of the element to be processed.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
           std::size_t J_idx>
 struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, true> {
@@ -2188,6 +4170,19 @@ struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, true> {
   }
 };
 
+/**
+ * @brief Specialization of MinSaturateConditional when limit_valid_flag is
+ * false.
+ *
+ * This specialization implements a no-operation behavior. When the
+ * limit_valid_flag is false, the compute function does nothing, effectively
+ * skipping any minimum limit application.
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
+ * @tparam I Row index of the element to be processed.
+ * @tparam J_idx Column index of the element to be processed.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type, std::size_t I,
           std::size_t J_idx>
 struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, false> {
@@ -2201,6 +4196,24 @@ struct MinSaturateConditional<U_Mat_Type, U_Min_Matrix_Type, I, J_idx, false> {
 };
 
 // Max-limit conditional saturator based on compile-time availability
+
+/**
+ * @brief Max-limit conditional saturator based on compile-time availability.
+ *
+ * This struct template provides a mechanism to conditionally apply a maximum
+ * limit to elements of a matrix based on a compile-time boolean flag. If the
+ * flag is true, the specified element in the candidate matrix is compared to
+ * the corresponding element in the maximum matrix, and if it exceeds the
+ * maximum, it is set to that maximum value. If the flag is false, no operation
+ * is performed.
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
+ * @tparam I Row index of the element to be processed.
+ * @tparam J_idx Column index of the element to be processed.
+ * @tparam limit_valid_flag Compile-time boolean flag indicating whether to
+ * apply the maximum limit.
+ */
 template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
           std::size_t J_idx, bool limit_valid_flag>
 struct MaxSaturateConditional {};
@@ -2219,6 +4232,19 @@ struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, true> {
   }
 };
 
+/**
+ * @brief Specialization of MaxSaturateConditional when limit_valid_flag is
+ * false.
+ *
+ * This specialization implements a no-operation behavior. When the
+ * limit_valid_flag is false, the compute function does nothing, effectively
+ * skipping any maximum limit application.
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
+ * @tparam I Row index of the element to be processed.
+ * @tparam J_idx Column index of the element to be processed.
+ */
 template <typename U_Mat_Type, typename U_Max_Matrix_Type, std::size_t I,
           std::size_t J_idx>
 struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, false> {
@@ -2232,6 +4258,33 @@ struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, false> {
 };
 
 // Column recursion for J (0..N-1), when J_idx > 0
+
+/**
+ * @brief Template struct to recursively apply minimum and maximum saturation
+ * limits to elements of a candidate matrix.
+ *
+ * This struct template performs per-element saturation of the candidate matrix
+ * by applying minimum and maximum limits based on the corresponding elements in
+ * the provided limit matrices. The recursion proceeds by decrementing the
+ * J_idx until the base case is reached (J_idx == 0).
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
+ * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
+ * @tparam M Number of columns in the matrices.
+ * @tparam N Number of rows in the matrices.
+ * @tparam I Current column index being processed.
+ * @tparam J_idx Current row index being processed (recursively decremented).
+ *
+ * The compute() static method:
+ *   - Applies minimum saturation using MinSaturateConditional.
+ *   - Applies maximum saturation using MaxSaturateConditional.
+ *   - Recursively processes the next row index by decrementing J_idx.
+ *
+ * @param U_candidate The candidate matrix to be saturated.
+ * @param U_min_matrix The minimum limit matrix.
+ * @param U_max_matrix The maximum limit matrix.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
           std::size_t I, std::size_t J_idx>
@@ -2256,6 +4309,32 @@ struct Column {
 };
 
 // Column recursion termination for J_idx == 0
+
+/**
+ * @brief Specialization of the Column struct for the base case when J_idx is
+ * 0, applying minimum and maximum saturation limits to a matrix element.
+ *
+ * This struct template provides a static compute function that performs the
+ * final per-element saturation of the candidate matrix by applying minimum and
+ * maximum limits based on the corresponding elements in the provided limit
+ * matrices. It serves as the termination case for the recursive processing of
+ * row indices in the optimization utility.
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
+ * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
+ * @tparam M Number of columns in the matrices.
+ * @tparam N Number of rows in the matrices.
+ * @tparam I Current column index being processed.
+ *
+ * The compute() static method:
+ *   - Applies minimum saturation using MinSaturateConditional.
+ *   - Applies maximum saturation using MaxSaturateConditional.
+ *
+ * @param U_candidate The candidate matrix to be saturated.
+ * @param U_min_matrix The minimum limit matrix.
+ * @param U_max_matrix The maximum limit matrix.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
           std::size_t I>
@@ -2275,6 +4354,32 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
 };
 
 // Row recursion for I (0..M-1), when I_idx > 0
+
+/**
+ * @brief Template struct to recursively process rows of matrix operations for
+ * applying saturation limits to a candidate matrix.
+ *
+ * This struct template performs column-wise processing for each column index
+ * (I_idx) of the input matrices, and applies minimum and maximum saturation
+ * limits to the candidate matrix. The recursion proceeds by decrementing I_idx
+ * until the base case is reached (I_idx == 0).
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
+ * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
+ * @tparam M Number of columns in the matrices.
+ * @tparam N Number of rows in the matrices.
+ * @tparam I_idx Current column index being processed (recursively decremented).
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the current column index, applying
+ *   saturation limits.
+ *   - Recursively processes the next column index by decrementing I_idx.
+ *
+ * @param U_candidate The candidate matrix to be saturated.
+ * @param U_min_matrix The minimum limit matrix.
+ * @param U_max_matrix The maximum limit matrix.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
           std::size_t I_idx>
@@ -2291,6 +4396,31 @@ struct Row {
 };
 
 // Row recursion termination for I_idx == 0
+
+/**
+ * @brief Specialization of the Row struct for the base case when I_idx is 0,
+ * applying saturation limits to a matrix row.
+ *
+ * This struct template provides a static compute function that initiates the
+ * column-wise processing for the first column index (I_idx == 0) of the input
+ * matrices, applying minimum and maximum saturation limits to the candidate
+ * matrix. It serves as the termination case for the recursive processing of
+ * column indices in the optimization utility.
+ *
+ * @tparam U_Mat_Type Type of the candidate matrix.
+ * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
+ * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
+ * @tparam M Number of columns in the matrices.
+ * @tparam N Number of rows in the matrices.
+ *
+ * The compute() static method:
+ *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   applying saturation limits.
+ *
+ * @param U_candidate The candidate matrix to be saturated.
+ * @param U_min_matrix The minimum limit matrix.
+ * @param U_max_matrix The maximum limit matrix.
+ */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N>
 struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
