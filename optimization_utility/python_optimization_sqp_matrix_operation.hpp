@@ -265,9 +265,9 @@ namespace CalculateY_LimitPenalty {
  * @tparam Y_Min_Matrix_Type  The type representing the matrix to store minimum
  * values.
  * @tparam Out_Type           The output type for the operation.
- * @tparam I                  The number of rows (or a specific row index,
+ * @tparam I                  The number of columns (or a specific column index,
  * depending on usage).
- * @tparam J_idx              The number of columns (or a specific column index,
+ * @tparam J_idx              The number of rows (or a specific row index,
  * depending on usage).
  * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
  * enabled.
@@ -289,8 +289,8 @@ struct MinConditional {};
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix
  * Y_min_matrix.
  * @tparam Out_Type           Type of the output penalty matrix Y_limit_penalty.
- * @tparam I                  Row index (compile-time constant).
- * @tparam J_idx              Column index (compile-time constant).
+ * @tparam I                  Column index (compile-time constant).
+ * @tparam J_idx              Row index (compile-time constant).
  *
  * @param Y_horizon           Input matrix containing values to be checked.
  * @param Y_min_matrix        Matrix containing minimum allowed values.
@@ -326,8 +326,8 @@ struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx, true> {
  * @tparam Y_Mat_Type         Type of the input matrix Y_horizon.
  * @tparam Y_Min_Matrix_Type  Type of the input matrix Y_min_matrix.
  * @tparam Out_Type           Type of the output Y_limit_penalty.
- * @tparam I                  Row index or size parameter.
- * @tparam J_idx              Column index or size parameter.
+ * @tparam I                  Column index or size parameter.
+ * @tparam J_idx              Row index or size parameter.
  *
  * @param Y_horizon           Input matrix (unused).
  * @param Y_min_matrix        Input matrix (unused).
@@ -358,8 +358,8 @@ struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Type, I, J_idx,
  * @tparam Y_Max_Matrix_Type  The type representing the matrix used for maximum
  * value comparison.
  * @tparam Out_Type           The type representing the output/result.
- * @tparam I                  Compile-time row index or dimension parameter.
- * @tparam J_idx              Compile-time column index or dimension parameter.
+ * @tparam I                  Compile-time column index or dimension parameter.
+ * @tparam J_idx              Compile-time row index or dimension parameter.
  * @tparam limit_valid_flag   Boolean flag indicating whether a limit condition
  * is valid.
  */
@@ -381,8 +381,8 @@ struct MaxConditional {};
  * @tparam Y_Max_Matrix_Type  Type of the matrix containing maximum allowed
  * values.
  * @tparam Out_Type           Type of the output matrix for storing penalties.
- * @tparam I                  Row index (compile-time constant).
- * @tparam J_idx              Column index (compile-time constant).
+ * @tparam I                  Column index (compile-time constant).
+ * @tparam J_idx              Row index (compile-time constant).
  *
  * @note This specialization is enabled when the last template parameter is
  * true.
