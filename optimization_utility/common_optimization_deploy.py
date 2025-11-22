@@ -158,11 +158,17 @@ class MinMaxCodeGenerator:
             - Relies on `self.active_set` and `self.min_max_name` attributes.
         """
         active_set = np.array(self.active_set, dtype=data_type).reshape(-1, 1)
-        exec(f"{variable_name}_{self.min_max_name} = copy.deepcopy(active_set)")
 
+        locals_map = {
+            f"{variable_name}_{self.min_max_name}": copy.deepcopy(active_set),
+            "caller_file_name_no_extension": caller_file_name_no_extension
+        }
         file_name = eval(
             f"NumpyDeploy.generate_matrix_cpp_code(matrix_in={variable_name}_" +
-            self.min_max_name + ", file_name=caller_file_name_no_extension)")
+            self.min_max_name + ", file_name=caller_file_name_no_extension)",
+            globals(),
+            locals_map
+        )
 
         self.file_name_no_extension = file_name.split(".")[0]
 
