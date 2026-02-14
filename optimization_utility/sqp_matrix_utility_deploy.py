@@ -15,9 +15,13 @@ generation pipeline for NMPC applications,
 where Python models and constraints are automatically
 translated into efficient C++ code for deployment.
 """
+from __future__ import annotations
+
 import os
 import sys
-sys.path.append(os.getcwd())
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 
 import inspect

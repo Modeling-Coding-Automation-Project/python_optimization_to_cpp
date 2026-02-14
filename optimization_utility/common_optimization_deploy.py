@@ -6,9 +6,13 @@ C++ code for optimization problems, particularly focusing on min/max limits
 and their active sets. It includes functionality to create C++ code snippets
 for these limits, which can be used in Model Predictive Control (MPC) deployments.
 """
+from __future__ import annotations
+
 import os
 import sys
-sys.path.append(os.getcwd())
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import sympy as sp
