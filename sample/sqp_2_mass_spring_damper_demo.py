@@ -29,9 +29,13 @@ Usage:
 Run the script to perform NMPC optimization for the 2-mass spring-damper system
  and view the results.
 """
+from __future__ import annotations
+
 import os
 import sys
-sys.path.append(os.getcwd())
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 sys.path.append(os.path.join(
     os.getcwd(), 'external_libraries', 'MCAP_python_control'))
 sys.path.append(os.path.join(
