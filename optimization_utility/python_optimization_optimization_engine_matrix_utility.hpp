@@ -18,6 +18,7 @@
 #define __PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP__
 
 #include "python_optimization_matrix_utility_common.hpp"
+#include "python_optimization_sqp_matrix_operation.hpp"
 
 #include "python_control.hpp"
 #include "python_numpy.hpp"
