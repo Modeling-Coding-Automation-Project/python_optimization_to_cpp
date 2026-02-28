@@ -102,6 +102,13 @@ template <typename T> struct PANOC_SolverStatus {
 template <typename T, std::size_t BufferSize, std::size_t ElementSize = 0>
 class VectorRingBuffer {
 public:
+  /* Type */
+  using OutputVector_Type = PythonNumpy::DenseMatrix_Type<T, ElementSize, 1>;
+
+  /* Compatibility check */
+  static_assert(BufferSize > 0, "BufferSize must be greater than 0");
+
+public:
   /* Constructor */
   VectorRingBuffer()
       : _head(0), _active_size(0), _data_matrix(), _data_scalar() {}
@@ -126,9 +133,9 @@ public:
    */
   template <std::size_t ES = ElementSize,
             typename std::enable_if<(ES > 0), int>::type = 0>
-  inline void push(const PythonNumpy::DenseMatrix_Type<T, ES, 1> &value) {
+  inline void push(const OutputVector_Type &value) {
     for (std::size_t i = 0; i < ES; ++i) {
-      this->_data_matrix[i][this->_head] = value(0, i);
+      this->_data_matrix[i][this->_head] = value.access(0, i);
     }
     this->_advance_head();
   }
@@ -153,12 +160,12 @@ public:
    * @return Column vector (ElementSize x 1).
    */
   template <std::size_t ES_, typename std::enable_if<(ES_ > 0), int>::type = 0>
-  inline auto get(std::size_t index_from_latest) const
-      -> PythonNumpy::DenseMatrix_Type<T, ES_, 1> {
+  inline auto get(std::size_t index_from_latest) const -> OutputVector_Type {
     std::size_t idx = this->_resolve_index(index_from_latest);
-    PythonNumpy::DenseMatrix_Type<T, ES_, 1> result;
+    OutputVector_Type result;
+
     for (std::size_t i = 0; i < ES_; ++i) {
-      result(0, i) = this->_data_matrix[i][idx];
+      result.access(0, i) = this->_data_matrix[i][idx];
     }
     return result;
   }
