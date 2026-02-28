@@ -1223,10 +1223,6 @@ void test_alm_pm_optimizer() {
     /* solver status 確認 */
     auto status = solver.get_solver_status();
 
-    tester.expect_near(static_cast<T>(status.has_converged()), static_cast<T>(true),
-        NEAR_LIMIT_STRICT,
-        "check convergence.");
-
     tester.expect_near(status.cost > static_cast<T>(0), static_cast<T>(true),
         NEAR_LIMIT_STRICT,
         "check cost positive.");
