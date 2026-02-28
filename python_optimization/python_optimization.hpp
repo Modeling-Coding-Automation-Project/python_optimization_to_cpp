@@ -4,6 +4,7 @@
 #include "python_optimization_utility.hpp"
 
 #include "python_optimization_active_set.hpp"
+#include "python_optimization_alm_pm_optimizer.hpp"
 #include "python_optimization_common.hpp"
 #include "python_optimization_panoc.hpp"
 #include "python_optimization_qp_active_set.hpp"
