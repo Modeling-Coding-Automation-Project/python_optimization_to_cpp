@@ -17,7 +17,7 @@
 #ifndef __PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP__
 #define __PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP__
 
-#include "python_optimization_sqp_matrix_operation.hpp"
+#include "python_optimization_matrix_utility_common.hpp"
 
 #include "python_control.hpp"
 #include "python_numpy.hpp"
@@ -27,35 +27,6 @@
 #include <type_traits>
 
 namespace PythonOptimization {
-
-/* State Space Function Objects for Optimization Engine */
-
-template <typename State_Type, typename Input_Type, typename Parameter_Type>
-using OE_StateFunction_Object = std::function<State_Type(
-    const State_Type &, const Input_Type &, const Parameter_Type &)>;
-
-template <typename Output_Type, typename State_Type, typename Input_Type,
-          typename Parameter_Type>
-using OE_MeasurementFunction_Object = std::function<Output_Type(
-    const State_Type &, const Input_Type &, const Parameter_Type &)>;
-
-template <typename State_Jacobian_X_Matrix_Type, typename State_Type,
-          typename Input_Type, typename Parameter_Type>
-using OE_StateFunctionJacobian_X_Object =
-    std::function<State_Jacobian_X_Matrix_Type(
-        const State_Type &, const Input_Type &, const Parameter_Type &)>;
-
-template <typename State_Jacobian_U_Matrix_Type, typename State_Type,
-          typename Input_Type, typename Parameter_Type>
-using OE_StateFunctionJacobian_U_Object =
-    std::function<State_Jacobian_U_Matrix_Type(
-        const State_Type &, const Input_Type &, const Parameter_Type &)>;
-
-template <typename Measurement_Jacobian_X_Matrix_Type, typename State_Type,
-          typename Input_Type, typename Parameter_Type>
-using OE_MeasurementFunctionJacobian_X_Object =
-    std::function<Measurement_Jacobian_X_Matrix_Type(
-        const State_Type &, const Input_Type &, const Parameter_Type &)>;
 
 /* Optimization Engine cost matrices for Nonlinear MPC (PANOC/ALM) */
 
@@ -215,18 +186,18 @@ protected:
       Measurement_Jacobian_X_Matrix_Type_In;
 
   using _StateFunction_Object =
-      OE_StateFunction_Object<X_Type, U_Type, _Parameter_Type>;
+      StateFunction_Object<X_Type, U_Type, _Parameter_Type>;
   using _MeasurementFunction_Object =
-      OE_MeasurementFunction_Object<Y_Type, X_Type, U_Type, _Parameter_Type>;
+      MeasurementFunction_Object<Y_Type, X_Type, U_Type, _Parameter_Type>;
 
   using _StateFunctionJacobian_X_Object =
-      OE_StateFunctionJacobian_X_Object<_StateFunctionJacobian_X_Out_Type,
-                                        X_Type, U_Type, _Parameter_Type>;
+      StateFunctionJacobian_X_Object<_StateFunctionJacobian_X_Out_Type, X_Type,
+                                     U_Type, _Parameter_Type>;
   using _StateFunctionJacobian_U_Object =
-      OE_StateFunctionJacobian_U_Object<_StateFunctionJacobian_U_Out_Type,
-                                        X_Type, U_Type, _Parameter_Type>;
+      StateFunctionJacobian_U_Object<_StateFunctionJacobian_U_Out_Type, X_Type,
+                                     U_Type, _Parameter_Type>;
   using _MeasurementFunctionJacobian_X_Object =
-      OE_MeasurementFunctionJacobian_X_Object<
+      MeasurementFunctionJacobian_X_Object<
           _MeasurementFunctionJacobian_X_Out_Type, X_Type, U_Type,
           _Parameter_Type>;
 
