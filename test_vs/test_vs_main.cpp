@@ -760,6 +760,215 @@ void test_sqp_active_set_pcg_pls() {
 
 
 
+template <typename T>
+void test_OptimizationEngine_CostMatrices() {
+    using namespace PythonNumpy;
+    using namespace PythonControl;
+    using namespace PythonOptimization;
+    using namespace SQP_TestData;
+
+    MCAPTester<T> tester;
+
+    constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-4);
+    //const T NEAR_LIMIT_SOFT = 1.0e-2F;
+
+    /* 定義 */
+    constexpr std::size_t STATE_SIZE = 4;
+    constexpr std::size_t INPUT_SIZE = 2;
+    constexpr std::size_t OUTPUT_SIZE = 2;
+
+    constexpr std::size_t NP = 10;
+
+    using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter<T>;
+
+    using State_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::State_Jacobian_x_Type<T>;
+    using State_Jacobian_U_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::State_Jacobian_u_Type<T>;
+    using Measurement_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Measurement_Jacobian_x_Type<T>;
+
+    using X_Type = StateSpaceState_Type<T, STATE_SIZE>;
+    using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
+
+    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+        T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
+
+    PythonOptimization::StateFunctionJacobian_X_Object<
+        State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionJacobian_U_Object<
+        State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+        Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+
+    using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
+    using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
+    using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
+
+    Qx_Type Qx = make_DiagMatrix<STATE_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.1), static_cast<T>(0.5), static_cast<T>(0.1)
+    );
+    R_Type R = make_DiagMatrix<INPUT_SIZE>(
+        static_cast<T>(0.1), static_cast<T>(0.1)
+    );
+    Qy_Type Qy = make_DiagMatrix<OUTPUT_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.5)
+    );
+
+    using U_Min_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using U_Max_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+
+    U_Min_Type u_min = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(-1),
+        static_cast<T>(-1)
+    );
+    U_Max_Type u_max = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(1),
+        static_cast<T>(1)
+    );
+
+    using Y_Min_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+    using Y_Max_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+
+    Y_Min_Type y_min;
+    Y_Max_Type y_max;
+
+    using Reference_Trajectory_Type = DenseMatrix_Type<T, OUTPUT_SIZE, (NP + 1)>;
+
+    Reference_Trajectory_Type reference_trajectory;
+
+    /* コンストラクタ */
+    using Cost_Matrices_Type = OptimizationEngine_CostMatrices_Type<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type>;
+
+    Cost_Matrices_Type cost_matrices =
+        make_OptimizationEngine_CostMatrices<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type>(
+            Qx, R, Qy, u_min, u_max, y_min, y_max);
+
+    /* コピー、ムーブ */
+    Cost_Matrices_Type cost_matrices_copy = cost_matrices;
+    Cost_Matrices_Type cost_matrices_move = std::move(cost_matrices_copy);
+    cost_matrices = std::move(cost_matrices_move);
+
+    T u_min_value = cost_matrices.state_space_parameters.k1;
+
+    tester.expect_near(u_min_value, static_cast<T>(10), NEAR_LIMIT_STRICT,
+        "check u_min value.");
+
+    cost_matrices.set_function_objects(
+        state_function,
+        measurement_function,
+        state_jacobian_x_function,
+        state_jacobian_u_function,
+        measurement_jacobian_x_function
+    );
+
+    cost_matrices.reference_trajectory = reference_trajectory;
+
+    auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
+        static_cast<T>(5),
+        static_cast<T>(0),
+        static_cast<T>(5),
+        static_cast<T>(0)
+    );
+
+    cost_matrices.X_initial = X_initial;
+
+    typename Cost_Matrices_Type::U_Horizon_Type U_horizon_initial;
+
+    /* compute_cost 動作確認 */
+    auto cost_value = cost_matrices.compute_cost(U_horizon_initial);
+
+    tester.expect_near(cost_value > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_cost positive.");
+
+    /* compute_gradient 動作確認 */
+    auto gradient = cost_matrices.compute_gradient(U_horizon_initial);
+
+    auto gradient_row_0 = MatrixOperation::get_row(gradient, 0);
+
+    T gradient_0_norm = static_cast<T>(0);
+    for (std::size_t i = 0; i < gradient_row_0.matrix.data.size(); i++) {
+        gradient_0_norm += gradient_row_0(i, 0) * gradient_row_0(i, 0);
+    }
+    gradient_0_norm = std::sqrt(gradient_0_norm);
+
+    tester.expect_near(gradient_0_norm > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_gradient non-zero.");
+
+    /* compute_output_mapping 動作確認 */
+    auto Y_horizon = cost_matrices.compute_output_mapping(U_horizon_initial);
+
+    auto Y_horizon_row_0 = MatrixOperation::get_row(Y_horizon, 0);
+
+    T y_horizon_0_norm = static_cast<T>(0);
+    for (std::size_t i = 0; i < Y_horizon_row_0.matrix.data.size(); i++) {
+        y_horizon_0_norm += Y_horizon_row_0(i, 0) * Y_horizon_row_0(i, 0);
+    }
+    y_horizon_0_norm = std::sqrt(y_horizon_0_norm);
+
+    tester.expect_near(y_horizon_0_norm > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_output_mapping non-zero.");
+
+    /* compute_output_jacobian_trans 動作確認 */
+    typename Cost_Matrices_Type::Y_Horizon_Type D;
+
+    for (std::size_t k = 0; k < (NP + 1); k++) {
+        auto d_row = make_DenseMatrix<OUTPUT_SIZE, 1>(
+            static_cast<T>(1), static_cast<T>(1)
+        );
+        MatrixOperation::set_row(D, d_row, k);
+    }
+
+    auto jf1_trans_d = cost_matrices.compute_output_jacobian_trans(U_horizon_initial, D);
+
+    auto jf1_row_0 = MatrixOperation::get_row(jf1_trans_d, 0);
+
+    T jf1_0_norm = static_cast<T>(0);
+    for (std::size_t i = 0; i < jf1_row_0.matrix.data.size(); i++) {
+        jf1_0_norm += jf1_row_0(i, 0) * jf1_row_0(i, 0);
+    }
+    jf1_0_norm = std::sqrt(jf1_0_norm);
+
+    tester.expect_near(jf1_0_norm > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_output_jacobian_trans non-zero.");
+
+    /* getter 動作確認 */
+    auto Qx_get = cost_matrices.get_Qx();
+    tester.expect_near(Qx_get.matrix.data, Qx.matrix.data, NEAR_LIMIT_STRICT,
+        "check get_Qx.");
+
+    auto R_get = cost_matrices.get_R();
+    tester.expect_near(R_get.matrix.data, R.matrix.data, NEAR_LIMIT_STRICT,
+        "check get_R.");
+
+    auto Qy_get = cost_matrices.get_Qy();
+    tester.expect_near(Qy_get.matrix.data, Qy.matrix.data, NEAR_LIMIT_STRICT,
+        "check get_Qy.");
+
+
+    tester.throw_error_if_test_failed();
+}
+
+
 int main() {
 
     test_active_set<double>();
@@ -781,6 +990,10 @@ int main() {
     test_sqp_active_set_pcg_pls<double>();
 
     test_sqp_active_set_pcg_pls<float>();
+
+    test_OptimizationEngine_CostMatrices<double>();
+
+    test_OptimizationEngine_CostMatrices<float>();
 
 
     return 0;
