@@ -53,5 +53,11 @@
     <ClInclude Include="..\python_optimization\python_optimization_panoc.hpp">
       <Filter>リソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\python_optimization\python_optimization_alm_pm_optimizer.hpp">
+      <Filter>リソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\python_optimization\python_optimization_common.hpp">
+      <Filter>リソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -139,6 +139,8 @@
     <ClInclude Include="..\optimization_utility\python_optimization_utility.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization_active_set.hpp" />
+    <ClInclude Include="..\python_optimization\python_optimization_alm_pm_optimizer.hpp" />
+    <ClInclude Include="..\python_optimization\python_optimization_common.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization_panoc.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization_qp_active_set.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization_sqp_active_set_pcg_pls.hpp" />
