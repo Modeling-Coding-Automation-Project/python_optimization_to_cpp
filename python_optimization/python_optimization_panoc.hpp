@@ -816,7 +816,7 @@ protected:
     _FlatVector_Type flat;
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        flat(0, k * INPUT_SIZE + i) = u_horizon(k, i);
+        flat(k * INPUT_SIZE + i, 0) = u_horizon(k, i);
       }
     }
     return flat;
