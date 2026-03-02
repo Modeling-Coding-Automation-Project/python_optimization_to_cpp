@@ -23,6 +23,24 @@ namespace PythonOptimization {
 
 namespace MatrixOperation {
 
+namespace InnerProduct {
+
+/**
+ * @brief Compute inner product.
+ */
+template <typename Vector_Type>
+inline auto compute(const Vector_Type &a, const Vector_Type &b) ->
+    typename Vector_Type::Value_Type {
+  using T = typename Vector_Type::Value_Type;
+  T sum = static_cast<T>(0);
+  for (std::size_t i = 0; i < Vector_Type::ROWS; ++i) {
+    sum += a(i, 0) * b(i, 0);
+  }
+  return sum;
+}
+
+} // namespace InnerProduct
+
 namespace SetRow {
 
 // Row recursion when I_idx > 0

@@ -353,8 +353,8 @@ public:
     /* Update H0 scaling: gamma = (s^T y) / (y^T y) */
     Vector_Type s0 = this->_s.get(0);
     Vector_Type y0 = this->_y.get(0);
-    T ys = this->_inner_product(s0, y0);
-    T yy = this->_inner_product(y0, y0);
+    T ys = MatrixOperation::InnerProduct::compute(s0, y0);
+    T yy = MatrixOperation::InnerProduct::compute(y0, y0);
 
     this->_gamma =
         ys / Base::Utility::avoid_zero_divide(
@@ -385,7 +385,7 @@ public:
       Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.get(i);
 
-      alpha[i] = rho_i * _inner_product(si, q);
+      alpha[i] = rho_i * MatrixOperation::InnerProduct::compute(si, q);
       q = q - alpha[i] * yi;
     }
 
@@ -399,7 +399,7 @@ public:
       Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.get(i);
 
-      T beta = rho_i * this->_inner_product(yi, q);
+      T beta = rho_i * MatrixOperation::InnerProduct::compute(yi, q);
       q = q + (alpha[i] - beta) * si;
     }
   }
@@ -421,8 +421,8 @@ private:
    */
   inline bool _compute_rho_if_valid(const Vector_Type &g, const Vector_Type &s,
                                     const Vector_Type &y, T &rho_out) const {
-    T ys = this->_inner_product(s, y);
-    T norm_s_sq = this->_inner_product(s, s);
+    T ys = MatrixOperation::InnerProduct::compute(s, y);
+    T norm_s_sq = MatrixOperation::InnerProduct::compute(s, s);
 
     if (norm_s_sq <= static_cast<T>(PANOC_Constants::NORM_SMALL_LIMIT)) {
       return false;
@@ -447,17 +447,6 @@ private:
 
     rho_out = static_cast<T>(1) / ys;
     return true;
-  }
-
-  /**
-   * @brief Compute inner product (a^T b) for column vectors.
-   */
-  static inline T _inner_product(const Vector_Type &a, const Vector_Type &b) {
-    T sum = static_cast<T>(0);
-    for (std::size_t i = 0; i < ProblemSize; ++i) {
-      sum += a(i, 0) * b(i, 0);
-    }
-    return sum;
   }
 
   T _sy_epsilon;
