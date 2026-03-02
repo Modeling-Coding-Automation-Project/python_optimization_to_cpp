@@ -421,13 +421,13 @@ private:
    */
   inline bool _compute_rho_if_valid(const Vector_Type &g, const Vector_Type &s,
                                     const Vector_Type &y, T &rho_out) const {
-    T ys = _inner_product(s, y);
-    T norm_s_sq = _inner_product(s, s);
+    T ys = this->_inner_product(s, y);
+    T norm_s_sq = this->_inner_product(s, s);
 
     if (norm_s_sq <= static_cast<T>(PANOC_Constants::NORM_SMALL_LIMIT)) {
       return false;
     }
-    if (this->_sy_epsilon > static_cast<T>(0) && ys <= this->_sy_epsilon) {
+    if (ys <= this->_sy_epsilon) {
       return false;
     }
 
