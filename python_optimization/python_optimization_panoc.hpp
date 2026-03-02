@@ -720,7 +720,6 @@ public:
         _max_lipschitz_update_iteration(input._max_lipschitz_update_iteration),
         _solver_status(input._solver_status) {}
 
-  /* Copy assignment */
   PANOC_Optimizer &operator=(const PANOC_Optimizer &input) {
     if (this != &input) {
       this->_cost_func = input._cost_func;
@@ -747,7 +746,6 @@ public:
         _max_lipschitz_update_iteration(input._max_lipschitz_update_iteration),
         _solver_status(input._solver_status) {}
 
-  /* Move assignment */
   PANOC_Optimizer &operator=(PANOC_Optimizer &&input) noexcept {
     if (this != &input) {
       this->_cost_func = std::move(input._cost_func);
@@ -801,10 +799,10 @@ public:
 
   /**
    * @brief Set the maximum number of Lipschitz update iterations.
-   * @param max_iter Maximum Lipschitz update iterations.
+   * @param max_iteration Maximum Lipschitz update iterations.
    */
-  inline void set_max_lipschitz_update_iteration(std::size_t max_iter) {
-    this->_max_lipschitz_update_iteration = max_iter;
+  inline void set_max_lipschitz_update_iteration(std::size_t max_iteration) {
+    this->_max_lipschitz_update_iteration = max_iteration;
   }
 
   /**
@@ -851,22 +849,22 @@ public:
    * @return Optimized control horizon.
    */
   inline auto solve(const U_Horizon_Type &u_initial) -> U_Horizon_Type {
-    _Cache_Type &c = this->_cache;
-    c.reset();
+    this->_cache.reset();
 
     /* Convert U_Horizon_Type to flat vector for internal computation */
     _FlatVector_Type u = _to_flat(u_initial);
 
     /* --- Initialization --- */
-    c.cost_value = this->_cost_func(_from_flat(u));
+    this->_cache.cost_value = this->_cost_func(_from_flat(u));
     this->_estimate_local_lipschitz(u);
-    c.gamma =
+    this->_cache.gamma =
         static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
-        _max_val(c.lipschitz_constant,
+        _max_val(this->_cache.lipschitz_constant,
                  static_cast<_T>(PANOC_Constants::MIN_L_ESTIMATE_DEFAULT));
-    c.sigma = (static_cast<_T>(1) -
-               static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
-              (static_cast<_T>(4) * c.gamma);
+    this->_cache.sigma =
+        (static_cast<_T>(1) -
+         static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
+        (static_cast<_T>(4) * this->_cache.gamma);
     this->_gradient_step(u);
     this->_half_step();
 
@@ -879,7 +877,7 @@ public:
       this->_compute_fpr(u);
 
       /* 2. Check exit condition */
-      if (c.exit_condition()) {
+      if (this->_cache.exit_condition()) {
         converged = true;
         break;
       }
@@ -891,13 +889,13 @@ public:
       this->_lbfgs_direction(u);
 
       /* 5. Line search or direct update */
-      if (c.iteration == 0) {
+      if (this->_cache.iteration == 0) {
         this->_update_no_linesearch(u);
       } else {
         this->_linesearch(u);
       }
 
-      c.iteration += 1;
+      this->_cache.iteration += 1;
       number_of_iteration += 1;
     }
 
@@ -912,12 +910,13 @@ public:
     }
 
     /* Return the feasible half-step (always satisfies constraints) */
-    u = c.u_half_step;
+    u = this->_cache.u_half_step;
 
     this->_solver_status.exit_status = exit_status;
     this->_solver_status.number_of_iteration = number_of_iteration;
-    this->_solver_status.norm_fixed_point_residual = c.norm_gamma_fpr;
-    this->_solver_status.cost_value = c.cost_value;
+    this->_solver_status.norm_fixed_point_residual =
+        this->_cache.norm_gamma_fpr;
+    this->_solver_status.cost_value = this->_cache.cost_value;
 
     return _from_flat(u);
   }
@@ -984,14 +983,14 @@ protected:
    * where h_i = max(delta, epsilon * |u_i|).
    */
   inline void _estimate_local_lipschitz(_FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
+
     const _T delta = static_cast<_T>(PANOC_Constants::DELTA_LIPSCHITZ_DEFAULT);
     const _T epsilon =
         static_cast<_T>(PANOC_Constants::EPSILON_LIPSCHITZ_DEFAULT);
 
     /* Evaluate gradient at u */
     _Gradient_Type grad_horizon = this->_gradient_func(_from_flat(u));
-    c.gradient_u = _to_flat(grad_horizon);
+    this->_cache.gradient_u = _to_flat(grad_horizon);
 
     /* Build perturbation h: h_i = max(delta, epsilon * |u_i|) */
     _FlatVector_Type h;
@@ -1012,53 +1011,50 @@ protected:
     _FlatVector_Type grad_perturbed = _to_flat(grad_perturbed_horizon);
 
     /* L = ||grad(u+h) - grad(u)|| / ||h|| */
-    _FlatVector_Type diff = grad_perturbed - c.gradient_u;
-    c.lipschitz_constant = PythonNumpy::norm(diff) / norm_h;
+    _FlatVector_Type diff = grad_perturbed - this->_cache.gradient_u;
+    this->_cache.lipschitz_constant = PythonNumpy::norm(diff) / norm_h;
   }
 
   /**
    * @brief Compute the fixed-point residual: gamma_fpr = u - u_half_step.
    */
   inline void _compute_fpr(const _FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
-    c.gamma_fpr = u - c.u_half_step;
-    c.norm_gamma_fpr = PythonNumpy::norm(c.gamma_fpr);
+    this->_cache.gamma_fpr = u - this->_cache.u_half_step;
+    this->_cache.norm_gamma_fpr = PythonNumpy::norm(this->_cache.gamma_fpr);
   }
 
   /**
    * @brief gradient_step = u - gamma * gradient_u.
    */
   inline void _gradient_step(const _FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
-    c.gradient_step = u - c.gamma * c.gradient_u;
+    this->_cache.gradient_step =
+        u - this->_cache.gamma * this->_cache.gradient_u;
   }
 
   /**
    * @brief gradient_step = u_plus - gamma * gradient_u.
    */
   inline void _gradient_step_uplus(void) {
-    _Cache_Type &c = this->_cache;
-    c.gradient_step = c.u_plus - c.gamma * c.gradient_u;
+    this->_cache.gradient_step =
+        this->_cache.u_plus - this->_cache.gamma * this->_cache.gradient_u;
   }
 
   /**
    * @brief u_half_step = project(gradient_step) onto the constraint set.
    */
   inline void _half_step(void) {
-    _Cache_Type &c = this->_cache;
-    c.u_half_step = c.gradient_step;
-    this->_project(c.u_half_step);
+    this->_cache.u_half_step = this->_cache.gradient_step;
+    this->_project(this->_cache.u_half_step);
   }
 
   /**
    * @brief Update L-BFGS buffer and compute direction = H * gamma_fpr.
    */
   inline void _lbfgs_direction(const _FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
-    c.lbfgs.update_hessian(c.gamma_fpr, u);
-    if (c.iteration > 0) {
-      c.direction_lbfgs = c.gamma_fpr;
-      c.lbfgs.apply_hessian(c.direction_lbfgs);
+    this->_cache.lbfgs.update_hessian(this->_cache.gamma_fpr, u);
+    if (this->_cache.iteration > 0) {
+      this->_cache.direction_lbfgs = this->_cache.gamma_fpr;
+      this->_cache.lbfgs.apply_hessian(this->_cache.direction_lbfgs);
     }
   }
 
@@ -1069,63 +1065,63 @@ protected:
    *       (L_coeff / (2*gamma)) * ||gamma_fpr||^2
    */
   inline auto _lipschitz_check_rhs(void) const -> _T {
-    const _Cache_Type &c = this->_cache;
-    _T inner =
-        MatrixOperation::InnerProduct::compute(c.gradient_u, c.gamma_fpr);
-    _T abs_cost = c.cost_value;
+
+    _T inner = MatrixOperation::InnerProduct::compute(this->_cache.gradient_u,
+                                                      this->_cache.gamma_fpr);
+    _T abs_cost = this->_cache.cost_value;
     if (abs_cost < static_cast<_T>(0)) {
       abs_cost = -abs_cost;
     }
 
-    return c.cost_value +
+    return this->_cache.cost_value +
            static_cast<_T>(PANOC_Constants::LIPSCHITZ_UPDATE_EPSILON_DEFAULT) *
                abs_cost -
            inner +
            (static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
-            (static_cast<_T>(2) * c.gamma)) *
-               c.norm_gamma_fpr * c.norm_gamma_fpr;
+            (static_cast<_T>(2) * this->_cache.gamma)) *
+               this->_cache.norm_gamma_fpr * this->_cache.norm_gamma_fpr;
   }
 
   /**
    * @brief Update the Lipschitz constant estimate (and gamma, sigma).
    */
   inline void _update_lipschitz_constant(_FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
-
-    _T cost_half = this->_cost_func(_from_flat(c.u_half_step));
-    c.cost_value = this->_cost_func(_from_flat(u));
+    _T cost_half = this->_cost_func(_from_flat(this->_cache.u_half_step));
+    this->_cache.cost_value = this->_cost_func(_from_flat(u));
 
     for (std::size_t lip_iter = 0;
          lip_iter < this->_max_lipschitz_update_iteration; ++lip_iter) {
       if (cost_half <= this->_lipschitz_check_rhs() ||
-          c.lipschitz_constant >=
+          this->_cache.lipschitz_constant >=
               static_cast<_T>(
                   PANOC_Constants::MAX_LIPSCHITZ_CONSTANT_DEFAULT)) {
         break;
       }
 
-      c.lbfgs.reset();
-      c.lipschitz_constant *= static_cast<_T>(2);
-      c.gamma /= static_cast<_T>(2);
+      this->_cache.lbfgs.reset();
+      this->_cache.lipschitz_constant *= static_cast<_T>(2);
+      this->_cache.gamma /= static_cast<_T>(2);
 
       this->_gradient_step(u);
       this->_half_step();
-      cost_half = this->_cost_func(_from_flat(c.u_half_step));
+      cost_half = this->_cost_func(_from_flat(this->_cache.u_half_step));
       this->_compute_fpr(u);
     }
 
-    c.sigma = (static_cast<_T>(1) -
-               static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
-              (static_cast<_T>(4) * c.gamma);
+    this->_cache.sigma =
+        (static_cast<_T>(1) -
+         static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
+        (static_cast<_T>(4) * this->_cache.gamma);
   }
 
   /**
    * @brief u_plus = u - (1 - tau)*gamma_fpr - tau * direction_lbfgs.
    */
   inline void _compute_u_plus(const _FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
-    _T one_minus_tau = static_cast<_T>(1) - c.tau;
-    c.u_plus = u - one_minus_tau * c.gamma_fpr - c.tau * c.direction_lbfgs;
+
+    _T one_minus_tau = static_cast<_T>(1) - this->_cache.tau;
+    this->_cache.u_plus = u - one_minus_tau * this->_cache.gamma_fpr -
+                          this->_cache.tau * this->_cache.direction_lbfgs;
   }
 
   /**
@@ -1133,14 +1129,18 @@ protected:
    * ||fpr||^2).
    */
   inline void _compute_rhs_ls(void) {
-    _Cache_Type &c = this->_cache;
-    _FlatVector_Type diff = c.gradient_step - c.u_half_step;
+
+    _FlatVector_Type diff =
+        this->_cache.gradient_step - this->_cache.u_half_step;
     _T dist_sq = MatrixOperation::InnerProduct::compute(diff, diff);
-    _T grad_norm_sq =
-        MatrixOperation::InnerProduct::compute(c.gradient_u, c.gradient_u);
-    _T fbe = c.cost_value - static_cast<_T>(0.5) * c.gamma * grad_norm_sq +
-             static_cast<_T>(0.5) * dist_sq / c.gamma;
-    c.rhs_ls = fbe - c.sigma * c.norm_gamma_fpr * c.norm_gamma_fpr;
+    _T grad_norm_sq = MatrixOperation::InnerProduct::compute(
+        this->_cache.gradient_u, this->_cache.gradient_u);
+    _T fbe = this->_cache.cost_value -
+             static_cast<_T>(0.5) * this->_cache.gamma * grad_norm_sq +
+             static_cast<_T>(0.5) * dist_sq / this->_cache.gamma;
+    this->_cache.rhs_ls = fbe - this->_cache.sigma *
+                                    this->_cache.norm_gamma_fpr *
+                                    this->_cache.norm_gamma_fpr;
   }
 
   /**
@@ -1151,40 +1151,42 @@ protected:
    * gradient_step, u_half_step, lhs_ls.
    */
   inline bool _line_search_condition(const _FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
-
     /* Candidate next iterate */
     this->_compute_u_plus(u);
 
     /* Evaluate cost and gradient at u_plus */
-    c.cost_value = this->_cost_func(_from_flat(c.u_plus));
-    _Gradient_Type grad_horizon = this->_gradient_func(_from_flat(c.u_plus));
-    c.gradient_u = _to_flat(grad_horizon);
+    this->_cache.cost_value = this->_cost_func(_from_flat(this->_cache.u_plus));
+    _Gradient_Type grad_horizon =
+        this->_gradient_func(_from_flat(this->_cache.u_plus));
+    this->_cache.gradient_u = _to_flat(grad_horizon);
 
     /* Gradient step and half step at u_plus */
     this->_gradient_step_uplus();
     this->_half_step();
 
     /* LHS of line-search condition (FBE at u_plus) */
-    _FlatVector_Type diff = c.gradient_step - c.u_half_step;
+    _FlatVector_Type diff =
+        this->_cache.gradient_step - this->_cache.u_half_step;
     _T dist_sq = MatrixOperation::InnerProduct::compute(diff, diff);
-    _T grad_norm_sq =
-        MatrixOperation::InnerProduct::compute(c.gradient_u, c.gradient_u);
-    c.lhs_ls = c.cost_value - static_cast<_T>(0.5) * c.gamma * grad_norm_sq +
-               static_cast<_T>(0.5) * dist_sq / c.gamma;
+    _T grad_norm_sq = MatrixOperation::InnerProduct::compute(
+        this->_cache.gradient_u, this->_cache.gradient_u);
+    this->_cache.lhs_ls =
+        this->_cache.cost_value -
+        static_cast<_T>(0.5) * this->_cache.gamma * grad_norm_sq +
+        static_cast<_T>(0.5) * dist_sq / this->_cache.gamma;
 
-    return c.lhs_ls > c.rhs_ls;
+    return this->_cache.lhs_ls > this->_cache.rhs_ls;
   }
 
   /**
    * @brief First-iteration update (no line search): u <- u_half_step.
    */
   inline void _update_no_linesearch(_FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
-    u = c.u_half_step;
-    c.cost_value = this->_cost_func(_from_flat(u));
+
+    u = this->_cache.u_half_step;
+    this->_cache.cost_value = this->_cost_func(_from_flat(u));
     _Gradient_Type grad_horizon = this->_gradient_func(_from_flat(u));
-    c.gradient_u = _to_flat(grad_horizon);
+    this->_cache.gradient_u = _to_flat(grad_horizon);
     this->_gradient_step(u);
     this->_half_step();
   }
@@ -1193,24 +1195,24 @@ protected:
    * @brief Perform a line search on tau to select the next iterate.
    */
   inline void _linesearch(_FlatVector_Type &u) {
-    _Cache_Type &c = this->_cache;
+
     this->_compute_rhs_ls();
-    c.tau = static_cast<_T>(1);
+    this->_cache.tau = static_cast<_T>(1);
     std::size_t num_ls = 0;
 
     while (this->_line_search_condition(u) &&
            num_ls < PANOC_Constants::MAX_LINESEARCH_ITERATIONS_DEFAULT) {
-      c.tau /= static_cast<_T>(2);
+      this->_cache.tau /= static_cast<_T>(2);
       num_ls += 1;
     }
 
     if (num_ls >= PANOC_Constants::MAX_LINESEARCH_ITERATIONS_DEFAULT) {
       /* Fall back to projected gradient step */
-      c.tau = static_cast<_T>(0);
-      u = c.u_half_step;
+      this->_cache.tau = static_cast<_T>(0);
+      u = this->_cache.u_half_step;
     }
     /* Accept the candidate */
-    u = c.u_plus;
+    u = this->_cache.u_plus;
   }
 
   /**
