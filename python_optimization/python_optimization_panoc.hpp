@@ -107,6 +107,7 @@ public:
 
   /* Compatibility check */
   static_assert(BufferSize > 0, "BufferSize must be greater than 0");
+  static_assert(ElementSize > 0, "ElementSize must be greater than 0");
 
 public:
   /* Constructor */
@@ -146,33 +147,33 @@ public:
   }
 
   /**
-   * @brief Get the i-th most recent vector element.
+   * @brief Get the i-th most recent vector element (ElementSize > 1).
    *
    * @param index_from_latest 0 = most recent, 1 = one before newest, ...
    * @return Column vector (ElementSize x 1).
    */
+  template <std::size_t ES = ElementSize,
+            typename std::enable_if<ES != 1, int>::type = 0>
   inline auto get(std::size_t index_from_latest) const -> OutputVector_Type {
     std::size_t index = this->_resolve_index(index_from_latest);
     OutputVector_Type result;
 
-    // for (std::size_t i = 0; i < ElementSize; ++i) {
-    //   result.access(i, 0) = this->_data_matrix.access(i, idx);
-    // }
     MatrixOperation::GetRow::compute(this->_data_matrix, index, result);
     return result;
   }
 
   /**
-   * @brief Get the i-th most recent scalar element.
+   * @brief Get the i-th most recent scalar element (ElementSize == 1).
    *
-   * @tparam ES_ Dispatching parameter (must be 0, used for SFINAE).
    * @param index_from_latest 0 = most recent, 1 = one before newest, ...
-   * @return Scalar value.
+   * @return Element accessed directly from the data matrix.
    */
-  template <std::size_t ES_, typename std::enable_if<(ES_ == 0), int>::type = 0>
+  template <std::size_t ES = ElementSize,
+            typename std::enable_if<ES == 1, int>::type = 0>
   inline auto get(std::size_t index_from_latest) const -> T {
-    std::size_t idx = this->_resolve_index(index_from_latest);
-    return this->_data_scalar[idx];
+    std::size_t index = this->_resolve_index(index_from_latest);
+
+    return this->_data_matrix.access(0, index);
   }
 
   /**
@@ -321,7 +322,7 @@ public:
     for (std::size_t i = 0; i < this->_s.get_active_size(); ++i) {
       Vector_Type si = this->_s.get(i);
       Vector_Type yi = this->_y.get(i);
-      T rho_i = this->_rho.template get<0>(i);
+      T rho_i = this->_rho.get(i);
 
       alpha[i] = rho_i * _inner_product(si, q);
       q = q - alpha[i] * yi;
@@ -335,7 +336,7 @@ public:
       std::size_t i = ii - 1;
       Vector_Type si = this->_s.get(i);
       Vector_Type yi = this->_y.get(i);
-      T rho_i = this->_rho.template get<0>(i);
+      T rho_i = this->_rho.get(i);
 
       T beta = rho_i * _inner_product(yi, q);
       q = q + (alpha[i] - beta) * si;
@@ -404,7 +405,7 @@ private:
 
   VectorRingBuffer<T, MemorySize, ProblemSize> _s;
   VectorRingBuffer<T, MemorySize, ProblemSize> _y;
-  VectorRingBuffer<T, MemorySize, 0> _rho;
+  VectorRingBuffer<T, MemorySize, 1> _rho;
 
   T _gamma; /* initial Hessian scaling H0 = gamma * I */
   Vector_Type _old_state;
