@@ -137,6 +137,7 @@
     <ClInclude Include="..\optimization_utility\python_optimization_sqp_matrix_operation.hpp" />
     <ClInclude Include="..\optimization_utility\python_optimization_sqp_matrix_utility.hpp" />
     <ClInclude Include="..\optimization_utility\python_optimization_utility.hpp" />
+    <ClInclude Include="..\optimization_utility\python_optimization_utility_matrix_operation.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization_active_set.hpp" />
     <ClInclude Include="..\python_optimization\python_optimization_alm_pm_optimizer.hpp" />
