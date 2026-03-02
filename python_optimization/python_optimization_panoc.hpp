@@ -113,11 +113,33 @@ public:
   /* Constructor */
   VectorRingBuffer() : _head(0), _active_size(0), _data_matrix() {}
 
-  /* Copy / Move: use defaults */
-  VectorRingBuffer(const VectorRingBuffer &) = default;
-  VectorRingBuffer &operator=(const VectorRingBuffer &) = default;
-  VectorRingBuffer(VectorRingBuffer &&) noexcept = default;
-  VectorRingBuffer &operator=(VectorRingBuffer &&) noexcept = default;
+  /* Copy Constructor */
+  VectorRingBuffer(const VectorRingBuffer &input)
+      : _head(input._head), _active_size(input._active_size),
+        _data_matrix(input._data_matrix) {}
+
+  VectorRingBuffer &operator=(const VectorRingBuffer &input) {
+    if (this != &input) {
+      this->_head = input._head;
+      this->_active_size = input._active_size;
+      this->_data_matrix = input._data_matrix;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  VectorRingBuffer(VectorRingBuffer &&input) noexcept
+      : _head(input._head), _active_size(input._active_size),
+        _data_matrix(std::move(input._data_matrix)) {}
+
+  VectorRingBuffer &operator=(VectorRingBuffer &&input) noexcept {
+    if (this != &input) {
+      this->_head = input._head;
+      this->_active_size = input._active_size;
+      this->_data_matrix = std::move(input._data_matrix);
+    }
+    return *this;
+  }
 
   /**
    * @brief Reset the buffer (O(1) - only resets counters).
