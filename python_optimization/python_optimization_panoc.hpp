@@ -399,7 +399,7 @@ public:
       Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.get(i);
 
-      T beta = rho_i * _inner_product(yi, q);
+      T beta = rho_i * this->_inner_product(yi, q);
       q = q + (alpha[i] - beta) * si;
     }
   }
