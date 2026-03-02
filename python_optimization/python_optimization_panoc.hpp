@@ -53,8 +53,7 @@ static constexpr double CBFGS_EPSILON_DEFAULT = 1e-8;
 /** @brief C-BFGS parameter alpha (must be 0, 1, or 2). */
 static constexpr std::size_t CBFGS_ALPHA_DEFAULT = 1;
 
-/** @brief Threshold below which ||s||^2 is considered zero. */
-static constexpr double NORM_S_SMALL_LIMIT = 1e-30;
+static constexpr double NORM_SMALL_LIMIT = 1e-30;
 
 } // namespace PANOC_Constants
 
@@ -353,11 +352,12 @@ public:
     /* Update H0 scaling: gamma = (s^T y) / (y^T y) */
     Vector_Type s0 = this->_s.get(0);
     Vector_Type y0 = this->_y.get(0);
-    T ys = _inner_product(s0, y0);
-    T yy = _inner_product(y0, y0);
-    if (yy > static_cast<T>(0)) {
-      this->_gamma = ys / yy;
-    }
+    T ys = this->_inner_product(s0, y0);
+    T yy = this->_inner_product(y0, y0);
+
+    this->_gamma =
+        ys / Base::Utility::avoid_zero_divide(
+                 yy, static_cast<T>(PANOC_Constants::NORM_SMALL_LIMIT));
 
     return true;
   }
@@ -422,7 +422,7 @@ private:
     T ys = _inner_product(s, y);
     T norm_s_sq = _inner_product(s, s);
 
-    if (norm_s_sq <= static_cast<T>(PANOC_Constants::NORM_S_SMALL_LIMIT)) {
+    if (norm_s_sq <= static_cast<T>(PANOC_Constants::NORM_SMALL_LIMIT)) {
       return false;
     }
     if (this->_sy_epsilon > static_cast<T>(0) && ys <= this->_sy_epsilon) {
