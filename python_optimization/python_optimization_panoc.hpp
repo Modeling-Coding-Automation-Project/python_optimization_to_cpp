@@ -258,11 +258,52 @@ public:
         _s(), _y(), _rho(), _gamma(static_cast<T>(1)), _old_state(), _old_g(),
         _first_old(true) {}
 
-  /* Copy / Move: use defaults */
-  L_BFGS_Buffer(const L_BFGS_Buffer &) = default;
-  L_BFGS_Buffer &operator=(const L_BFGS_Buffer &) = default;
-  L_BFGS_Buffer(L_BFGS_Buffer &&) noexcept = default;
-  L_BFGS_Buffer &operator=(L_BFGS_Buffer &&) noexcept = default;
+  /* Copy Constructor */
+  L_BFGS_Buffer(const L_BFGS_Buffer &input)
+      : _sy_epsilon(input._sy_epsilon), _cbfgs_alpha(input._cbfgs_alpha),
+        _cbfgs_epsilon(input._cbfgs_epsilon), _s(input._s), _y(input._y),
+        _rho(input._rho), _gamma(input._gamma), _old_state(input._old_state),
+        _old_g(input._old_g), _first_old(input._first_old) {}
+
+  L_BFGS_Buffer &operator=(const L_BFGS_Buffer &input) {
+    if (this != &input) {
+      this->_sy_epsilon = input._sy_epsilon;
+      this->_cbfgs_alpha = input._cbfgs_alpha;
+      this->_cbfgs_epsilon = input._cbfgs_epsilon;
+      this->_s = input._s;
+      this->_y = input._y;
+      this->_rho = input._rho;
+      this->_gamma = input._gamma;
+      this->_old_state = input._old_state;
+      this->_old_g = input._old_g;
+      this->_first_old = input._first_old;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  L_BFGS_Buffer(L_BFGS_Buffer &&input) noexcept
+      : _sy_epsilon(input._sy_epsilon), _cbfgs_alpha(input._cbfgs_alpha),
+        _cbfgs_epsilon(input._cbfgs_epsilon), _s(std::move(input._s)),
+        _y(std::move(input._y)), _rho(std::move(input._rho)),
+        _gamma(input._gamma), _old_state(std::move(input._old_state)),
+        _old_g(std::move(input._old_g)), _first_old(input._first_old) {}
+
+  L_BFGS_Buffer &operator=(L_BFGS_Buffer &&input) noexcept {
+    if (this != &input) {
+      this->_sy_epsilon = input._sy_epsilon;
+      this->_cbfgs_alpha = input._cbfgs_alpha;
+      this->_cbfgs_epsilon = input._cbfgs_epsilon;
+      this->_s = std::move(input._s);
+      this->_y = std::move(input._y);
+      this->_rho = std::move(input._rho);
+      this->_gamma = input._gamma;
+      this->_old_state = std::move(input._old_state);
+      this->_old_g = std::move(input._old_g);
+      this->_first_old = input._first_old;
+    }
+    return *this;
+  }
 
   /**
    * @brief Clear the buffer (cheap - just resets flags/counters).
