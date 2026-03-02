@@ -196,13 +196,13 @@ private:
   inline auto _resolve_index(std::size_t index_from_latest) const
       -> std::size_t {
     /* index_from_latest must be < _active_size (caller's responsibility). */
-    std::size_t idx;
+    std::size_t index;
     if (this->_head >= (index_from_latest + 1)) {
-      idx = this->_head - 1 - index_from_latest;
+      index = this->_head - 1 - index_from_latest;
     } else {
-      idx = BufferSize + this->_head - 1 - index_from_latest;
+      index = BufferSize + this->_head - 1 - index_from_latest;
     }
-    return idx;
+    return index;
   }
 
   std::size_t _head;
@@ -833,8 +833,8 @@ protected:
   inline void _project(_FlatVector_Type &x) const {
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        std::size_t idx = k * INPUT_SIZE + i;
-        _T val = x(idx, 0);
+        std::size_t index = k * INPUT_SIZE + i;
+        _T val = x(index, 0);
         _T lo = this->_u_min_matrix(i, k);
         _T hi = this->_u_max_matrix(i, k);
         if (val < lo) {
@@ -843,7 +843,7 @@ protected:
         if (val > hi) {
           val = hi;
         }
-        x(idx, 0) = val;
+        x(index, 0) = val;
       }
     }
   }
