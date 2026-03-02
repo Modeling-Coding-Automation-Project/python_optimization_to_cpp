@@ -195,13 +195,13 @@ public:
   inline void project(Vector_Type &x) const {
     for (std::size_t i = 0; i < Size; ++i) {
       if (this->_has_lower) {
-        if (x(0, i) < this->_lower(0, i)) {
-          x(0, i) = this->_lower(0, i);
+        if (x(i, 0) < this->_lower(i, 0)) {
+          x(i, 0) = this->_lower(i, 0);
         }
       }
       if (this->_has_upper) {
-        if (x(0, i) > this->_upper(0, i)) {
-          x(0, i) = this->_upper(0, i);
+        if (x(i, 0) > this->_upper(i, 0)) {
+          x(i, 0) = this->_upper(i, 0);
         }
       }
     }
@@ -267,7 +267,7 @@ public:
 
     T norm_d = static_cast<T>(0);
     for (std::size_t i = 0; i < Size; ++i) {
-      norm_d += d(0, i) * d(0, i);
+      norm_d += d(i, 0) * d(i, 0);
     }
     norm_d = static_cast<T>(std::sqrt(static_cast<double>(norm_d)));
 
@@ -321,7 +321,7 @@ public:
         f2_norm_plus(static_cast<T>(1e30)), iteration(0),
         inner_iteration_count(0),
         last_inner_problem_norm_fpr(static_cast<T>(-1)) {
-    /* Initialize xi[0] = c (penalty parameter) to default */
+    /* Initialize xi(0, 0) = c (penalty parameter) to default */
     this->xi(0, 0) = static_cast<T>(ALM_Constants::DEFAULT_INITIAL_PENALTY);
   }
 
@@ -508,7 +508,7 @@ public:
       /* Extract y from xi(0, 1..N1) */
       F1_Output_Type y;
       for (std::size_t i = 0; i < N1; ++i) {
-        y(0, i) = xi(0, 1 + i);
+        y(i, 0) = xi(i + 1, 0);
       }
 
       /* t = F1(u) + y / c_bar */
@@ -523,7 +523,7 @@ public:
       F1_Output_Type diff = t - s;
       _T dist_sq = static_cast<_T>(0);
       for (std::size_t i = 0; i < N1; ++i) {
-        dist_sq += diff(0, i) * diff(0, i);
+        dist_sq += diff(i, 0) * diff(i, 0);
       }
       cost += static_cast<_T>(0.5) * c * dist_sq;
     }
@@ -534,7 +534,7 @@ public:
       F2_Output_Type f2_u = this->_mapping_f2(u);
       _T f2_sq = static_cast<_T>(0);
       for (std::size_t i = 0; i < N2; ++i) {
-        f2_sq += f2_u(0, i) * f2_u(0, i);
+        f2_sq += f2_u(i, 0) * f2_u(i, 0);
       }
       cost += static_cast<_T>(0.5) * c * f2_sq;
     }
@@ -561,7 +561,7 @@ public:
       /* Extract y from xi */
       F1_Output_Type y;
       for (std::size_t i = 0; i < N1; ++i) {
-        y(0, i) = xi(0, 1 + i);
+        y(i, 0) = xi(i + 1, 0);
       }
 
       /* t = F1(u) + y/c  (note: uses c, not c_bar) */
@@ -979,7 +979,7 @@ public:
    */
   inline void set_initial_y(const _F1_Output_Type &y0) {
     for (std::size_t i = 0; i < N1; ++i) {
-      this->_cache.xi(0, 1 + i) = y0(0, i);
+      this->_cache.xi(i + 1, 0) = y0(i, 0);
     }
   }
 
@@ -1128,11 +1128,11 @@ protected:
     if (N1 > 0 && this->_problem.set_y_project) {
       _F1_Output_Type y;
       for (std::size_t i = 0; i < N1; ++i) {
-        y(0, i) = this->_cache.xi(0, 1 + i);
+        y(i, 0) = this->_cache.xi(i + 1, 0);
       }
       this->_problem.set_y_project(y);
       for (std::size_t i = 0; i < N1; ++i) {
-        this->_cache.xi(0, 1 + i) = y(0, i);
+        this->_cache.xi(i + 1, 0) = y(i, 0);
       }
     }
   }
@@ -1197,7 +1197,7 @@ protected:
     /* Extract y from xi */
     _F1_Output_Type y;
     for (std::size_t i = 0; i < N1; ++i) {
-      y(0, i) = this->_cache.xi(0, 1 + i);
+      y(i, 0) = this->_cache.xi(i + 1, 0);
     }
 
     /* Step 1: w = F1(u) */
@@ -1223,12 +1223,12 @@ protected:
     if (N1 > 0) {
       _F1_Output_Type y;
       for (std::size_t i = 0; i < N1; ++i) {
-        y(0, i) = this->_cache.xi(0, 1 + i);
+        y(i, 0) = this->_cache.xi(i + 1, 0);
       }
       _F1_Output_Type diff = this->_cache.y_plus - y;
       _T norm_sq = static_cast<_T>(0);
       for (std::size_t i = 0; i < N1; ++i) {
-        norm_sq += diff(0, i) * diff(0, i);
+        norm_sq += diff(i, 0) * diff(i, 0);
       }
       this->_cache.delta_y_norm_plus =
           static_cast<_T>(std::sqrt(static_cast<double>(norm_sq)));
@@ -1243,7 +1243,7 @@ protected:
       this->_cache.w_pm = this->_problem.mapping_f2(u);
       _T norm_sq = static_cast<_T>(0);
       for (std::size_t i = 0; i < N2; ++i) {
-        norm_sq += this->_cache.w_pm(0, i) * this->_cache.w_pm(0, i);
+        norm_sq += this->_cache.w_pm(i, 0) * this->_cache.w_pm(i, 0);
       }
       this->_cache.f2_norm_plus =
           static_cast<_T>(std::sqrt(static_cast<double>(norm_sq)));
@@ -1359,7 +1359,7 @@ protected:
     /* Copy y^+ into xi (update y) */
     if (N1 > 0) {
       for (std::size_t i = 0; i < N1; ++i) {
-        this->_cache.xi(0, 1 + i) = this->_cache.y_plus(0, i);
+        this->_cache.xi(i + 1, 0) = this->_cache.y_plus(i, 0);
       }
     }
 
