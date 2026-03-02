@@ -859,8 +859,9 @@ public:
     this->_estimate_local_lipschitz(u);
     this->_cache.gamma =
         static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
-        _max_val(this->_cache.lipschitz_constant,
-                 static_cast<_T>(PANOC_Constants::MIN_L_ESTIMATE_DEFAULT));
+        this->_max_val(
+            this->_cache.lipschitz_constant,
+            static_cast<_T>(PANOC_Constants::MIN_L_ESTIMATE_DEFAULT));
     this->_cache.sigma =
         (static_cast<_T>(1) -
          static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
@@ -1094,7 +1095,7 @@ protected:
 
       this->_cache.lbfgs.reset();
       this->_cache.lipschitz_constant *= static_cast<_T>(2);
-      this->_cache.gamma /= static_cast<_T>(2);
+      this->_cache.gamma *= static_cast<_T>(0.5);
 
       this->_gradient_step(u);
       this->_half_step();
@@ -1196,7 +1197,7 @@ protected:
 
     while (this->_line_search_condition(u) &&
            num_ls < PANOC_Constants::MAX_LINESEARCH_ITERATIONS_DEFAULT) {
-      this->_cache.tau /= static_cast<_T>(2);
+      this->_cache.tau *= static_cast<_T>(0.5);
       num_ls += 1;
     }
 
