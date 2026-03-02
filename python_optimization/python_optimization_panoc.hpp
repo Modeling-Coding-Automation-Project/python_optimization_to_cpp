@@ -994,14 +994,8 @@ protected:
 
     /* Build perturbation h: h_i = max(delta, epsilon * |u_i|) */
     _FlatVector_Type h;
-    for (std::size_t i = 0; i < PROBLEM_SIZE; ++i) {
-      _T abs_ui = u(i, 0);
-      if (abs_ui < static_cast<_T>(0)) {
-        abs_ui = -abs_ui;
-      }
-      _T val = epsilon * abs_ui;
-      h(i, 0) = (delta > val) ? delta : val;
-    }
+    MatrixOperation::AbsoluteMaxScalarToMatrix::compute(u, delta, epsilon, h);
+
     _T norm_h = PythonNumpy::norm(h);
 
     /* Evaluate gradient at u + h */
