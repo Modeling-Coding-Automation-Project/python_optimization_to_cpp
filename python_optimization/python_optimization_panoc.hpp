@@ -816,7 +816,7 @@ protected:
     _FlatVector_Type flat;
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        flat(k * INPUT_SIZE + i, 0) = u_horizon(k, i);
+        flat(k * INPUT_SIZE + i, 0) = u_horizon(i, k);
       }
     }
     return flat;
@@ -830,7 +830,7 @@ protected:
     U_Horizon_Type u_horizon;
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        u_horizon(k, i) = flat(0, k * INPUT_SIZE + i);
+        u_horizon(i, k) = flat(k * INPUT_SIZE + i, 0);
       }
     }
     return u_horizon;
@@ -877,7 +877,7 @@ protected:
     /* Build perturbation h: h_i = max(delta, epsilon * |u_i|) */
     _FlatVector_Type h;
     for (std::size_t i = 0; i < PROBLEM_SIZE; ++i) {
-      _T abs_ui = u(0, i);
+      _T abs_ui = u(i, 0);
       if (abs_ui < static_cast<_T>(0)) {
         abs_ui = -abs_ui;
       }
