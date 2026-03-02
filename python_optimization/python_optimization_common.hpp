@@ -105,6 +105,92 @@ using CostAndGradientFunction_Object =
     std::function<void(const X_Type &, const U_Horizon_Type &,
                        typename X_Type::Value_Type &, Gradient_Type &)>;
 
+namespace AbsoluteMaxScalarToMatrix {
+
+// Recursion when I_idx > 0
+template <typename Vector_Type, std::size_t I_idx> struct Element {
+  /**
+   * @brief Recursively computes h(I_idx, 0) = max(delta, epsilon * |u(I_idx,
+   * 0)|) and recurses down to index 0.
+   *
+   * @tparam Vector_Type The column-vector type (ROWS x 1).
+   * @tparam I_idx       Current row index in the recursion.
+   * @param u       Source column vector.
+   * @param delta   Minimum perturbation scalar.
+   * @param epsilon Relative perturbation scalar.
+   * @param h       Output column vector.
+   */
+  static inline void compute(const Vector_Type &u,
+                             const typename Vector_Type::Value_Type &delta,
+                             const typename Vector_Type::Value_Type &epsilon,
+                             Vector_Type &h) {
+    typename Vector_Type::Value_Type abs_ui = u.template get<I_idx, 0>();
+    if (abs_ui < static_cast<typename Vector_Type::Value_Type>(0)) {
+      abs_ui = -abs_ui;
+    }
+    typename Vector_Type::Value_Type val = epsilon * abs_ui;
+    h.template set<I_idx, 0>((delta > val) ? delta : val);
+
+    Element<Vector_Type, I_idx - 1>::compute(u, delta, epsilon, h);
+  }
+};
+
+// Recursion termination for I_idx == 0
+template <typename Vector_Type> struct Element<Vector_Type, 0> {
+  /**
+   * @brief Base case: computes h(0, 0) = max(delta, epsilon * |u(0, 0)|).
+   *
+   * @tparam Vector_Type The column-vector type (ROWS x 1).
+   * @param u       Source column vector.
+   * @param delta   Minimum perturbation scalar.
+   * @param epsilon Relative perturbation scalar.
+   * @param h       Output column vector.
+   */
+  static inline void compute(const Vector_Type &u,
+                             const typename Vector_Type::Value_Type &delta,
+                             const typename Vector_Type::Value_Type &epsilon,
+                             Vector_Type &h) {
+    typename Vector_Type::Value_Type abs_ui = u.template get<0, 0>();
+    if (abs_ui < static_cast<typename Vector_Type::Value_Type>(0)) {
+      abs_ui = -abs_ui;
+    }
+    typename Vector_Type::Value_Type val = epsilon * abs_ui;
+    h.template set<0, 0>((delta > val) ? delta : val);
+  }
+};
+
+/**
+ * @brief Compute h(i, 0) = max(delta, epsilon * |u(i, 0)|) for all i via
+ * compile-time loop unrolling.
+ *
+ * Equivalent runtime loop:
+ * @code
+ *   for (std::size_t i = 0; i < ROWS; ++i) {
+ *     _T abs_ui = u(i, 0);
+ *     if (abs_ui < 0) abs_ui = -abs_ui;
+ *     _T val = epsilon * abs_ui;
+ *     h(i, 0) = (delta > val) ? delta : val;
+ *   }
+ * @endcode
+ *
+ * @tparam Vector_Type The column-vector type (ROWS x 1). Must define ROWS,
+ *         COLS, Value_Type, get<R,C>(), and set<R,C>().
+ * @param u       Source column vector.
+ * @param delta   Minimum perturbation value.
+ * @param epsilon Relative perturbation coefficient.
+ * @param h       Output column vector (overwritten).
+ */
+template <typename Vector_Type>
+inline void
+compute(const Vector_Type &u, const typename Vector_Type::Value_Type &delta,
+        const typename Vector_Type::Value_Type &epsilon, Vector_Type &h) {
+  static_assert(Vector_Type::COLS == 1,
+                "Vector_Type must be a column vector (COLS == 1)");
+  Element<Vector_Type, Vector_Type::ROWS - 1>::compute(u, delta, epsilon, h);
+}
+
+} // namespace AbsoluteMaxScalarToMatrix
+
 } // namespace PythonOptimization
 
 #endif // __PYTHON_OPTIMIZATION_COMMON_HPP__
