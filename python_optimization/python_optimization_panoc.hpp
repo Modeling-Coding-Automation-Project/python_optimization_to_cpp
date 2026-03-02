@@ -135,7 +135,7 @@ public:
             typename std::enable_if<(ES > 0), int>::type = 0>
   inline void push(const OutputVector_Type &value) {
     for (std::size_t i = 0; i < ES; ++i) {
-      this->_data_matrix[i][this->_head] = value.access(0, i);
+      this->_data_matrix[i][this->_head] = value.access(i, 0);
     }
     this->_advance_head();
   }
@@ -165,7 +165,7 @@ public:
     OutputVector_Type result;
 
     for (std::size_t i = 0; i < ES_; ++i) {
-      result.access(0, i) = this->_data_matrix[i][idx];
+      result.access(i, 0) = this->_data_matrix[i][idx];
     }
     return result;
   }
@@ -399,7 +399,7 @@ private:
   static inline T _inner_product(const Vector_Type &a, const Vector_Type &b) {
     T sum = static_cast<T>(0);
     for (std::size_t i = 0; i < ProblemSize; ++i) {
-      sum += a(0, i) * b(0, i);
+      sum += a(i, 0) * b(i, 0);
     }
     return sum;
   }
@@ -843,16 +843,16 @@ protected:
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
         std::size_t idx = k * INPUT_SIZE + i;
-        _T val = x(0, idx);
-        _T lo = this->_u_min_matrix(k, i);
-        _T hi = this->_u_max_matrix(k, i);
+        _T val = x(idx, 0);
+        _T lo = this->_u_min_matrix(i, k);
+        _T hi = this->_u_max_matrix(i, k);
         if (val < lo) {
           val = lo;
         }
         if (val > hi) {
           val = hi;
         }
-        x(0, idx) = val;
+        x(idx, 0) = val;
       }
     }
   }
@@ -882,7 +882,7 @@ protected:
         abs_ui = -abs_ui;
       }
       _T val = epsilon * abs_ui;
-      h(0, i) = (delta > val) ? delta : val;
+      h(i, 0) = (delta > val) ? delta : val;
     }
     _T norm_h = PythonNumpy::norm(h);
 
@@ -1098,7 +1098,7 @@ protected:
                                          const _FlatVector_Type &b) -> _T {
     _T sum = static_cast<_T>(0);
     for (std::size_t i = 0; i < PROBLEM_SIZE; ++i) {
-      sum += a(0, i) * b(0, i);
+      sum += a(i, 0) * b(i, 0);
     }
     return sum;
   }
@@ -1108,7 +1108,7 @@ protected:
    */
   static inline bool _is_all_finite(const _FlatVector_Type &v) {
     for (std::size_t i = 0; i < PROBLEM_SIZE; ++i) {
-      if (!std::isfinite(static_cast<double>(v(0, i)))) {
+      if (!std::isfinite(static_cast<double>(v(i, 0)))) {
         return false;
       }
     }
