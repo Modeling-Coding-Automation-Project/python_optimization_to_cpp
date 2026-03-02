@@ -99,7 +99,7 @@ template <typename T> struct PANOC_SolverStatus {
  * @tparam ElementSize Size of each vector element (number of rows).
  *                     If 0, each element is a scalar.
  */
-template <typename T, std::size_t BufferSize, std::size_t ElementSize = 0>
+template <typename T, std::size_t BufferSize, std::size_t ElementSize>
 class VectorRingBuffer {
 public:
   /* Type */
@@ -131,10 +131,8 @@ public:
    * @brief Push a new vector value, overwriting the oldest entry if full.
    * @param value Column vector (ElementSize x 1) to push.
    */
-  template <std::size_t ES = ElementSize,
-            typename std::enable_if<(ES > 0), int>::type = 0>
   inline void push(const OutputVector_Type &value) {
-    for (std::size_t i = 0; i < ES; ++i) {
+    for (std::size_t i = 0; i < ElementSize; ++i) {
       this->_data_matrix[i][this->_head] = value.access(i, 0);
     }
     this->_advance_head();

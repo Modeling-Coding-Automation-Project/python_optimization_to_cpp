@@ -1,24 +1,13 @@
 /**
- * @file python_optimization_sqp_matrix_operation.hpp
+ * File: python_optimization_common_matrix_operation.hpp
  *
- * @brief Matrix operation utilities for SQP-based Python optimization, ported
- * to C++.
- *
- * This header provides a collection of template-based matrix operations for use
- * in sequential quadratic programming (SQP) optimization routines, supporting
- * fixed-size matrices and compile-time recursion for performance and type
- * safety.
- *
- * Main Features:
- * - Row and column extraction and assignment between matrices.
- * - Element-wise matrix multiplication.
- * - Quadratic form calculations (weighted and unweighted).
- * - Penalty calculations for output constraints (Y limits), including active
- * set detection.
- * - Contract operations for Hessian and gradient matrices with lambda weights.
- * - Masking and active set management for free variables.
- * - Saturation and inversion operations for control horizons and diagonal
- * matrices.
+ * @brief This header file defines common matrix operations used in Python-based
+ * optimization utilities.
+ * The operations include setting and getting rows of matrices, calculating
+ * quadratic forms, and computing penalties for constraint violations. The
+ * implementations leverage template metaprogramming for compile-time
+ * optimizations and are designed to work with custom matrix types that provide
+ * specific access and manipulation methods.
  */
 #ifndef __PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP__
 #define __PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP__
