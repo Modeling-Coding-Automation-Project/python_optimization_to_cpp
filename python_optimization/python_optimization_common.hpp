@@ -117,10 +117,10 @@ struct Column {
                              const typename Matrix_Type::Value_Type &delta,
                              const typename Matrix_Type::Value_Type &epsilon,
                              Matrix_Type &H) {
-    typename Matrix_Type::Value_Type abs_ui = U.template get<I, J_idx>();
-    if (abs_ui < static_cast<typename Matrix_Type::Value_Type>(0)) {
-      abs_ui = -abs_ui;
-    }
+
+    typename Matrix_Type::Value_Type abs_ui =
+        Base::Math::abs(U.template get<I, J_idx>());
+
     typename Matrix_Type::Value_Type val = epsilon * abs_ui;
     H.template set<I, J_idx>((delta > val) ? delta : val);
 
@@ -147,10 +147,9 @@ struct Column<Matrix_Type, M, N, I, 0> {
                              const typename Matrix_Type::Value_Type &delta,
                              const typename Matrix_Type::Value_Type &epsilon,
                              Matrix_Type &H) {
-    typename Matrix_Type::Value_Type abs_ui = U.template get<I, 0>();
-    if (abs_ui < static_cast<typename Matrix_Type::Value_Type>(0)) {
-      abs_ui = -abs_ui;
-    }
+    typename Matrix_Type::Value_Type abs_ui =
+        Base::Math::abs(U.template get<I, 0>());
+
     typename Matrix_Type::Value_Type val = epsilon * abs_ui;
     H.template set<I, 0>((delta > val) ? delta : val);
   }
