@@ -7,6 +7,7 @@
 #include "python_control.hpp"
 #include "python_numpy.hpp"
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <type_traits>
@@ -372,10 +373,11 @@ public:
    */
   inline void apply_hessian(Vector_Type &q) const {
     if (this->_s.get_active_size() == 0) {
-      return; /* no curvature info yet - return q unchanged */
+      /* no curvature info yet - return q unchanged */
+      return;
     }
 
-    T alpha[MemorySize];
+    std::array<T, MemorySize> alpha{};
 
     /* --- forward pass --- */
     for (std::size_t i = 0; i < this->_s.get_active_size(); ++i) {
