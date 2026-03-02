@@ -142,7 +142,7 @@ public:
    * @param value Scalar to push.
    */
   inline void push(const T &value) {
-    this->_data_scalar[this->_head] = value;
+    this->_data_matrix.access(0, this->_head) = value;
     this->_advance_head();
   }
 
@@ -210,9 +210,7 @@ private:
   std::size_t _active_size;
 
   /* Storage: vectors stored column-wise, scalars in a flat array. */
-  PythonNumpy::DenseMatrix_Type<T, (ElementSize > 0 ? ElementSize : 1),
-                                BufferSize>
-      _data_matrix;
+  PythonNumpy::DenseMatrix_Type<T, ElementSize, BufferSize> _data_matrix;
   T _data_scalar[BufferSize];
 };
 
