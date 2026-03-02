@@ -140,8 +140,6 @@ public:
    * @brief Push a new scalar value, overwriting the oldest entry if full.
    * @param value Scalar to push.
    */
-  template <std::size_t ES = ElementSize,
-            typename std::enable_if<(ES == 0), int>::type = 0>
   inline void push(const T &value) {
     this->_data_scalar[this->_head] = value;
     this->_advance_head();
@@ -150,19 +148,17 @@ public:
   /**
    * @brief Get the i-th most recent vector element.
    *
-   * @tparam ES_ Dispatching parameter (must equal ElementSize, used for
-   * SFINAE).
    * @param index_from_latest 0 = most recent, 1 = one before newest, ...
    * @return Column vector (ElementSize x 1).
    */
-  template <std::size_t ES_, typename std::enable_if<(ES_ > 0), int>::type = 0>
   inline auto get(std::size_t index_from_latest) const -> OutputVector_Type {
-    std::size_t idx = this->_resolve_index(index_from_latest);
+    std::size_t index = this->_resolve_index(index_from_latest);
     OutputVector_Type result;
 
-    for (std::size_t i = 0; i < ES_; ++i) {
-      result.access(i, 0) = this->_data_matrix.access(i, idx);
-    }
+    // for (std::size_t i = 0; i < ElementSize; ++i) {
+    //   result.access(i, 0) = this->_data_matrix.access(i, idx);
+    // }
+    MatrixOperation::GetRow::compute(this->_data_matrix, index, result);
     return result;
   }
 
@@ -295,8 +291,8 @@ public:
     this->_rho.push(rho_new);
 
     /* Update H0 scaling: gamma = (s^T y) / (y^T y) */
-    Vector_Type s0 = this->_s.template get<ProblemSize>(0);
-    Vector_Type y0 = this->_y.template get<ProblemSize>(0);
+    Vector_Type s0 = this->_s.get(0);
+    Vector_Type y0 = this->_y.get(0);
     T ys = _inner_product(s0, y0);
     T yy = _inner_product(y0, y0);
     if (yy > static_cast<T>(0)) {
@@ -323,8 +319,8 @@ public:
 
     /* --- forward pass --- */
     for (std::size_t i = 0; i < this->_s.get_active_size(); ++i) {
-      Vector_Type si = this->_s.template get<ProblemSize>(i);
-      Vector_Type yi = this->_y.template get<ProblemSize>(i);
+      Vector_Type si = this->_s.get(i);
+      Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.template get<0>(i);
 
       alpha[i] = rho_i * _inner_product(si, q);
@@ -337,8 +333,8 @@ public:
     /* --- backward pass --- */
     for (std::size_t ii = this->_s.get_active_size(); ii > 0; --ii) {
       std::size_t i = ii - 1;
-      Vector_Type si = this->_s.template get<ProblemSize>(i);
-      Vector_Type yi = this->_y.template get<ProblemSize>(i);
+      Vector_Type si = this->_s.get(i);
+      Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.template get<0>(i);
 
       T beta = rho_i * _inner_product(yi, q);
