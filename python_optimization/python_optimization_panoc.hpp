@@ -996,7 +996,8 @@ protected:
    */
   inline auto _lipschitz_check_rhs(void) const -> _T {
     const _Cache_Type &c = this->_cache;
-    _T inner = _inner_product_flat(c.gradient_u, c.gamma_fpr);
+    _T inner =
+        MatrixOperation::InnerProduct::compute(c.gradient_u, c.gamma_fpr);
     _T abs_cost = c.cost_value;
     if (abs_cost < static_cast<_T>(0)) {
       abs_cost = -abs_cost;
@@ -1060,8 +1061,9 @@ protected:
   inline void _compute_rhs_ls(void) {
     _Cache_Type &c = this->_cache;
     _FlatVector_Type diff = c.gradient_step - c.u_half_step;
-    _T dist_sq = _inner_product_flat(diff, diff);
-    _T grad_norm_sq = _inner_product_flat(c.gradient_u, c.gradient_u);
+    _T dist_sq = MatrixOperation::InnerProduct::compute(diff, diff);
+    _T grad_norm_sq =
+        MatrixOperation::InnerProduct::compute(c.gradient_u, c.gradient_u);
     _T fbe = c.cost_value - static_cast<_T>(0.5) * c.gamma * grad_norm_sq +
              static_cast<_T>(0.5) * dist_sq / c.gamma;
     c.rhs_ls = fbe - c.sigma * c.norm_gamma_fpr * c.norm_gamma_fpr;
@@ -1091,8 +1093,9 @@ protected:
 
     /* LHS of line-search condition (FBE at u_plus) */
     _FlatVector_Type diff = c.gradient_step - c.u_half_step;
-    _T dist_sq = _inner_product_flat(diff, diff);
-    _T grad_norm_sq = _inner_product_flat(c.gradient_u, c.gradient_u);
+    _T dist_sq = MatrixOperation::InnerProduct::compute(diff, diff);
+    _T grad_norm_sq =
+        MatrixOperation::InnerProduct::compute(c.gradient_u, c.gradient_u);
     c.lhs_ls = c.cost_value - static_cast<_T>(0.5) * c.gamma * grad_norm_sq +
                static_cast<_T>(0.5) * dist_sq / c.gamma;
 
@@ -1134,18 +1137,6 @@ protected:
     }
     /* Accept the candidate */
     u = c.u_plus;
-  }
-
-  /**
-   * @brief Inner product for flat vectors.
-   */
-  static inline auto _inner_product_flat(const _FlatVector_Type &a,
-                                         const _FlatVector_Type &b) -> _T {
-    _T sum = static_cast<_T>(0);
-    for (std::size_t i = 0; i < PROBLEM_SIZE; ++i) {
-      sum += a(i, 0) * b(i, 0);
-    }
-    return sum;
   }
 
   /**
