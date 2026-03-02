@@ -132,9 +132,7 @@ public:
    * @param value Column vector (ElementSize x 1) to push.
    */
   inline void push(const OutputVector_Type &value) {
-    for (std::size_t i = 0; i < ElementSize; ++i) {
-      this->_data_matrix[i][this->_head] = value.access(i, 0);
-    }
+    MatrixOperation::SetRow::compute(this->_data_matrix, value, this->_head);
     this->_advance_head();
   }
 
@@ -163,7 +161,7 @@ public:
     OutputVector_Type result;
 
     for (std::size_t i = 0; i < ES_; ++i) {
-      result.access(i, 0) = this->_data_matrix[i][idx];
+      result.access(i, 0) = this->_data_matrix.access(i, idx);
     }
     return result;
   }
@@ -215,7 +213,9 @@ private:
   std::size_t _active_size;
 
   /* Storage: vectors stored column-wise, scalars in a flat array. */
-  T _data_matrix[ElementSize > 0 ? ElementSize : 1][BufferSize];
+  PythonNumpy::DenseMatrix_Type<T, (ElementSize > 0 ? ElementSize : 1),
+                                BufferSize>
+      _data_matrix;
   T _data_scalar[BufferSize];
 };
 
