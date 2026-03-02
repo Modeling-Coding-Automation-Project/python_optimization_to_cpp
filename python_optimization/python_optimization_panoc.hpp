@@ -111,8 +111,7 @@ public:
 
 public:
   /* Constructor */
-  VectorRingBuffer()
-      : _head(0), _active_size(0), _data_matrix(), _data_scalar() {}
+  VectorRingBuffer() : _head(0), _active_size(0), _data_matrix() {}
 
   /* Copy / Move: use defaults */
   VectorRingBuffer(const VectorRingBuffer &) = default;
@@ -211,7 +210,6 @@ private:
 
   /* Storage: vectors stored column-wise, scalars in a flat array. */
   PythonNumpy::DenseMatrix_Type<T, ElementSize, BufferSize> _data_matrix;
-  T _data_scalar[BufferSize];
 };
 
 /**
