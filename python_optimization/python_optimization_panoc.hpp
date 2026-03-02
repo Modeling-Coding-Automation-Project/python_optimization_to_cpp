@@ -56,6 +56,10 @@ static constexpr std::size_t CBFGS_ALPHA_DEFAULT = 1;
 
 static constexpr double NORM_SMALL_LIMIT = 1e-30;
 
+static constexpr double PANOC_TOLERANCE_DEFAULT = 1e-4;
+
+static constexpr double PANOC_NORM_GAMMA_FPR_INITIAL_VALUE = 1e30;
+
 } // namespace PANOC_Constants
 
 /**
@@ -481,9 +485,11 @@ public:
 
   /* Constructor */
   PANOC_Cache()
-      : tolerance(static_cast<T>(1e-4)), lbfgs(), gradient_u(), u_half_step(),
-        gradient_step(), direction_lbfgs(), u_plus(), gamma_fpr(),
-        gamma(static_cast<T>(0)), norm_gamma_fpr(static_cast<T>(1e30)),
+      : tolerance(static_cast<T>(PANOC_Constants::PANOC_TOLERANCE_DEFAULT)),
+        lbfgs(), gradient_u(), u_half_step(), gradient_step(),
+        direction_lbfgs(), u_plus(), gamma_fpr(), gamma(static_cast<T>(0)),
+        norm_gamma_fpr(static_cast<T>(
+            PANOC_Constants::PANOC_NORM_GAMMA_FPR_INITIAL_VALUE)),
         tau(static_cast<T>(1)), lipschitz_constant(static_cast<T>(0)),
         sigma(static_cast<T>(0)), cost_value(static_cast<T>(0)),
         rhs_ls(static_cast<T>(0)), lhs_ls(static_cast<T>(0)), iteration(0) {}
@@ -491,16 +497,83 @@ public:
   explicit PANOC_Cache(const T &tolerance_in)
       : tolerance(tolerance_in), lbfgs(), gradient_u(), u_half_step(),
         gradient_step(), direction_lbfgs(), u_plus(), gamma_fpr(),
-        gamma(static_cast<T>(0)), norm_gamma_fpr(static_cast<T>(1e30)),
+        gamma(static_cast<T>(0)),
+        norm_gamma_fpr(static_cast<T>(
+            PANOC_Constants::PANOC_NORM_GAMMA_FPR_INITIAL_VALUE)),
         tau(static_cast<T>(1)), lipschitz_constant(static_cast<T>(0)),
         sigma(static_cast<T>(0)), cost_value(static_cast<T>(0)),
         rhs_ls(static_cast<T>(0)), lhs_ls(static_cast<T>(0)), iteration(0) {}
 
-  /* Copy / Move: use defaults */
-  PANOC_Cache(const PANOC_Cache &) = default;
-  PANOC_Cache &operator=(const PANOC_Cache &) = default;
-  PANOC_Cache(PANOC_Cache &&) noexcept = default;
-  PANOC_Cache &operator=(PANOC_Cache &&) noexcept = default;
+  /* Copy Constructor */
+  PANOC_Cache(const PANOC_Cache &input)
+      : tolerance(input.tolerance), lbfgs(input.lbfgs),
+        gradient_u(input.gradient_u), u_half_step(input.u_half_step),
+        gradient_step(input.gradient_step),
+        direction_lbfgs(input.direction_lbfgs), u_plus(input.u_plus),
+        gamma_fpr(input.gamma_fpr), gamma(input.gamma),
+        norm_gamma_fpr(input.norm_gamma_fpr), tau(input.tau),
+        lipschitz_constant(input.lipschitz_constant), sigma(input.sigma),
+        cost_value(input.cost_value), rhs_ls(input.rhs_ls),
+        lhs_ls(input.lhs_ls), iteration(input.iteration) {}
+
+  PANOC_Cache &operator=(const PANOC_Cache &input) {
+    if (this != &input) {
+      this->tolerance = input.tolerance;
+      this->lbfgs = input.lbfgs;
+      this->gradient_u = input.gradient_u;
+      this->u_half_step = input.u_half_step;
+      this->gradient_step = input.gradient_step;
+      this->direction_lbfgs = input.direction_lbfgs;
+      this->u_plus = input.u_plus;
+      this->gamma_fpr = input.gamma_fpr;
+      this->gamma = input.gamma;
+      this->norm_gamma_fpr = input.norm_gamma_fpr;
+      this->tau = input.tau;
+      this->lipschitz_constant = input.lipschitz_constant;
+      this->sigma = input.sigma;
+      this->cost_value = input.cost_value;
+      this->rhs_ls = input.rhs_ls;
+      this->lhs_ls = input.lhs_ls;
+      this->iteration = input.iteration;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  PANOC_Cache(PANOC_Cache &&input) noexcept
+      : tolerance(input.tolerance), lbfgs(std::move(input.lbfgs)),
+        gradient_u(std::move(input.gradient_u)),
+        u_half_step(std::move(input.u_half_step)),
+        gradient_step(std::move(input.gradient_step)),
+        direction_lbfgs(std::move(input.direction_lbfgs)),
+        u_plus(std::move(input.u_plus)), gamma_fpr(std::move(input.gamma_fpr)),
+        gamma(input.gamma), norm_gamma_fpr(input.norm_gamma_fpr),
+        tau(input.tau), lipschitz_constant(input.lipschitz_constant),
+        sigma(input.sigma), cost_value(input.cost_value), rhs_ls(input.rhs_ls),
+        lhs_ls(input.lhs_ls), iteration(input.iteration) {}
+
+  PANOC_Cache &operator=(PANOC_Cache &&input) noexcept {
+    if (this != &input) {
+      this->tolerance = input.tolerance;
+      this->lbfgs = std::move(input.lbfgs);
+      this->gradient_u = std::move(input.gradient_u);
+      this->u_half_step = std::move(input.u_half_step);
+      this->gradient_step = std::move(input.gradient_step);
+      this->direction_lbfgs = std::move(input.direction_lbfgs);
+      this->u_plus = std::move(input.u_plus);
+      this->gamma_fpr = std::move(input.gamma_fpr);
+      this->gamma = input.gamma;
+      this->norm_gamma_fpr = input.norm_gamma_fpr;
+      this->tau = input.tau;
+      this->lipschitz_constant = input.lipschitz_constant;
+      this->sigma = input.sigma;
+      this->cost_value = input.cost_value;
+      this->rhs_ls = input.rhs_ls;
+      this->lhs_ls = input.lhs_ls;
+      this->iteration = input.iteration;
+    }
+    return *this;
+  }
 
   /**
    * @brief Reset the cache to its initial state (called before each solve).
@@ -515,7 +588,8 @@ public:
     this->cost_value = static_cast<T>(0);
     this->iteration = 0;
     this->gamma = static_cast<T>(0);
-    this->norm_gamma_fpr = static_cast<T>(1e30);
+    this->norm_gamma_fpr =
+        static_cast<T>(PANOC_Constants::PANOC_NORM_GAMMA_FPR_INITIAL_VALUE);
   }
 
   /**
