@@ -103,11 +103,10 @@ template <typename T> struct PANOC_SolverStatus {
  * @tparam ElementSize Size of each vector element (number of rows).
  *                     If 0, each element is a scalar.
  */
-template <typename T, std::size_t BufferSize, std::size_t ElementSize>
-class MatrixRingBuffer {
+template <typename Matrix_Type, std::size_t BufferSize> class MatrixRingBuffer {
 public:
   /* Type */
-  using OutputVector_Type = PythonNumpy::DenseMatrix_Type<T, ElementSize, 1>;
+  using T = typename Matrix_Type::Value_Type;
 
   /* Compatibility check */
   static_assert(BufferSize > 0, "BufferSize must be greater than 0");
@@ -157,7 +156,7 @@ public:
    * @brief Push a new vector value, overwriting the oldest entry if full.
    * @param value Column vector (ElementSize x 1) to push.
    */
-  inline void push(const OutputVector_Type &value) {
+  inline void push(const Matrix_Type &value) {
     this->_data[this->_head] = value;
     this->_advance_head();
   }
@@ -179,7 +178,7 @@ public:
    */
   template <std::size_t ES = ElementSize,
             typename std::enable_if<ES != 1, int>::type = 0>
-  inline auto get(std::size_t index_from_latest) const -> OutputVector_Type {
+  inline auto get(std::size_t index_from_latest) const -> Matrix_Type {
     std::size_t index = this->_resolve_index(index_from_latest);
     return this->_data[index];
   }
@@ -212,8 +211,8 @@ public:
    * @param b Right operand.
    * @return Sum of element-wise products.
    */
-  static inline auto inner_product(const OutputVector_Type &a,
-                                   const OutputVector_Type &b) -> T {
+  static inline auto inner_product(const Matrix_Type &a, const Matrix_Type &b)
+      -> T {
     T result = static_cast<T>(0);
     for (std::size_t i = 0; i < ElementSize; ++i) {
       result += a(i, 0) * b(i, 0);
@@ -248,7 +247,7 @@ private:
   std::size_t _active_size;
 
   /* Storage: each element stored individually in a std::array. */
-  std::array<OutputVector_Type, BufferSize> _data;
+  std::array<Matrix_Type, BufferSize> _data;
 };
 
 /**
@@ -265,7 +264,13 @@ private:
 template <typename T, std::size_t ProblemSize, std::size_t MemorySize>
 class L_BFGS_Buffer {
 public:
+  /* Type */
   using Vector_Type = PythonNumpy::DenseMatrix_Type<T, ProblemSize, 1>;
+  using Scalar_Type = PythonNumpy::DenseMatrix_Type<T, 1, 1>;
+
+protected:
+  /* Type */
+  using _MatrixRingBuffer_Type = MatrixRingBuffer<Vector_Type, MemorySize>;
 
   /* Constructor */
   L_BFGS_Buffer()
@@ -470,11 +475,9 @@ private:
   std::size_t _cbfgs_alpha;
   T _cbfgs_epsilon;
 
-  using _MatrixRingBuffer_Type = MatrixRingBuffer<T, MemorySize, ProblemSize>;
-
-  MatrixRingBuffer<T, MemorySize, ProblemSize> _s;
-  MatrixRingBuffer<T, MemorySize, ProblemSize> _y;
-  MatrixRingBuffer<T, MemorySize, 1> _rho;
+  MatrixRingBuffer<Vector_Type, MemorySize> _s;
+  MatrixRingBuffer<Vector_Type, MemorySize> _y;
+  MatrixRingBuffer<Scalar_Type, MemorySize> _rho;
 
   T _gamma; /* initial Hessian scaling H0 = gamma * I */
   Vector_Type _old_state;
