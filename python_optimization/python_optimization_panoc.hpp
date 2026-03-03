@@ -104,7 +104,7 @@ template <typename T> struct PANOC_SolverStatus {
  *                     If 0, each element is a scalar.
  */
 template <typename T, std::size_t BufferSize, std::size_t ElementSize>
-class VectorRingBuffer {
+class MatrixRingBuffer {
 public:
   /* Type */
   using OutputVector_Type = PythonNumpy::DenseMatrix_Type<T, ElementSize, 1>;
@@ -115,32 +115,32 @@ public:
 
 public:
   /* Constructor */
-  VectorRingBuffer() : _head(0), _active_size(0), _data_matrix() {}
+  MatrixRingBuffer() : _head(0), _active_size(0), _data() {}
 
   /* Copy Constructor */
-  VectorRingBuffer(const VectorRingBuffer &input)
+  MatrixRingBuffer(const MatrixRingBuffer &input)
       : _head(input._head), _active_size(input._active_size),
-        _data_matrix(input._data_matrix) {}
+        _data(input._data) {}
 
-  VectorRingBuffer &operator=(const VectorRingBuffer &input) {
+  MatrixRingBuffer &operator=(const MatrixRingBuffer &input) {
     if (this != &input) {
       this->_head = input._head;
       this->_active_size = input._active_size;
-      this->_data_matrix = input._data_matrix;
+      this->_data = input._data;
     }
     return *this;
   }
 
   /* Move Constructor */
-  VectorRingBuffer(VectorRingBuffer &&input) noexcept
+  MatrixRingBuffer(MatrixRingBuffer &&input) noexcept
       : _head(input._head), _active_size(input._active_size),
-        _data_matrix(std::move(input._data_matrix)) {}
+        _data(std::move(input._data)) {}
 
-  VectorRingBuffer &operator=(VectorRingBuffer &&input) noexcept {
+  MatrixRingBuffer &operator=(MatrixRingBuffer &&input) noexcept {
     if (this != &input) {
       this->_head = input._head;
       this->_active_size = input._active_size;
-      this->_data_matrix = std::move(input._data_matrix);
+      this->_data = std::move(input._data);
     }
     return *this;
   }
@@ -158,7 +158,7 @@ public:
    * @param value Column vector (ElementSize x 1) to push.
    */
   inline void push(const OutputVector_Type &value) {
-    MatrixOperation::SetRow::compute(this->_data_matrix, value, this->_head);
+    this->_data[this->_head] = value;
     this->_advance_head();
   }
 
@@ -167,7 +167,7 @@ public:
    * @param value Scalar to push.
    */
   inline void push(const T &value) {
-    this->_data_matrix.access(0, this->_head) = value;
+    this->_data[this->_head](0, 0) = value;
     this->_advance_head();
   }
 
@@ -181,10 +181,7 @@ public:
             typename std::enable_if<ES != 1, int>::type = 0>
   inline auto get(std::size_t index_from_latest) const -> OutputVector_Type {
     std::size_t index = this->_resolve_index(index_from_latest);
-    OutputVector_Type result;
-
-    MatrixOperation::GetRow::compute(this->_data_matrix, index, result);
-    return result;
+    return this->_data[index];
   }
 
   /**
@@ -197,8 +194,7 @@ public:
             typename std::enable_if<ES == 1, int>::type = 0>
   inline auto get(std::size_t index_from_latest) const -> T {
     std::size_t index = this->_resolve_index(index_from_latest);
-
-    return this->_data_matrix.access(0, index);
+    return this->_data[index](0, 0);
   }
 
   /**
@@ -206,6 +202,23 @@ public:
    */
   inline auto get_active_size(void) const -> std::size_t {
     return this->_active_size;
+  }
+
+  /**
+   * @brief Compute the inner product (element-wise sum of products) of two
+   * arrays.
+   *
+   * @param a Left operand.
+   * @param b Right operand.
+   * @return Sum of element-wise products.
+   */
+  static inline auto inner_product(const OutputVector_Type &a,
+                                   const OutputVector_Type &b) -> T {
+    T result = static_cast<T>(0);
+    for (std::size_t i = 0; i < ElementSize; ++i) {
+      result += a(i, 0) * b(i, 0);
+    }
+    return result;
   }
 
 private:
@@ -234,8 +247,8 @@ private:
   std::size_t _head;
   std::size_t _active_size;
 
-  /* Storage: vectors stored column-wise, scalars in a flat array. */
-  PythonNumpy::DenseMatrix_Type<T, ElementSize, BufferSize> _data_matrix;
+  /* Storage: each element stored individually in a std::array. */
+  std::array<OutputVector_Type, BufferSize> _data;
 };
 
 /**
@@ -357,8 +370,8 @@ public:
     /* Update H0 scaling: gamma = (s^T y) / (y^T y) */
     Vector_Type s0 = this->_s.get(0);
     Vector_Type y0 = this->_y.get(0);
-    T ys = MatrixOperation::InnerProduct::compute(s0, y0);
-    T yy = MatrixOperation::InnerProduct::compute(y0, y0);
+    T ys = _MatrixRingBuffer_Type::inner_product(s0, y0);
+    T yy = _MatrixRingBuffer_Type::inner_product(y0, y0);
 
     this->_gamma =
         ys / Base::Utility::avoid_zero_divide(
@@ -389,7 +402,7 @@ public:
       Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.get(i);
 
-      alpha[i] = rho_i * MatrixOperation::InnerProduct::compute(si, q);
+      alpha[i] = rho_i * _MatrixRingBuffer_Type::inner_product(si, q);
       q = q - alpha[i] * yi;
     }
 
@@ -403,7 +416,7 @@ public:
       Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.get(i);
 
-      T beta = rho_i * MatrixOperation::InnerProduct::compute(yi, q);
+      T beta = rho_i * _MatrixRingBuffer_Type::inner_product(yi, q);
       q = q + (alpha[i] - beta) * si;
     }
   }
@@ -425,8 +438,8 @@ private:
    */
   inline bool _compute_rho_if_valid(const Vector_Type &g, const Vector_Type &s,
                                     const Vector_Type &y, T &rho_out) const {
-    T ys = MatrixOperation::InnerProduct::compute(s, y);
-    T norm_s_sq = MatrixOperation::InnerProduct::compute(s, s);
+    T ys = _MatrixRingBuffer_Type::inner_product(s, y);
+    T norm_s_sq = _MatrixRingBuffer_Type::inner_product(s, s);
 
     if (norm_s_sq <= static_cast<T>(PANOC_Constants::NORM_SMALL_LIMIT)) {
       return false;
@@ -457,9 +470,11 @@ private:
   std::size_t _cbfgs_alpha;
   T _cbfgs_epsilon;
 
-  VectorRingBuffer<T, MemorySize, ProblemSize> _s;
-  VectorRingBuffer<T, MemorySize, ProblemSize> _y;
-  VectorRingBuffer<T, MemorySize, 1> _rho;
+  using _MatrixRingBuffer_Type = MatrixRingBuffer<T, MemorySize, ProblemSize>;
+
+  MatrixRingBuffer<T, MemorySize, ProblemSize> _s;
+  MatrixRingBuffer<T, MemorySize, ProblemSize> _y;
+  MatrixRingBuffer<T, MemorySize, 1> _rho;
 
   T _gamma; /* initial Hessian scaling H0 = gamma * I */
   Vector_Type _old_state;
