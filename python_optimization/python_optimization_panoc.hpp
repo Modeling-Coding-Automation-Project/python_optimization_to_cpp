@@ -216,9 +216,13 @@ public:
   static inline auto inner_product(const Matrix_Type &a, const Matrix_Type &b)
       -> T {
     T result = static_cast<T>(0);
-    for (std::size_t i = 0; i < ELEMENT_SIZE; ++i) {
-      result += a(i, 0) * b(i, 0);
+
+    for (std::size_t i = 0; i < Matrix_Type::COLS; ++i) {
+      for (std::size_t j = 0; j < Matrix_Type::ROWS; ++j) {
+        result += a(i, j) * b(i, j);
+      }
     }
+
     return result;
   }
 
