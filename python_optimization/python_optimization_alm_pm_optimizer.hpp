@@ -307,7 +307,9 @@ template <typename T, std::size_t ProblemSize, std::size_t N1,
           std::size_t N2 = 0, std::size_t LBFGSMemory = 5>
 class ALM_Cache {
 public:
-  using PANOC_Cache_Type = PANOC_Cache<T, ProblemSize, LBFGSMemory>;
+  using PANOC_Cache_Type =
+      PANOC_Cache<PythonNumpy::DenseMatrix_Type<T, ProblemSize, 1>,
+                  LBFGSMemory>;
   using Y_Plus_Type = PythonNumpy::DenseMatrix_Type<T, N1, 1>;
   using Xi_Type = PythonNumpy::DenseMatrix_Type<T, (1 + N1), 1>;
   using W_ALM_Aux_Type = PythonNumpy::DenseMatrix_Type<T, N1, 1>;

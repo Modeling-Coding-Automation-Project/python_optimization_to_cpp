@@ -263,15 +263,14 @@ private:
  * two-loop recursion, where H is the L-BFGS approximation of the inverse
  * Hessian.
  *
- * @tparam T Scalar value type.
- * @tparam ProblemSize Dimension of the decision variable (column vector size).
+ * @tparam Vector_Type_In Matrix/vector type for the decision variable.
  * @tparam MemorySize Number of (s, y) pairs to store (L-BFGS memory).
  */
-template <typename T, std::size_t ProblemSize, std::size_t MemorySize>
-class L_BFGS_Buffer {
+template <typename Vector_Type_In, std::size_t MemorySize> class L_BFGS_Buffer {
 public:
   /* Type */
-  using Vector_Type = PythonNumpy::DenseMatrix_Type<T, ProblemSize, 1>;
+  using Vector_Type = Vector_Type_In;
+  using T = typename Vector_Type::Value_Type;
   using Scalar_Type = PythonNumpy::DenseMatrix_Type<T, 1, 1>;
 
 protected:
@@ -498,15 +497,14 @@ private:
  * Create once and reuse across multiple solve calls to avoid repeated memory
  * allocation.
  *
- * @tparam T Scalar value type.
- * @tparam ProblemSize Dimension of the decision variable vector u.
+ * @tparam Vector_Type_In Matrix/vector type for the decision variable.
  * @tparam LBFGSMemory L-BFGS memory size (number of stored pairs).
  */
-template <typename T, std::size_t ProblemSize, std::size_t LBFGSMemory>
-class PANOC_Cache {
+template <typename Vector_Type_In, std::size_t LBFGSMemory> class PANOC_Cache {
 public:
-  using Vector_Type = PythonNumpy::DenseMatrix_Type<T, ProblemSize, 1>;
-  using LBFGS_Type = L_BFGS_Buffer<T, ProblemSize, LBFGSMemory>;
+  using Vector_Type = Vector_Type_In;
+  using T = typename Vector_Type::Value_Type;
+  using LBFGS_Type = L_BFGS_Buffer<Vector_Type, LBFGSMemory>;
 
   /* Constructor */
   PANOC_Cache()
@@ -700,15 +698,10 @@ protected:
   using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_min_Type>;
   using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_max_Type>;
 
-  /**
-   * @brief Flat column vector type for PANOC internal computations.
-   *
-   * The PANOC algorithm treats the entire U_Horizon as a single
-   * flat column vector of size (INPUT_SIZE * NP) x 1.
-   */
-  using _FlatVector_Type = PythonNumpy::DenseMatrix_Type<_T, PROBLEM_SIZE, 1>;
+  using _Cache_Type = PANOC_Cache<U_Horizon_Type, LBFGSMemory>;
 
-  using _Cache_Type = PANOC_Cache<_T, PROBLEM_SIZE, LBFGSMemory>;
+  using _MatrixRingBuffer_InnerProduct_Type =
+      MatrixRingBuffer<U_Horizon_Type, 1>;
 
   using _SolverStatus_Type = PANOC_SolverStatus<_T>;
 
@@ -876,11 +869,10 @@ public:
   inline auto solve(const U_Horizon_Type &u_initial) -> U_Horizon_Type {
     this->_cache.reset();
 
-    /* Convert U_Horizon_Type to flat vector for internal computation */
-    _FlatVector_Type u = _to_flat(u_initial);
+    U_Horizon_Type u = u_initial;
 
     /* --- Initialization --- */
-    this->_cache.cost_value = this->_cost_func(_from_flat(u));
+    this->_cache.cost_value = this->_cost_func(u);
     this->_estimate_local_lipschitz(u);
     this->_cache.gamma =
         static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
@@ -944,50 +936,17 @@ public:
         this->_cache.norm_gamma_fpr;
     this->_solver_status.cost_value = this->_cache.cost_value;
 
-    return _from_flat(u);
+    return u;
   }
 
 protected:
-  /* ------------------------------------------------------------------ */
-  /* Internal helper: flat vector <-> U_Horizon_Type conversion         */
-  /* ------------------------------------------------------------------ */
-
   /**
-   * @brief Convert U_Horizon_Type to a flat column vector.
+   * @brief Project x onto the box [u_min, u_max] in-place.
    */
-  static inline auto _to_flat(const U_Horizon_Type &u_horizon)
-      -> _FlatVector_Type {
-    _FlatVector_Type flat;
+  inline void _project(U_Horizon_Type &x) const {
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        flat(k * INPUT_SIZE + i, 0) = u_horizon(i, k);
-      }
-    }
-    return flat;
-  }
-
-  /**
-   * @brief Convert a flat column vector back to U_Horizon_Type.
-   */
-  static inline auto _from_flat(const _FlatVector_Type &flat)
-      -> U_Horizon_Type {
-    U_Horizon_Type u_horizon;
-    for (std::size_t k = 0; k < NP; ++k) {
-      for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        u_horizon(i, k) = flat(k * INPUT_SIZE + i, 0);
-      }
-    }
-    return u_horizon;
-  }
-
-  /**
-   * @brief Project x onto the box [u_min, u_max] in-place (flat vector).
-   */
-  inline void _project(_FlatVector_Type &x) const {
-    for (std::size_t k = 0; k < NP; ++k) {
-      for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        std::size_t index = k * INPUT_SIZE + i;
-        _T val = x(index, 0);
+        _T val = x(i, k);
         _T lo = this->_u_min_matrix(i, k);
         _T hi = this->_u_max_matrix(i, k);
         if (val < lo) {
@@ -996,7 +955,7 @@ protected:
         if (val > hi) {
           val = hi;
         }
-        x(index, 0) = val;
+        x(i, k) = val;
       }
     }
   }
@@ -1008,37 +967,34 @@ protected:
    * The estimate is: L = ||grad(u+h) - grad(u)|| / ||h||
    * where h_i = max(delta, epsilon * |u_i|).
    */
-  inline void _estimate_local_lipschitz(_FlatVector_Type &u) {
+  inline void _estimate_local_lipschitz(U_Horizon_Type &u) {
 
     const _T delta = static_cast<_T>(PANOC_Constants::DELTA_LIPSCHITZ_DEFAULT);
     const _T epsilon =
         static_cast<_T>(PANOC_Constants::EPSILON_LIPSCHITZ_DEFAULT);
 
     /* Evaluate gradient at u */
-    _Gradient_Type grad_horizon = this->_gradient_func(_from_flat(u));
-    this->_cache.gradient_u = _to_flat(grad_horizon);
+    this->_cache.gradient_u = this->_gradient_func(u);
 
     /* Build perturbation h: h_i = max(delta, epsilon * |u_i|) */
-    _FlatVector_Type h;
+    U_Horizon_Type h;
     MatrixOperation::AbsoluteMaxScalarToMatrix::compute(u, delta, epsilon, h);
 
     _T norm_h = PythonNumpy::norm(h);
 
     /* Evaluate gradient at u + h */
-    _FlatVector_Type u_plus_h = u + h;
-    _Gradient_Type grad_perturbed_horizon =
-        this->_gradient_func(_from_flat(u_plus_h));
-    _FlatVector_Type grad_perturbed = _to_flat(grad_perturbed_horizon);
+    U_Horizon_Type u_plus_h = u + h;
+    U_Horizon_Type grad_perturbed = this->_gradient_func(u_plus_h);
 
     /* L = ||grad(u+h) - grad(u)|| / ||h|| */
-    _FlatVector_Type diff = grad_perturbed - this->_cache.gradient_u;
+    U_Horizon_Type diff = grad_perturbed - this->_cache.gradient_u;
     this->_cache.lipschitz_constant = PythonNumpy::norm(diff) / norm_h;
   }
 
   /**
    * @brief Compute the fixed-point residual: gamma_fpr = u - u_half_step.
    */
-  inline void _compute_fpr(const _FlatVector_Type &u) {
+  inline void _compute_fpr(const U_Horizon_Type &u) {
     this->_cache.gamma_fpr = u - this->_cache.u_half_step;
     this->_cache.norm_gamma_fpr = PythonNumpy::norm(this->_cache.gamma_fpr);
   }
@@ -1046,7 +1002,7 @@ protected:
   /**
    * @brief gradient_step = u - gamma * gradient_u.
    */
-  inline void _gradient_step(const _FlatVector_Type &u) {
+  inline void _gradient_step(const U_Horizon_Type &u) {
     this->_cache.gradient_step =
         u - this->_cache.gamma * this->_cache.gradient_u;
   }
@@ -1070,7 +1026,7 @@ protected:
   /**
    * @brief Update L-BFGS buffer and compute direction = H * gamma_fpr.
    */
-  inline void _lbfgs_direction(const _FlatVector_Type &u) {
+  inline void _lbfgs_direction(const U_Horizon_Type &u) {
     this->_cache.lbfgs.update_hessian(this->_cache.gamma_fpr, u);
     if (this->_cache.iteration > 0) {
       this->_cache.direction_lbfgs = this->_cache.gamma_fpr;
@@ -1086,8 +1042,8 @@ protected:
    */
   inline auto _lipschitz_check_rhs(void) const -> _T {
 
-    _T inner = MatrixOperation::InnerProduct::compute(this->_cache.gradient_u,
-                                                      this->_cache.gamma_fpr);
+    _T inner = _MatrixRingBuffer_InnerProduct_Type::inner_product(
+        this->_cache.gradient_u, this->_cache.gamma_fpr);
     _T abs_cost = this->_cache.cost_value;
     if (abs_cost < static_cast<_T>(0)) {
       abs_cost = -abs_cost;
@@ -1105,9 +1061,9 @@ protected:
   /**
    * @brief Update the Lipschitz constant estimate (and gamma, sigma).
    */
-  inline void _update_lipschitz_constant(_FlatVector_Type &u) {
-    _T cost_half = this->_cost_func(_from_flat(this->_cache.u_half_step));
-    this->_cache.cost_value = this->_cost_func(_from_flat(u));
+  inline void _update_lipschitz_constant(U_Horizon_Type &u) {
+    _T cost_half = this->_cost_func(this->_cache.u_half_step);
+    this->_cache.cost_value = this->_cost_func(u);
 
     for (std::size_t lip_iter = 0;
          lip_iter < this->_max_lipschitz_update_iteration; ++lip_iter) {
@@ -1124,7 +1080,7 @@ protected:
 
       this->_gradient_step(u);
       this->_half_step();
-      cost_half = this->_cost_func(_from_flat(this->_cache.u_half_step));
+      cost_half = this->_cost_func(this->_cache.u_half_step);
       this->_compute_fpr(u);
     }
 
@@ -1137,7 +1093,7 @@ protected:
   /**
    * @brief u_plus = u - (1 - tau)*gamma_fpr - tau * direction_lbfgs.
    */
-  inline void _compute_u_plus(const _FlatVector_Type &u) {
+  inline void _compute_u_plus(const U_Horizon_Type &u) {
 
     _T one_minus_tau = static_cast<_T>(1) - this->_cache.tau;
     this->_cache.u_plus = u - one_minus_tau * this->_cache.gamma_fpr -
@@ -1150,10 +1106,9 @@ protected:
    */
   inline void _compute_rhs_ls(void) {
 
-    _FlatVector_Type diff =
-        this->_cache.gradient_step - this->_cache.u_half_step;
-    _T dist_sq = MatrixOperation::InnerProduct::compute(diff, diff);
-    _T grad_norm_sq = MatrixOperation::InnerProduct::compute(
+    U_Horizon_Type diff = this->_cache.gradient_step - this->_cache.u_half_step;
+    _T dist_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(diff, diff);
+    _T grad_norm_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(
         this->_cache.gradient_u, this->_cache.gradient_u);
     _T fbe = this->_cache.cost_value -
              static_cast<_T>(0.5) * this->_cache.gamma * grad_norm_sq +
@@ -1170,25 +1125,22 @@ protected:
    * Side effects: updates u_plus, cost_value, gradient_u,
    * gradient_step, u_half_step, lhs_ls.
    */
-  inline bool _line_search_condition(const _FlatVector_Type &u) {
+  inline bool _line_search_condition(const U_Horizon_Type &u) {
     /* Candidate next iterate */
     this->_compute_u_plus(u);
 
     /* Evaluate cost and gradient at u_plus */
-    this->_cache.cost_value = this->_cost_func(_from_flat(this->_cache.u_plus));
-    _Gradient_Type grad_horizon =
-        this->_gradient_func(_from_flat(this->_cache.u_plus));
-    this->_cache.gradient_u = _to_flat(grad_horizon);
+    this->_cache.cost_value = this->_cost_func(this->_cache.u_plus);
+    this->_cache.gradient_u = this->_gradient_func(this->_cache.u_plus);
 
     /* Gradient step and half step at u_plus */
     this->_gradient_step_uplus();
     this->_half_step();
 
     /* LHS of line-search condition (FBE at u_plus) */
-    _FlatVector_Type diff =
-        this->_cache.gradient_step - this->_cache.u_half_step;
-    _T dist_sq = MatrixOperation::InnerProduct::compute(diff, diff);
-    _T grad_norm_sq = MatrixOperation::InnerProduct::compute(
+    U_Horizon_Type diff = this->_cache.gradient_step - this->_cache.u_half_step;
+    _T dist_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(diff, diff);
+    _T grad_norm_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(
         this->_cache.gradient_u, this->_cache.gradient_u);
     this->_cache.lhs_ls =
         this->_cache.cost_value -
@@ -1201,12 +1153,11 @@ protected:
   /**
    * @brief First-iteration update (no line search): u <- u_half_step.
    */
-  inline void _update_no_linesearch(_FlatVector_Type &u) {
+  inline void _update_no_linesearch(U_Horizon_Type &u) {
 
     u = this->_cache.u_half_step;
-    this->_cache.cost_value = this->_cost_func(_from_flat(u));
-    _Gradient_Type grad_horizon = this->_gradient_func(_from_flat(u));
-    this->_cache.gradient_u = _to_flat(grad_horizon);
+    this->_cache.cost_value = this->_cost_func(u);
+    this->_cache.gradient_u = this->_gradient_func(u);
     this->_gradient_step(u);
     this->_half_step();
   }
@@ -1214,7 +1165,7 @@ protected:
   /**
    * @brief Perform a line search on tau to select the next iterate.
    */
-  inline void _linesearch(_FlatVector_Type &u) {
+  inline void _linesearch(U_Horizon_Type &u) {
 
     this->_compute_rhs_ls();
     this->_cache.tau = static_cast<_T>(1);
@@ -1238,10 +1189,12 @@ protected:
   /**
    * @brief Check if all elements of the flat vector are finite.
    */
-  static inline bool _is_all_finite(const _FlatVector_Type &v) {
-    for (std::size_t i = 0; i < PROBLEM_SIZE; ++i) {
-      if (!std::isfinite(static_cast<double>(v(i, 0)))) {
-        return false;
+  static inline bool _is_all_finite(const U_Horizon_Type &v) {
+    for (std::size_t k = 0; k < NP; ++k) {
+      for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
+        if (!std::isfinite(static_cast<double>(v(i, k)))) {
+          return false;
+        }
       }
     }
     return true;
