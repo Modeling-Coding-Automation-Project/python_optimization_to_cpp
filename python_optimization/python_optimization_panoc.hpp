@@ -100,7 +100,7 @@ template <typename T> struct PANOC_SolverStatus {
  *
  * @tparam T Scalar value type (e.g. double).
  * @tparam BufferSize Maximum number of entries the buffer can hold.
- * @tparam ElementSize Size of each vector element (number of rows).
+ * @tparam ELEMENT_SIZE Size of each vector element (number of rows).
  *                     If 0, each element is a scalar.
  */
 template <typename Matrix_Type, std::size_t BufferSize> class MatrixRingBuffer {
@@ -108,9 +108,11 @@ public:
   /* Type */
   using T = typename Matrix_Type::Value_Type;
 
+  static constexpr std::size_t ELEMENT_SIZE =
+      Matrix_Type::COLS * Matrix_Type::ROWS;
+
   /* Compatibility check */
   static_assert(BufferSize > 0, "BufferSize must be greater than 0");
-  static_assert(ElementSize > 0, "ElementSize must be greater than 0");
 
 public:
   /* Constructor */
@@ -154,7 +156,7 @@ public:
 
   /**
    * @brief Push a new vector value, overwriting the oldest entry if full.
-   * @param value Column vector (ElementSize x 1) to push.
+   * @param value Column vector (ELEMENT_SIZE x 1) to push.
    */
   inline void push(const Matrix_Type &value) {
     this->_data[this->_head] = value;
@@ -171,12 +173,12 @@ public:
   }
 
   /**
-   * @brief Get the i-th most recent vector element (ElementSize > 1).
+   * @brief Get the i-th most recent vector element (ELEMENT_SIZE > 1).
    *
    * @param index_from_latest 0 = most recent, 1 = one before newest, ...
-   * @return Column vector (ElementSize x 1).
+   * @return Column vector (ELEMENT_SIZE x 1).
    */
-  template <std::size_t ES = ElementSize,
+  template <std::size_t ES = ELEMENT_SIZE,
             typename std::enable_if<ES != 1, int>::type = 0>
   inline auto get(std::size_t index_from_latest) const -> Matrix_Type {
     std::size_t index = this->_resolve_index(index_from_latest);
@@ -184,12 +186,12 @@ public:
   }
 
   /**
-   * @brief Get the i-th most recent scalar element (ElementSize == 1).
+   * @brief Get the i-th most recent scalar element (ELEMENT_SIZE == 1).
    *
    * @param index_from_latest 0 = most recent, 1 = one before newest, ...
    * @return Element accessed directly from the data matrix.
    */
-  template <std::size_t ES = ElementSize,
+  template <std::size_t ES = ELEMENT_SIZE,
             typename std::enable_if<ES == 1, int>::type = 0>
   inline auto get(std::size_t index_from_latest) const -> T {
     std::size_t index = this->_resolve_index(index_from_latest);
@@ -214,7 +216,7 @@ public:
   static inline auto inner_product(const Matrix_Type &a, const Matrix_Type &b)
       -> T {
     T result = static_cast<T>(0);
-    for (std::size_t i = 0; i < ElementSize; ++i) {
+    for (std::size_t i = 0; i < ELEMENT_SIZE; ++i) {
       result += a(i, 0) * b(i, 0);
     }
     return result;
@@ -272,6 +274,7 @@ protected:
   /* Type */
   using _MatrixRingBuffer_Type = MatrixRingBuffer<Vector_Type, MemorySize>;
 
+public:
   /* Constructor */
   L_BFGS_Buffer()
       : _sy_epsilon(static_cast<T>(PANOC_Constants::SY_EPSILON_DEFAULT)),
