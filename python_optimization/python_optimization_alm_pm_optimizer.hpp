@@ -512,7 +512,10 @@ public:
    * @brief Reset the cache to its initial state (called at the start of each
    * solve).
    */
-  inline void reset(void) {
+  inline void reset(T xi_initial_penalty = static_cast<T>(
+                        ALM_Constants::DEFAULT_INITIAL_PENALTY)) {
+    this->xi.access(0, 0) = xi_initial_penalty;
+
     this->panoc_cache.reset();
     this->iteration = 0;
     this->f2_norm = static_cast<T>(0);
