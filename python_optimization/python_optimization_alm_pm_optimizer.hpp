@@ -104,6 +104,11 @@ static constexpr double DEFAULT_INITIAL_PENALTY = 10.0;
 /** @brief Machine epsilon for numerical comparisons. */
 static constexpr double SMALL_EPSILON = 1e-30;
 
+/** @brief Large number for initializing norms (e.g., delta_y_norm_plus). */
+static constexpr double NORM_INITIAL = 1e30;
+
+static constexpr double INNER_PROBLEM_NORM_FPR_INITIAL = -1.0;
+
 } // namespace ALM_Constants
 
 // ============================================================================
@@ -360,10 +365,12 @@ public:
   ALM_Cache()
       : panoc_cache(), y_plus(), xi(), w_alm_aux(), w_pm(),
         delta_y_norm(static_cast<T>(0)),
-        delta_y_norm_plus(static_cast<T>(1e30)), f2_norm(static_cast<T>(0)),
-        f2_norm_plus(static_cast<T>(1e30)), iteration(0),
+        delta_y_norm_plus(static_cast<T>(ALM_Constants::NORM_INITIAL)),
+        f2_norm(static_cast<T>(0)),
+        f2_norm_plus(static_cast<T>(ALM_Constants::NORM_INITIAL)), iteration(0),
         inner_iteration_count(0),
-        last_inner_problem_norm_fpr(static_cast<T>(-1)) {
+        last_inner_problem_norm_fpr(
+            static_cast<T>(ALM_Constants::INNER_PROBLEM_NORM_FPR_INITIAL)) {
     /* Initialize xi(0, 0) = c (penalty parameter) to default */
     this->xi(0, 0) = static_cast<T>(ALM_Constants::DEFAULT_INITIAL_PENALTY);
   }
@@ -371,10 +378,12 @@ public:
   explicit ALM_Cache(const T &panoc_tolerance)
       : panoc_cache(panoc_tolerance), y_plus(), xi(), w_alm_aux(), w_pm(),
         delta_y_norm(static_cast<T>(0)),
-        delta_y_norm_plus(static_cast<T>(1e30)), f2_norm(static_cast<T>(0)),
-        f2_norm_plus(static_cast<T>(1e30)), iteration(0),
+        delta_y_norm_plus(static_cast<T>(ALM_Constants::NORM_INITIAL)),
+        f2_norm(static_cast<T>(0)),
+        f2_norm_plus(static_cast<T>(ALM_Constants::NORM_INITIAL)), iteration(0),
         inner_iteration_count(0),
-        last_inner_problem_norm_fpr(static_cast<T>(-1)) {
+        last_inner_problem_norm_fpr(
+            static_cast<T>(ALM_Constants::INNER_PROBLEM_NORM_FPR_INITIAL)) {
     this->xi(0, 0) = static_cast<T>(ALM_Constants::DEFAULT_INITIAL_PENALTY);
   }
 
