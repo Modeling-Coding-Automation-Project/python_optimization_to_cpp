@@ -1558,19 +1558,26 @@ protected:
   }
 
   /**
-   * @brief Update Lagrange multipliers:
-   *    y^+ = y + c * [F1(u) - Pi_C(F1(u) + y/c)]
-   *
-   * Steps:
+   * @brief Update Lagrange multipliers y^+ (in-place on cache).
+   * Specialization for N1 == 0: no ALM constraints, no-op.
+   */
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  inline void _update_lagrange_multipliers(const U_Horizon_Type &u) {
+    static_cast<void>(u);
+  }
+
+  /**
+   * @brief Update Lagrange multipliers y^+ (in-place on cache).
+   * Specialization for N1 > 0:
    *   1. w = F1(u)
    *   2. y_plus = w + y/c
    *   3. y_plus = Pi_C(y_plus)
    *   4. y_plus = y + c * (w - y_plus)
    */
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 > 0), int>::type = 0>
   inline void _update_lagrange_multipliers(const U_Horizon_Type &u) {
-    if (N1 == 0) {
-      return;
-    }
     if (!this->_problem.mapping_f1 || !this->_problem.set_c_project) {
       return;
     }
@@ -1579,7 +1586,7 @@ protected:
 
     /* Extract y from xi */
     _F1_Output_Type y;
-    for (std::size_t i = 0; i < N1; ++i) {
+    for (std::size_t i = 0; i < _N1; ++i) {
       y.access(i, 0) = this->_cache.xi.access(i + 1, 0);
     }
 
@@ -1590,7 +1597,11 @@ protected:
     this->_cache.w_alm_aux = w;
 
     /* Step 2: y_plus = F1(u) + y/c */
-    this->_cache.y_plus = w + (static_cast<_T>(1) / c) * y;
+    this->_cache.y_plus =
+        w + (static_cast<_T>(1) /
+             Base::Utility::avoid_zero_divide(
+                 c, static_cast<_T>(ALM_Constants::SMALL_EPSILON))) *
+                y;
 
     /* Step 3: y_plus = Pi_C(y_plus) */
     this->_problem.set_c_project(this->_cache.y_plus);
