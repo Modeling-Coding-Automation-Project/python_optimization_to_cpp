@@ -1,6 +1,8 @@
 ﻿#include <type_traits>
 #include <iostream>
 #include <cmath>
+#include <tuple>
+#include <stdexcept>
 
 #include "python_optimization.hpp"
 
@@ -760,6 +762,489 @@ void test_sqp_active_set_pcg_pls() {
 
 
 
+template <typename T>
+void test_OptimizationEngine_CostMatrices() {
+    using namespace PythonNumpy;
+    using namespace PythonControl;
+    using namespace PythonOptimization;
+    using namespace SQP_TestData;
+
+    MCAPTester<T> tester;
+
+    constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-4);
+    //const T NEAR_LIMIT_SOFT = 1.0e-2F;
+
+    /* 定義 */
+    constexpr std::size_t STATE_SIZE = 4;
+    constexpr std::size_t INPUT_SIZE = 2;
+    constexpr std::size_t OUTPUT_SIZE = 2;
+
+    constexpr std::size_t NP = 10;
+
+    using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter<T>;
+
+    using State_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::State_Jacobian_x_Type<T>;
+    using State_Jacobian_U_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::State_Jacobian_u_Type<T>;
+    using Measurement_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Measurement_Jacobian_x_Type<T>;
+
+    using X_Type = StateSpaceState_Type<T, STATE_SIZE>;
+    using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
+
+    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+        T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
+
+    PythonOptimization::StateFunctionJacobian_X_Object<
+        State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionJacobian_U_Object<
+        State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+        Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+
+    using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
+    using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
+    using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
+
+    Qx_Type Qx = make_DiagMatrix<STATE_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.1), static_cast<T>(0.5), static_cast<T>(0.1)
+    );
+    R_Type R = make_DiagMatrix<INPUT_SIZE>(
+        static_cast<T>(0.1), static_cast<T>(0.1)
+    );
+    Qy_Type Qy = make_DiagMatrix<OUTPUT_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.5)
+    );
+
+    using U_Min_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using U_Max_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+
+    U_Min_Type u_min = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(-1),
+        static_cast<T>(-1)
+    );
+    U_Max_Type u_max = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(1),
+        static_cast<T>(1)
+    );
+
+    using Y_Min_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+    using Y_Max_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+
+    Y_Min_Type y_min;
+    Y_Max_Type y_max;
+
+    using Reference_Trajectory_Type = DenseMatrix_Type<T, OUTPUT_SIZE, (NP + 1)>;
+
+    Reference_Trajectory_Type reference_trajectory;
+
+    /* コンストラクタ */
+    using Cost_Matrices_Type = OptimizationEngine_CostMatrices_Type<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type>;
+
+    Cost_Matrices_Type cost_matrices =
+        make_OptimizationEngine_CostMatrices<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type>(
+            Qx, R, Qy, u_min, u_max, y_min, y_max);
+
+    /* コピー、ムーブ */
+    Cost_Matrices_Type cost_matrices_copy = cost_matrices;
+    Cost_Matrices_Type cost_matrices_move = std::move(cost_matrices_copy);
+    cost_matrices = std::move(cost_matrices_move);
+
+    T u_min_value = cost_matrices.state_space_parameters.k1;
+
+    tester.expect_near(u_min_value, static_cast<T>(10), NEAR_LIMIT_STRICT,
+        "check u_min value.");
+
+    cost_matrices.set_function_objects(
+        state_function,
+        measurement_function,
+        state_jacobian_x_function,
+        state_jacobian_u_function,
+        measurement_jacobian_x_function
+    );
+
+    cost_matrices.reference_trajectory = reference_trajectory;
+
+    auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
+        static_cast<T>(5),
+        static_cast<T>(0),
+        static_cast<T>(5),
+        static_cast<T>(0)
+    );
+
+    cost_matrices.X_initial = X_initial;
+
+    typename Cost_Matrices_Type::U_Horizon_Type U_horizon_initial;
+
+    /* compute_cost 動作確認 */
+    auto cost_value = cost_matrices.compute_cost(U_horizon_initial);
+
+    tester.expect_near(cost_value > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_cost positive.");
+
+    /* compute_gradient 動作確認 */
+    auto gradient = cost_matrices.compute_gradient(U_horizon_initial);
+
+    auto gradient_row_0 = MatrixOperation::get_row(gradient, 0);
+
+    T gradient_0_norm = static_cast<T>(0);
+    for (std::size_t i = 0; i < gradient_row_0.matrix.data.size(); i++) {
+        gradient_0_norm += gradient_row_0(i, 0) * gradient_row_0(i, 0);
+    }
+    gradient_0_norm = std::sqrt(gradient_0_norm);
+
+    tester.expect_near(gradient_0_norm > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_gradient non-zero.");
+
+    /* compute_output_mapping 動作確認 */
+    auto Y_horizon = cost_matrices.compute_output_mapping(U_horizon_initial);
+
+    auto Y_horizon_row_0 = MatrixOperation::get_row(Y_horizon, 0);
+
+    T y_horizon_0_norm = static_cast<T>(0);
+    for (std::size_t i = 0; i < Y_horizon_row_0.matrix.data.size(); i++) {
+        y_horizon_0_norm += Y_horizon_row_0(i, 0) * Y_horizon_row_0(i, 0);
+    }
+    y_horizon_0_norm = std::sqrt(y_horizon_0_norm);
+
+    tester.expect_near(y_horizon_0_norm > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_output_mapping non-zero.");
+
+    /* compute_output_jacobian_trans 動作確認 */
+    typename Cost_Matrices_Type::Y_Horizon_Type D;
+
+    for (std::size_t k = 0; k < (NP + 1); k++) {
+        auto d_row = make_DenseMatrix<OUTPUT_SIZE, 1>(
+            static_cast<T>(1), static_cast<T>(1)
+        );
+        MatrixOperation::set_row(D, d_row, k);
+    }
+
+    auto jf1_trans_d = cost_matrices.compute_output_jacobian_trans(U_horizon_initial, D);
+
+    auto jf1_row_0 = MatrixOperation::get_row(jf1_trans_d, 0);
+
+    T jf1_0_norm = static_cast<T>(0);
+    for (std::size_t i = 0; i < jf1_row_0.matrix.data.size(); i++) {
+        jf1_0_norm += jf1_row_0(i, 0) * jf1_row_0(i, 0);
+    }
+    jf1_0_norm = std::sqrt(jf1_0_norm);
+
+    tester.expect_near(jf1_0_norm > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check compute_output_jacobian_trans non-zero.");
+
+    /* getter 動作確認 */
+    auto Qx_get = cost_matrices.get_Qx();
+    tester.expect_near(Qx_get.matrix.data, Qx.matrix.data, NEAR_LIMIT_STRICT,
+        "check get_Qx.");
+
+    auto R_get = cost_matrices.get_R();
+    tester.expect_near(R_get.matrix.data, R.matrix.data, NEAR_LIMIT_STRICT,
+        "check get_R.");
+
+    auto Qy_get = cost_matrices.get_Qy();
+    tester.expect_near(Qy_get.matrix.data, Qy.matrix.data, NEAR_LIMIT_STRICT,
+        "check get_Qy.");
+
+
+    tester.throw_error_if_test_failed();
+}
+
+
+template <typename T>
+void test_alm_pm_optimizer() {
+    using namespace PythonNumpy;
+    using namespace PythonControl;
+    using namespace PythonOptimization;
+    using namespace SQP_TestData;
+
+    MCAPTester<T> tester;
+
+    constexpr T NEAR_LIMIT_STRICT = std::is_same<T, double>::value ? T(1.0e-5) : T(1.0e-4);
+    const T NEAR_LIMIT_SOFT = std::is_same<T, double>::value ? T(1.0e-2) : T(1.0e-1);
+
+    /* Cost Matrices 定義 */
+    constexpr std::size_t STATE_SIZE = 4;
+    constexpr std::size_t INPUT_SIZE = 2;
+    constexpr std::size_t OUTPUT_SIZE = 2;
+
+    constexpr std::size_t NP = 10;
+
+    using Parameter_Type = sqp_2_mass_spring_damper_demo_parameter::Parameter<T>;
+
+    using State_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::State_Jacobian_x_Type<T>;
+    using State_Jacobian_U_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::State_Jacobian_u_Type<T>;
+    using Measurement_Jacobian_X_Matrix_Type =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Measurement_Jacobian_x_Type<T>;
+
+    using X_Type = StateSpaceState_Type<T, STATE_SIZE>;
+    using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
+
+    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+        T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
+
+    PythonOptimization::StateFunctionJacobian_X_Object<
+        State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::StateFunctionJacobian_U_Object<
+        State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
+        sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+        Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
+
+    using Qx_Type = DiagMatrix_Type<T, STATE_SIZE>;
+    using R_Type = DiagMatrix_Type<T, INPUT_SIZE>;
+    using Qy_Type = DiagMatrix_Type<T, OUTPUT_SIZE>;
+
+    Qx_Type Qx = make_DiagMatrix<STATE_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.1), static_cast<T>(0.5), static_cast<T>(0.1)
+    );
+    R_Type R = make_DiagMatrix<INPUT_SIZE>(
+        static_cast<T>(0.1), static_cast<T>(0.1)
+    );
+    Qy_Type Qy = make_DiagMatrix<OUTPUT_SIZE>(
+        static_cast<T>(0.5), static_cast<T>(0.5)
+    );
+
+    using U_Min_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+    using U_Max_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
+
+    U_Min_Type u_min = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(-1),
+        static_cast<T>(-1)
+    );
+    U_Max_Type u_max = make_DenseMatrix<INPUT_SIZE, 1>(
+        static_cast<T>(1),
+        static_cast<T>(1)
+    );
+
+    using Y_Min_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+    using Y_Max_Type = SparseMatrixEmpty_Type<T, OUTPUT_SIZE, 1>;
+
+    Y_Min_Type y_min;
+    Y_Max_Type y_max;
+
+    using Reference_Trajectory_Type = DenseMatrix_Type<T, OUTPUT_SIZE, (NP + 1)>;
+
+    Reference_Trajectory_Type reference_trajectory;
+
+    using Cost_Matrices_Type = OptimizationEngine_CostMatrices_Type<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type>;
+
+    Cost_Matrices_Type cost_matrices =
+        make_OptimizationEngine_CostMatrices<T, NP, Parameter_Type,
+        U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,
+        State_Jacobian_X_Matrix_Type,
+        State_Jacobian_U_Matrix_Type,
+        Measurement_Jacobian_X_Matrix_Type>(
+            Qx, R, Qy, u_min, u_max, y_min, y_max);
+
+    cost_matrices.set_function_objects(
+        state_function,
+        measurement_function,
+        state_jacobian_x_function,
+        state_jacobian_u_function,
+        measurement_jacobian_x_function
+    );
+
+    cost_matrices.reference_trajectory = reference_trajectory;
+
+    auto X_initial = make_DenseMatrix<STATE_SIZE, 1>(
+        static_cast<T>(5),
+        static_cast<T>(0),
+        static_cast<T>(5),
+        static_cast<T>(0)
+    );
+
+    cost_matrices.X_initial = X_initial;
+
+    /* ALM 定義 */
+    constexpr std::size_t N1 = OUTPUT_SIZE * (NP + 1);
+    constexpr std::size_t N2 = 0;
+
+    using U_Horizon_Type = typename Cost_Matrices_Type::U_Horizon_Type;
+    using Y_Horizon_Type = typename Cost_Matrices_Type::Y_Horizon_Type;
+    using F1_Output_Type = DenseMatrix_Type<T, N1, 1>;
+    using Xi_Type = DenseMatrix_Type<T, (1 + N1), 1>;
+
+    /* ALM Factory */
+    ALM_Factory_Type<Cost_Matrices_Type, N1, N2> alm_factory;
+
+    alm_factory.set_cost_function(
+        [&cost_matrices](const U_Horizon_Type& u) -> T {
+            return cost_matrices.compute_cost(u);
+        }
+    );
+
+    alm_factory.set_gradient_function(
+        [&cost_matrices](const U_Horizon_Type& u) -> U_Horizon_Type {
+            return cost_matrices.compute_gradient(u);
+        }
+    );
+
+    auto mapping_f1_func =
+        [&cost_matrices](const U_Horizon_Type& u) -> F1_Output_Type {
+            auto Y_horizon = cost_matrices.compute_output_mapping(u);
+            F1_Output_Type f1;
+            for (std::size_t k = 0; k < (NP + 1); k++) {
+                auto y_k = MatrixOperation::get_row(Y_horizon, k);
+                for (std::size_t j = 0; j < OUTPUT_SIZE; j++) {
+                    f1(0, k * OUTPUT_SIZE + j) = y_k(0, j);
+                }
+            }
+            return f1;
+        };
+
+    alm_factory.set_mapping_f1(mapping_f1_func);
+
+    alm_factory.set_jacobian_f1_trans(
+        [&cost_matrices](const U_Horizon_Type& u,
+            const F1_Output_Type& d) -> U_Horizon_Type {
+            Y_Horizon_Type D;
+            for (std::size_t k = 0; k < (NP + 1); k++) {
+                Y_Type d_k;
+                for (std::size_t j = 0; j < OUTPUT_SIZE; j++) {
+                    d_k(0, j) = d(0, k * OUTPUT_SIZE + j);
+                }
+                MatrixOperation::set_row(D, d_k, k);
+            }
+            return cost_matrices.compute_output_jacobian_trans(u, D);
+        }
+    );
+
+    /* 出力制約の Box Projection (広い範囲で非拘束) */
+    F1_Output_Type y_min_flat, y_max_flat;
+    for (std::size_t k = 0; k < (NP + 1); k++) {
+        for (std::size_t j = 0; j < OUTPUT_SIZE; j++) {
+            y_min_flat(0, k * OUTPUT_SIZE + j) = static_cast<T>(-100);
+            y_max_flat(0, k * OUTPUT_SIZE + j) = static_cast<T>(100);
+        }
+    }
+
+    BoxProjectionOperator_Type<T, N1> box_proj_c(y_min_flat, y_max_flat);
+
+    alm_factory.set_c_projection(
+        [&box_proj_c](F1_Output_Type& x) {
+            box_proj_c.project(x);
+        }
+    );
+
+    /* ALM Problem */
+    ALM_Problem_Type<Cost_Matrices_Type, N1, N2> problem;
+
+    problem.set_parametric_cost(
+        [&alm_factory](const U_Horizon_Type& u,
+            const Xi_Type& xi) -> T {
+            return alm_factory.psi(u, xi);
+        }
+    );
+
+    problem.set_parametric_gradient(
+        [&alm_factory](const U_Horizon_Type& u,
+            const Xi_Type& xi) -> U_Horizon_Type {
+            return alm_factory.d_psi(u, xi);
+        }
+    );
+
+    problem.set_u_min_matrix(cost_matrices.get_U_min_matrix());
+    problem.set_u_max_matrix(cost_matrices.get_U_max_matrix());
+    problem.set_mapping_f1(mapping_f1_func);
+
+    problem.set_c_projection(
+        [&box_proj_c](F1_Output_Type& x) {
+            box_proj_c.project(x);
+        }
+    );
+
+    /* ALM_PM_Optimizer */
+    ALM_PM_Optimizer_Type<Cost_Matrices_Type, N1, N2> solver =
+        make_ALM_PM_Optimizer<Cost_Matrices_Type, N1, N2>();
+
+    solver.set_problem(problem);
+
+    /* コピー、ムーブ */
+    ALM_PM_Optimizer_Type<Cost_Matrices_Type, N1, N2> solver_copy = solver;
+    ALM_PM_Optimizer_Type<Cost_Matrices_Type, N1, N2> solver_move = std::move(solver_copy);
+    solver = std::move(solver_move);
+
+    /* solve */
+    solver.set_solver_max_iteration(50, 500);
+    solver.set_epsilon_tolerance(static_cast<T>(1.0e-4));
+    solver.set_delta_tolerance(static_cast<T>(1.0e-4));
+    solver.set_initial_penalty(static_cast<T>(10));
+    solver.set_initial_inner_tolerance(static_cast<T>(0.1));
+
+    U_Horizon_Type U_horizon_initial;
+
+    auto U_horizon_opt = solver.solve(U_horizon_initial);
+
+    auto U_horizon_opt_answer = Matrix<DefDense, T, INPUT_SIZE, NP>({
+        {static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(0.88495493), static_cast<T>(-0.04190774) },
+        {static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(1), static_cast<T>(1),
+         static_cast<T>(0.88495493), static_cast<T>(-0.04190774) }
+    });
+
+    tester.expect_near(U_horizon_opt.matrix.data, U_horizon_opt_answer.matrix.data, NEAR_LIMIT_SOFT,
+        "check U_horizon_opt.");
+
+    /* solver status 確認 */
+    auto status = solver.get_solver_status();
+
+    tester.expect_near(status.cost > static_cast<T>(0), static_cast<T>(true),
+        NEAR_LIMIT_STRICT,
+        "check cost positive.");
+
+    std::size_t outer_count = 0;
+    std::size_t inner_count = 0;
+    std::tie(outer_count, inner_count) = solver.get_solver_step_iterated_number();
+
+    if (outer_count == 0) {
+        throw std::runtime_error("outer_count should be greater than 0 after update_manipulation.");
+    }
+    if (inner_count == 0) {
+        throw std::runtime_error("inner_count should be greater than 0 after update_manipulation.");
+    }
+
+
+    tester.throw_error_if_test_failed();
+}
+
+
 int main() {
 
     test_active_set<double>();
@@ -781,6 +1266,14 @@ int main() {
     test_sqp_active_set_pcg_pls<double>();
 
     test_sqp_active_set_pcg_pls<float>();
+
+    test_OptimizationEngine_CostMatrices<double>();
+
+    test_OptimizationEngine_CostMatrices<float>();
+
+    test_alm_pm_optimizer<double>();
+
+    test_alm_pm_optimizer<float>();
 
 
     return 0;

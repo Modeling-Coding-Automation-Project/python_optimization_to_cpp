@@ -1,12 +1,16 @@
 """
-File: sqp_matrix_utility_deploy.py
+File: optimization_engine_matrix_utility_deploy.py
 
-This module provides utilities for deploying SQP (Sequential Quadratic Programming)
+This module provides utilities for deploying PANOC/ALM optimization engine
 matrix-related code from Python to C++ for NMPC
 (Nonlinear Model Predictive Control) applications.
 It automates the generation of C++ header files for cost matrices,
-state and measurement functions, Jacobians, Hessians, and constraint limits,
+state and measurement functions, Jacobians, and constraint limits,
 based on Python data structures and code.
+
+Unlike sqp_matrix_utility_deploy.py, this module does not generate
+Hessian code, as the PANOC/ALM algorithm only requires first-order
+gradient information.
 
 Usage:
 ------
@@ -36,7 +40,7 @@ from optimization_utility.common_optimization_deploy import create_and_write_sta
 from optimization_utility.common_optimization_deploy import create_and_write_measurement_function_code
 from optimization_utility.common_optimization_deploy import create_and_write_state_measurement_jacobian_code
 
-from external_libraries.MCAP_python_optimization.optimization_utility.sqp_matrix_utility import SQP_CostMatrices_NMPC
+from external_libraries.MCAP_python_optimization.optimization_utility.optimization_engine_matrix_utility import OptimizationEngine_CostMatrices
 from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import NumpyDeploy
 from external_libraries.python_numpy_to_cpp.python_numpy.numpy_deploy import python_to_cpp_types
 from external_libraries.MCAP_python_control.python_control.control_deploy import ControlDeploy
@@ -44,113 +48,30 @@ from external_libraries.MCAP_python_control.python_control.control_deploy import
 from external_libraries.python_control_to_cpp.python_control.kalman_filter_deploy import FunctionToCppVisitor
 
 
-def create_and_write_state_measurement_hessian_code(
-        function_name: str,
-        output_type: str,
-        type_name: str,
-):
+class OptimizationEngine_MatrixUtilityDeploy:
     """
-    Generates C++ header code for state measurement Hessian functions
-      from Python source code and writes it to a file.
-
-    This function locates the Python source file corresponding 
-    to the given function name, extracts its functions,
-    converts them to C++ code, and generates a header file (.hpp) 
-    containing the converted code. It also handles
-    sparse matrix code generation if applicable.
-
-    Args:
-        function_name (str): The name of the function whose code
-          should be extracted and converted.
-        output_type (str): The C++ output type to use in the generated code.
-        type_name (str): The C++ type name for matrix or vector types
-          in the generated code.
-
-    Returns:
-        Tuple[str, List[Any]]: A tuple containing the saved file name
-          and a list of sparse matrix availability flags.
-    """
-    file_path = ControlDeploy.find_file(
-        f"{function_name}.py", os.getcwd())
-
-    extractor = FunctionExtractor(file_path)
-    functions = extractor.extract()
-    state_function_code = []
-    SparseAvailable_list = []
-
-    for _, code in functions.items():
-        converter = FunctionToCppVisitor(output_type)
-
-        state_function_code.append(converter.convert(code))
-        SparseAvailable_list.append(converter.SparseAvailable)
-
-    SparseAvailable_list = [
-        x for x in SparseAvailable_list if x is not None]
-
-    # generate code text
-    code_text = ""
-    header_macro_text = "__" + function_name.upper() + "_HPP__"
-
-    code_text += f"#ifndef {header_macro_text}\n"
-    code_text += f"#define {header_macro_text}\n\n"
-
-    code_text += "#include \"python_math.hpp\"\n"
-    code_text += "#include \"python_numpy.hpp\"\n\n"
-
-    code_text += f"namespace {function_name} {{\n\n"
-
-    code_text += "using namespace PythonMath;\n"
-
-    code_text += create_sparse_matrix_code(
-        SparseAvailable_list[0], type_name, output_type)
-
-    code_text += "template <typename X_Type, typename U_Type, " + \
-        " typename Parameter_Type>\n"
-    code_text += "class Function {\n"
-    code_text += "public:\n"
-
-    # sympy_function
-    code_text += f"static "
-    code_text += state_function_code[0]
-    code_text += "\n"
-
-    # function
-    code_text += f"static "
-    code_text += state_function_code[1]
-    code_text += "\n"
-
-    code_text += "};\n\n"
-
-    code_text += f"}} // namespace {function_name}\n\n"
-
-    code_text += f"#endif // {header_macro_text}\n"
-
-    saved_file_name = ControlDeploy.write_to_file(
-        code_text, f"{function_name}.hpp")
-
-    return saved_file_name, SparseAvailable_list
-
-
-class SQP_MatrixUtilityDeploy:
-    """
-    Utility class for deploying SQP (Sequential Quadratic Programming)
+    Utility class for deploying PANOC/ALM optimization engine
       cost matrices and related functions from Python to C++ code.
 
     This class provides a static method to generate C++ header files
       that encapsulate the cost matrices, system functions, Jacobians,
-        Hessians, and constraints required for NMPC
+        and constraints required for NMPC
           (Nonlinear Model Predictive Control) optimization.
             The generated code is tailored for integration with a C++ optimization framework.
 
+    Unlike SQP_MatrixUtilityDeploy, this class does not generate
+    Hessian-related code, as the PANOC/ALM algorithm only requires
+    first-order gradient information.
+
     Methods
     -------
-    generate_cpp_code(cost_matrices: SQP_CostMatrices_NMPC, file_name: str = None)
+    generate_cpp_code(cost_matrices: OptimizationEngine_CostMatrices, file_name: str = None)
       -> list[str]:
         Generates C++ header files for the provided cost matrices and associated functions.
 
         Parameters
         ----------
-        cost_matrices : SQP_CostMatrices_NMPC
+        cost_matrices : OptimizationEngine_CostMatrices
             An object containing all required matrices, functions,
               and parameters for NMPC optimization.
         file_name : str, optional
@@ -169,7 +90,7 @@ class SQP_MatrixUtilityDeploy:
         - Generates C++ code for:
             - Parameter class
             - State and measurement functions
-            - Jacobians and Hessians (state and measurement)
+            - Jacobians (state and measurement)
             - Input and output constraints (min/max)
         - Assembles all generated components into a single C++ header file
           with appropriate includes and namespace.
@@ -188,24 +109,24 @@ class SQP_MatrixUtilityDeploy:
 
     @staticmethod
     def generate_cpp_code(
-        cost_matrices: SQP_CostMatrices_NMPC,
+        cost_matrices: OptimizationEngine_CostMatrices,
         file_name: str = None
     ):
         """
-        Generates C++ code for deploying SQP cost matrices
-          and related functions for NMPC.
+        Generates C++ code for deploying PANOC/ALM optimization engine
+          cost matrices and related functions for NMPC.
 
-        This static method takes an SQP_CostMatrices_NMPC object
+        This static method takes an OptimizationEngine_CostMatrices object
           and generates C++ header files
         for all required matrix types, function objects,
           and parameter classes used in nonlinear
         model predictive control (NMPC).
           The generated code includes definitions for cost matrices,
-        state and measurement functions, Jacobians, Hessians,
+        state and measurement functions, Jacobians,
         and input/output constraints.
 
         Args:
-            cost_matrices (SQP_CostMatrices_NMPC): The cost matrices
+            cost_matrices (OptimizationEngine_CostMatrices): The cost matrices
               and associated function/code file names
                 required for NMPC deployment.
             file_name (str, optional): The base name for the generated
@@ -222,7 +143,7 @@ class SQP_MatrixUtilityDeploy:
             - The method inspects the caller's frame to determine the variable name
               and file name for code generation.
             - It generates code for parameter classes, state/measurement functions,
-              Jacobians, Hessians, and limits.
+              Jacobians, and limits.
             - The generated C++ code uses a namespace based on the caller's file
               and variable name.
             - The method writes the generated code to files and returns
@@ -320,61 +241,6 @@ class SQP_MatrixUtilityDeploy:
                 "Measurement_Jacobian_x_Type",
                 type_name)
         deployed_file_names.append(measurement_jacobian_x_cpp_file_name)
-
-        # state hessian xx function code
-        state_hessian_xx_file_name_no_extension = \
-            cost_matrices.state_hessian_xx_code_file_name.split(".")[0]
-
-        state_hessian_xx_cpp_file_name, state_hessian_xx_SparseAvailable_list = \
-            create_and_write_state_measurement_hessian_code(
-                state_hessian_xx_file_name_no_extension,
-                "State_Hessian_xx_Type",
-                type_name)
-        deployed_file_names.append(state_hessian_xx_cpp_file_name)
-
-        # state hessian xu function code
-        state_hessian_xu_file_name_no_extension = \
-            cost_matrices.state_hessian_xu_code_file_name.split(".")[0]
-
-        state_hessian_xu_cpp_file_name, state_hessian_xu_SparseAvailable_list = \
-            create_and_write_state_measurement_hessian_code(
-                state_hessian_xu_file_name_no_extension,
-                "State_Hessian_xu_Type",
-                type_name)
-        deployed_file_names.append(state_hessian_xu_cpp_file_name)
-
-        # state hessian ux function code
-        state_hessian_ux_file_name_no_extension = \
-            cost_matrices.state_hessian_ux_code_file_name.split(".")[0]
-
-        state_hessian_ux_cpp_file_name, state_hessian_ux_SparseAvailable_list = \
-            create_and_write_state_measurement_hessian_code(
-                state_hessian_ux_file_name_no_extension,
-                "State_Hessian_ux_Type",
-                type_name)
-        deployed_file_names.append(state_hessian_ux_cpp_file_name)
-
-        # state hessian uu function code
-        state_hessian_uu_file_name_no_extension = \
-            cost_matrices.state_hessian_uu_code_file_name.split(".")[0]
-
-        state_hessian_uu_cpp_file_name, state_hessian_uu_SparseAvailable_list = \
-            create_and_write_state_measurement_hessian_code(
-                state_hessian_uu_file_name_no_extension,
-                "State_Hessian_uu_Type",
-                type_name)
-        deployed_file_names.append(state_hessian_uu_cpp_file_name)
-
-        # measurement hessian xx function code
-        measurement_hessian_xx_file_name_no_extension = \
-            cost_matrices.measurement_hessian_xx_code_file_name.split(".")[0]
-
-        measurement_hessian_xx_cpp_file_name, measurement_hessian_xx_SparseAvailable_list = \
-            create_and_write_state_measurement_hessian_code(
-                measurement_hessian_xx_file_name_no_extension,
-                "Measurement_Hessian_xx_Type",
-                type_name)
-        deployed_file_names.append(measurement_hessian_xx_cpp_file_name)
 
         # %% create limits code
         U_size = cost_matrices.nu
@@ -478,12 +344,7 @@ class SQP_MatrixUtilityDeploy:
         code_text += f"#include \"{measurement_function_cpp_file_name}\"\n"
         code_text += f"#include \"{state_jacobian_x_cpp_file_name}\"\n"
         code_text += f"#include \"{state_jacobian_u_cpp_file_name}\"\n"
-        code_text += f"#include \"{measurement_jacobian_x_cpp_file_name}\"\n"
-        code_text += f"#include \"{state_hessian_xx_cpp_file_name}\"\n"
-        code_text += f"#include \"{state_hessian_xu_cpp_file_name}\"\n"
-        code_text += f"#include \"{state_hessian_ux_cpp_file_name}\"\n"
-        code_text += f"#include \"{state_hessian_uu_cpp_file_name}\"\n"
-        code_text += f"#include \"{measurement_hessian_xx_cpp_file_name}\"\n\n"
+        code_text += f"#include \"{measurement_jacobian_x_cpp_file_name}\"\n\n"
 
         code_text += f"#include \"{U_min_file_name}\"\n"
         code_text += f"#include \"{U_max_file_name}\"\n"
@@ -519,17 +380,6 @@ class SQP_MatrixUtilityDeploy:
         code_text += f"using Measurement_Jacobian_X_Matrix_Type = {measurement_jacobian_x_file_name_no_extension}" + \
             "::Measurement_Jacobian_x_Type;\n\n"
 
-        code_text += f"using State_Hessian_XX_Matrix_Type = {state_hessian_xx_file_name_no_extension}" + \
-            "::State_Hessian_xx_Type;\n"
-        code_text += f"using State_Hessian_XU_Matrix_Type = {state_hessian_xu_file_name_no_extension}" + \
-            "::State_Hessian_xu_Type;\n"
-        code_text += f"using State_Hessian_UX_Matrix_Type = {state_hessian_ux_file_name_no_extension}" + \
-            "::State_Hessian_ux_Type;\n"
-        code_text += f"using State_Hessian_UU_Matrix_Type = {state_hessian_uu_file_name_no_extension}" + \
-            "::State_Hessian_uu_Type;\n"
-        code_text += f"using Measurement_Hessian_XX_Matrix_Type = {measurement_hessian_xx_file_name_no_extension}" + \
-            "::Measurement_Hessian_xx_Type;\n\n"
-
         code_text += f"using Qx_Type = DiagMatrix_Type<{type_name}, STATE_SIZE>;\n"
         code_text += f"using R_Type = DiagMatrix_Type<{type_name}, INPUT_SIZE>;\n"
         code_text += f"using Qy_Type = DiagMatrix_Type<{type_name}, OUTPUT_SIZE>;\n\n"
@@ -541,16 +391,11 @@ class SQP_MatrixUtilityDeploy:
 
         code_text += f"using Reference_Trajectory_Type = DenseMatrix_Type<{type_name}, OUTPUT_SIZE, (NP + 1)>;\n\n"
 
-        code_text += f"using type = SQP_CostMatrices_NMPC_Type<{type_name}, NP, Parameter_Type,\n" + \
+        code_text += f"using type = OptimizationEngine_CostMatrices_Type<{type_name}, NP, Parameter_Type,\n" + \
             "    U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,\n" + \
             "    State_Jacobian_X_Matrix_Type,\n" + \
             "    State_Jacobian_U_Matrix_Type,\n" + \
-            "    Measurement_Jacobian_X_Matrix_Type,\n" + \
-            "    State_Hessian_XX_Matrix_Type,\n" + \
-            "    State_Hessian_XU_Matrix_Type,\n" + \
-            "    State_Hessian_UX_Matrix_Type,\n" + \
-            "    State_Hessian_UU_Matrix_Type,\n" + \
-            "    Measurement_Hessian_XX_Matrix_Type>;\n\n"
+            "    Measurement_Jacobian_X_Matrix_Type>;\n\n"
 
         code_text += "inline auto make() -> type {\n\n"
 
@@ -592,16 +437,11 @@ class SQP_MatrixUtilityDeploy:
         code_text += "  Reference_Trajectory_Type reference_trajectory;\n\n"
 
         code_text += "    type cost_matrices =\n" + \
-            f"        make_SQP_CostMatrices_NMPC<{type_name}, NP, Parameter_Type,\n" + \
+            f"        make_OptimizationEngine_CostMatrices<{type_name}, NP, Parameter_Type,\n" + \
             "            U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,\n" + \
             "            State_Jacobian_X_Matrix_Type,\n" + \
             "            State_Jacobian_U_Matrix_Type,\n" + \
-            "            Measurement_Jacobian_X_Matrix_Type,\n" + \
-            "            State_Hessian_XX_Matrix_Type,\n" + \
-            "            State_Hessian_XU_Matrix_Type,\n" + \
-            "            State_Hessian_UX_Matrix_Type,\n" + \
-            "            State_Hessian_UU_Matrix_Type,\n" + \
-            "            Measurement_Hessian_XX_Matrix_Type>(\n" + \
+            "            Measurement_Jacobian_X_Matrix_Type>(\n" + \
             "                Qx, R, Qy, U_min, U_max, Y_min, Y_max);\n\n"
 
         code_text += "    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =\n" + \
@@ -627,42 +467,12 @@ class SQP_MatrixUtilityDeploy:
             f"        {measurement_jacobian_x_file_name_no_extension}::Function<" + \
             "X_Type, U_Type, Parameter_Type>::function;\n\n"
 
-        code_text += "    PythonOptimization::StateFunctionHessian_XX_Object<\n" + \
-            "        State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xx_function =\n" + \
-            f"        {state_hessian_xx_file_name_no_extension}::Function<" + \
-            "X_Type, U_Type, Parameter_Type>::function;\n\n"
-
-        code_text += "    PythonOptimization::StateFunctionHessian_XU_Object<\n" + \
-            "        State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xu_function =\n" + \
-            f"        {state_hessian_xu_file_name_no_extension}::Function<" + \
-            "X_Type, U_Type, Parameter_Type>::function;\n\n"
-
-        code_text += "    PythonOptimization::StateFunctionHessian_UX_Object<\n" + \
-            "        State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_ux_function =\n" + \
-            f"        {state_hessian_ux_file_name_no_extension}::Function<" + \
-            "X_Type, U_Type, Parameter_Type>::function;\n\n"
-
-        code_text += "    PythonOptimization::StateFunctionHessian_UU_Object<\n" + \
-            "        State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_uu_function =\n" + \
-            f"        {state_hessian_uu_file_name_no_extension}::Function<" + \
-            "X_Type, U_Type, Parameter_Type>::function;\n\n"
-
-        code_text += "    PythonOptimization::MeasurementFunctionHessian_XX_Object<\n" + \
-            "        Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_hessian_xx_function =\n" + \
-            f"        {measurement_hessian_xx_file_name_no_extension}::Function<" + \
-            "X_Type, U_Type, Parameter_Type>::function;\n\n"
-
         code_text += "    cost_matrices.set_function_objects(\n"
         code_text += "        state_function,\n"
         code_text += "        measurement_function,\n"
         code_text += "        state_jacobian_x_function,\n"
         code_text += "        state_jacobian_u_function,\n"
-        code_text += "        measurement_jacobian_x_function,\n"
-        code_text += "        state_hessian_xx_function,\n"
-        code_text += "        state_hessian_xu_function,\n"
-        code_text += "        state_hessian_ux_function,\n"
-        code_text += "        state_hessian_uu_function,\n"
-        code_text += "        measurement_hessian_xx_function\n"
+        code_text += "        measurement_jacobian_x_function\n"
         code_text += "    );\n\n"
 
         code_text += "    return cost_matrices;\n\n"
