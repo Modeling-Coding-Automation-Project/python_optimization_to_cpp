@@ -778,23 +778,117 @@ public:
 
   /**
    * @brief Compute the gradient grad psi(u; xi).
+   * Specialization for N1 == 0, N2 == 0: no constraint terms, returns grad
+   * f(u).
+   *
+   * @param u Decision variable (U_Horizon_Type).
+   * @param xi Parameter vector xi = (c, y). Unused in this specialization.
+   * @return Gradient of augmented cost.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
+  inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
+      -> _Gradient_Type {
+    (void)xi;
+    return this->_df(u);
+  }
+
+  /**
+   * @brief Compute the gradient grad psi(u; xi).
+   * Specialization for N1 > 0, N2 == 0: ALM gradient term only.
+   *
+   *     grad psi = grad f(u) + c * JF1(u)^T [t(u) - Pi_C(t(u))]
    *
    * @param u Decision variable (U_Horizon_Type).
    * @param xi Parameter vector xi = (c, y).
    * @return Gradient of augmented cost.
    */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
   inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
       -> _Gradient_Type {
     _Gradient_Type grad = this->_df(u);
 
     /* ALM gradient: c * JF1(u)^T [t(u) - Pi_C(t(u))] */
-    if (N1 > 0 && this->_mapping_f1 && this->_jacobian_f1_trans &&
-        this->_set_c_project) {
+    if (this->_mapping_f1 && this->_jacobian_f1_trans && this->_set_c_project) {
       _T c = xi(0, 0);
 
       /* Extract y from xi */
       F1_Output_Type y;
-      for (std::size_t i = 0; i < N1; ++i) {
+      for (std::size_t i = 0; i < _N1; ++i) {
+        y(i, 0) = xi(i + 1, 0);
+      }
+
+      /* t = F1(u) + y/c  (note: uses c, not c_bar) */
+      F1_Output_Type f1_u = this->_mapping_f1(u);
+      F1_Output_Type t = f1_u + (static_cast<_T>(1) / c) * y;
+
+      /* s = Pi_C(t) */
+      F1_Output_Type s = t;
+      this->_set_c_project(s);
+
+      /* d = t - Pi_C(t) */
+      F1_Output_Type d = t - s;
+
+      /* grad += c * JF1(u)^T * d */
+      _Gradient_Type jf1t_d = this->_jacobian_f1_trans(u, d);
+      grad = grad + c * jf1t_d;
+    }
+
+    return grad;
+  }
+
+  /**
+   * @brief Compute the gradient grad psi(u; xi).
+   * Specialization for N1 == 0, N2 > 0: PM gradient term only.
+   *
+   *     grad psi = grad f(u) + c * JF2(u)^T * F2(u)
+   *
+   * @param u Decision variable (U_Horizon_Type).
+   * @param xi Parameter vector xi = (c, y).
+   * @return Gradient of augmented cost.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
+  inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
+      -> _Gradient_Type {
+    _Gradient_Type grad = this->_df(u);
+
+    /* PM gradient: c * JF2(u)^T * F2(u) */
+    if (this->_mapping_f2 && this->_jacobian_f2_trans) {
+      _T c = xi(0, 0);
+      F2_Output_Type f2_u = this->_mapping_f2(u);
+      _Gradient_Type jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
+      grad = grad + c * jf2t_f2u;
+    }
+
+    return grad;
+  }
+
+  /**
+   * @brief Compute the gradient grad psi(u; xi).
+   * Specialization for N1 > 0, N2 > 0: both ALM and PM gradient terms.
+   *
+   *     grad psi = grad f(u) + c * JF1(u)^T [t(u) - Pi_C(t(u))]
+   *                          + c * JF2(u)^T * F2(u)
+   *
+   * @param u Decision variable (U_Horizon_Type).
+   * @param xi Parameter vector xi = (c, y).
+   * @return Gradient of augmented cost.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
+  inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
+      -> _Gradient_Type {
+    _Gradient_Type grad = this->_df(u);
+
+    /* ALM gradient: c * JF1(u)^T [t(u) - Pi_C(t(u))] */
+    if (this->_mapping_f1 && this->_jacobian_f1_trans && this->_set_c_project) {
+      _T c = xi(0, 0);
+
+      /* Extract y from xi */
+      F1_Output_Type y;
+      for (std::size_t i = 0; i < _N1; ++i) {
         y(i, 0) = xi(i + 1, 0);
       }
 
@@ -815,7 +909,7 @@ public:
     }
 
     /* PM gradient: c * JF2(u)^T * F2(u) */
-    if (N2 > 0 && this->_mapping_f2 && this->_jacobian_f2_trans) {
+    if (this->_mapping_f2 && this->_jacobian_f2_trans) {
       _T c = xi(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
       _Gradient_Type jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
