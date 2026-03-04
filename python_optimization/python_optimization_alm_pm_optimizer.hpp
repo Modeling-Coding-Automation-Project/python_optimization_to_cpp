@@ -680,10 +680,8 @@ public:
 
       /* dist^2_C(t) = ||t - s||^2 */
       F1_Output_Type diff = t - s;
-      _T dist_sq = static_cast<_T>(0);
-      for (std::size_t i = 0; i < _N1; ++i) {
-        dist_sq += diff(i, 0) * diff(i, 0);
-      }
+      _T dist_sq = PythonNumpy::inner_product(diff, diff);
+
       cost += static_cast<_T>(0.5) * c * dist_sq;
     }
 
@@ -709,10 +707,8 @@ public:
     if (this->_mapping_f2) {
       _T c = xi(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
-      _T f2_sq = static_cast<_T>(0);
-      for (std::size_t i = 0; i < _N2; ++i) {
-        f2_sq += f2_u(i, 0) * f2_u(i, 0);
-      }
+      _T f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
+
       cost += static_cast<_T>(0.5) * c * f2_sq;
     }
 
@@ -755,10 +751,8 @@ public:
 
       /* dist^2_C(t) = ||t - s||^2 */
       F1_Output_Type diff = t - s;
-      _T dist_sq = static_cast<_T>(0);
-      for (std::size_t i = 0; i < _N1; ++i) {
-        dist_sq += diff(i, 0) * diff(i, 0);
-      }
+      _T dist_sq = PythonNumpy::inner_product(diff, diff);
+
       cost += static_cast<_T>(0.5) * c * dist_sq;
     }
 
@@ -766,10 +760,8 @@ public:
     if (this->_mapping_f2) {
       _T c = xi(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
-      _T f2_sq = static_cast<_T>(0);
-      for (std::size_t i = 0; i < _N2; ++i) {
-        f2_sq += f2_u(i, 0) * f2_u(i, 0);
-      }
+      _T f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
+
       cost += static_cast<_T>(0.5) * c * f2_sq;
     }
 
@@ -821,7 +813,11 @@ public:
 
       /* t = F1(u) + y/c  (note: uses c, not c_bar) */
       F1_Output_Type f1_u = this->_mapping_f1(u);
-      F1_Output_Type t = f1_u + (static_cast<_T>(1) / c) * y;
+      F1_Output_Type t =
+          f1_u + (static_cast<_T>(1) /
+                  Base::Utility::avoid_zero_divide(
+                      c, static_cast<_T>(ALM_Constants::SMALL_EPSILON))) *
+                     y;
 
       /* s = Pi_C(t) */
       F1_Output_Type s = t;
@@ -894,7 +890,11 @@ public:
 
       /* t = F1(u) + y/c  (note: uses c, not c_bar) */
       F1_Output_Type f1_u = this->_mapping_f1(u);
-      F1_Output_Type t = f1_u + (static_cast<_T>(1) / c) * y;
+      F1_Output_Type t =
+          f1_u + (static_cast<_T>(1) /
+                  Base::Utility::avoid_zero_divide(
+                      c, static_cast<_T>(ALM_Constants::SMALL_EPSILON))) *
+                     y;
 
       /* s = Pi_C(t) */
       F1_Output_Type s = t;
