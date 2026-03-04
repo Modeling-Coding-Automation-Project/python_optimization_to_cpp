@@ -945,7 +945,7 @@ private:
  * @tparam N1 Dimension of F1 output (ALM constraints).
  * @tparam N2 Dimension of F2 output (PM constraints). Default 0.
  */
-template <typename CostMatrices_Type_In, std::size_t N1, std::size_t N2 = 0>
+template <typename CostMatrices_Type_In, std::size_t N1 = 0, std::size_t N2 = 0>
 class ALM_Problem {
 public:
   /* Constants */
