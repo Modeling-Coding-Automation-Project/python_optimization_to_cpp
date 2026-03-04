@@ -515,7 +515,7 @@ public:
  * @tparam N1 Dimension of F1 output (ALM constraints).
  * @tparam N2 Dimension of F2 output (PM constraints). Default 0.
  */
-template <typename CostMatrices_Type_In, std::size_t N1, std::size_t N2 = 0>
+template <typename CostMatrices_Type_In, std::size_t N1 = 0, std::size_t N2 = 0>
 class ALM_Factory {
 public:
   /* Constants */
@@ -631,22 +631,42 @@ public:
 
   /**
    * @brief Compute the augmented cost psi(u; xi).
+   * Specialization for N1 == 0, N2 == 0: no constraint terms, returns f(u).
+   *
+   * @param u Decision variable (U_Horizon_Type).
+   * @param xi Parameter vector xi = (c, y). Unused in this specialization.
+   * @return Augmented cost value.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
+  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
+    (void)xi;
+    return this->_f(u);
+  }
+
+  /**
+   * @brief Compute the augmented cost psi(u; xi).
+   * Specialization for N1 > 0, N2 == 0: ALM term only.
+   *
+   *     psi(u; xi) = f(u) + (c/2) * dist^2_C(F1(u) + y/c_bar)
    *
    * @param u Decision variable (U_Horizon_Type).
    * @param xi Parameter vector xi = (c, y).
    * @return Augmented cost value.
    */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
   inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
     _T cost = this->_f(u);
 
     /* ALM term: (c/2) * dist^2_C(F1(u) + y/c_bar) */
-    if (N1 > 0 && this->_mapping_f1 && this->_set_c_project) {
+    if (this->_mapping_f1 && this->_set_c_project) {
       _T c = xi(0, 0);
       _T c_bar = (c > static_cast<_T>(1)) ? c : static_cast<_T>(1);
 
-      /* Extract y from xi(0, 1..N1) */
+      /* Extract y from xi(1.._N1) */
       F1_Output_Type y;
-      for (std::size_t i = 0; i < N1; ++i) {
+      for (std::size_t i = 0; i < _N1; ++i) {
         y(i, 0) = xi(i + 1, 0);
       }
 
@@ -661,18 +681,93 @@ public:
       /* dist^2_C(t) = ||t - s||^2 */
       F1_Output_Type diff = t - s;
       _T dist_sq = static_cast<_T>(0);
-      for (std::size_t i = 0; i < N1; ++i) {
+      for (std::size_t i = 0; i < _N1; ++i) {
+        dist_sq += diff(i, 0) * diff(i, 0);
+      }
+      cost += static_cast<_T>(0.5) * c * dist_sq;
+    }
+
+    return cost;
+  }
+
+  /**
+   * @brief Compute the augmented cost psi(u; xi).
+   * Specialization for N1 == 0, N2 > 0: PM term only.
+   *
+   *     psi(u; xi) = f(u) + (c/2) * ||F2(u)||^2
+   *
+   * @param u Decision variable (U_Horizon_Type).
+   * @param xi Parameter vector xi = (c, y).
+   * @return Augmented cost value.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
+  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
+    _T cost = this->_f(u);
+
+    /* PM term: (c/2) * ||F2(u)||^2 */
+    if (this->_mapping_f2) {
+      _T c = xi(0, 0);
+      F2_Output_Type f2_u = this->_mapping_f2(u);
+      _T f2_sq = static_cast<_T>(0);
+      for (std::size_t i = 0; i < _N2; ++i) {
+        f2_sq += f2_u(i, 0) * f2_u(i, 0);
+      }
+      cost += static_cast<_T>(0.5) * c * f2_sq;
+    }
+
+    return cost;
+  }
+
+  /**
+   * @brief Compute the augmented cost psi(u; xi).
+   * Specialization for N1 > 0, N2 > 0: both ALM and PM terms.
+   *
+   *     psi(u; xi) = f(u) + (c/2) * [dist^2_C(F1(u) + y/c_bar) + ||F2(u)||^2]
+   *
+   * @param u Decision variable (U_Horizon_Type).
+   * @param xi Parameter vector xi = (c, y).
+   * @return Augmented cost value.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
+  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
+    _T cost = this->_f(u);
+
+    /* ALM term: (c/2) * dist^2_C(F1(u) + y/c_bar) */
+    if (this->_mapping_f1 && this->_set_c_project) {
+      _T c = xi(0, 0);
+      _T c_bar = (c > static_cast<_T>(1)) ? c : static_cast<_T>(1);
+
+      /* Extract y from xi(1.._N1) */
+      F1_Output_Type y;
+      for (std::size_t i = 0; i < _N1; ++i) {
+        y(i, 0) = xi(i + 1, 0);
+      }
+
+      /* t = F1(u) + y / c_bar */
+      F1_Output_Type f1_u = this->_mapping_f1(u);
+      F1_Output_Type t = f1_u + (static_cast<_T>(1) / c_bar) * y;
+
+      /* s = Pi_C(t) */
+      F1_Output_Type s = t;
+      this->_set_c_project(s);
+
+      /* dist^2_C(t) = ||t - s||^2 */
+      F1_Output_Type diff = t - s;
+      _T dist_sq = static_cast<_T>(0);
+      for (std::size_t i = 0; i < _N1; ++i) {
         dist_sq += diff(i, 0) * diff(i, 0);
       }
       cost += static_cast<_T>(0.5) * c * dist_sq;
     }
 
     /* PM term: (c/2) * ||F2(u)||^2 */
-    if (N2 > 0 && this->_mapping_f2) {
+    if (this->_mapping_f2) {
       _T c = xi(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
       _T f2_sq = static_cast<_T>(0);
-      for (std::size_t i = 0; i < N2; ++i) {
+      for (std::size_t i = 0; i < _N2; ++i) {
         f2_sq += f2_u(i, 0) * f2_u(i, 0);
       }
       cost += static_cast<_T>(0.5) * c * f2_sq;
