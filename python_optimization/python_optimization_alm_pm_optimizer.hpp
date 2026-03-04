@@ -669,9 +669,7 @@ public:
 
       /* Extract y from xi(1.._N1) */
       F1_Output_Type y;
-      for (std::size_t i = 0; i < _N1; ++i) {
-        y.access(i, 0) = xi(i + 1, 0);
-      }
+      MatrixOperation::SubstituteGetOneOffset::compute(y, xi);
 
       /* t = F1(u) + y / c_bar */
       F1_Output_Type f1_u = this->_mapping_f1(u);
@@ -740,9 +738,7 @@ public:
 
       /* Extract y from xi(1.._N1) */
       F1_Output_Type y;
-      for (std::size_t i = 0; i < _N1; ++i) {
-        y.access(i, 0) = xi.access(i + 1, 0);
-      }
+      MatrixOperation::SubstituteGetOneOffset::compute(y, xi);
 
       /* t = F1(u) + y / c_bar */
       F1_Output_Type f1_u = this->_mapping_f1(u);
@@ -810,9 +806,7 @@ public:
 
       /* Extract y from xi */
       F1_Output_Type y;
-      for (std::size_t i = 0; i < _N1; ++i) {
-        y.access(i, 0) = xi.access(i + 1, 0);
-      }
+      MatrixOperation::SubstituteGetOneOffset::compute(y, xi);
 
       /* t = F1(u) + y/c  (note: uses c, not c_bar) */
       F1_Output_Type f1_u = this->_mapping_f1(u);
@@ -887,9 +881,7 @@ public:
 
       /* Extract y from xi */
       F1_Output_Type y;
-      for (std::size_t i = 0; i < _N1; ++i) {
-        y.access(i, 0) = xi.access(i + 1, 0);
-      }
+      MatrixOperation::SubstituteGetOneOffset::compute(y, xi);
 
       /* t = F1(u) + y/c  (note: uses c, not c_bar) */
       F1_Output_Type f1_u = this->_mapping_f1(u);
@@ -1510,13 +1502,9 @@ protected:
   inline void _project_on_set_y(void) {
     if (this->_problem.set_y_project) {
       _F1_Output_Type y;
-      for (std::size_t i = 0; i < _N1; ++i) {
-        y.access(i, 0) = this->_cache.xi.access(i + 1, 0);
-      }
+      MatrixOperation::SubstituteGetOneOffset::compute(y, this->_cache.xi);
       this->_problem.set_y_project(y);
-      for (std::size_t i = 0; i < _N1; ++i) {
-        this->_cache.xi.access(i + 1, 0) = y.access(i, 0);
-      }
+      MatrixOperation::SubstituteSetOneOffset::compute(this->_cache.xi, y);
     }
   }
 
@@ -1586,9 +1574,7 @@ protected:
 
     /* Extract y from xi */
     _F1_Output_Type y;
-    for (std::size_t i = 0; i < _N1; ++i) {
-      y.access(i, 0) = this->_cache.xi.access(i + 1, 0);
-    }
+    MatrixOperation::SubstituteGetOneOffset::compute(y, this->_cache.xi);
 
     /* Step 1: w = F1(u) */
     _F1_Output_Type w = this->_problem.mapping_f1(u);
@@ -1626,9 +1612,7 @@ protected:
             typename std::enable_if<(_N1 > 0), int>::type = 0>
   inline void _compute_alm_infeasibility(void) {
     _F1_Output_Type y;
-    for (std::size_t i = 0; i < _N1; ++i) {
-      y.access(i, 0) = this->_cache.xi.access(i + 1, 0);
-    }
+    MatrixOperation::SubstituteGetOneOffset::compute(y, this->_cache.xi);
     _F1_Output_Type diff = this->_cache.y_plus - y;
 
     this->_cache.delta_y_norm_plus = PythonNumpy::norm(diff);
@@ -1870,9 +1854,8 @@ protected:
     this->_cache.f2_norm = this->_cache.f2_norm_plus;
 
     /* Copy y^+ into xi (update y) */
-    for (std::size_t i = 0; i < _N1; ++i) {
-      this->_cache.xi.access(i + 1, 0) = this->_cache.y_plus.access(i, 0);
-    }
+    MatrixOperation::SubstituteSetOneOffset::compute(this->_cache.xi,
+                                                     this->_cache.y_plus);
 
     /* Reset PANOC cache for next inner solve */
     this->_cache.panoc_cache.reset();

@@ -234,6 +234,134 @@ compute(const Matrix_Type &U, const typename Matrix_Type::Value_Type &delta,
 
 } // namespace AbsoluteMaxScalarToMatrix
 
+namespace SubstituteGetOneOffset {
+
+// Recursion when I_idx > 0
+// dest.set<I_idx, 0>(src.get<I_idx + 1, 0>())
+template <typename Dest_Type, typename Src_Type, std::size_t I_idx>
+struct Assign {
+  /**
+   * @brief Recursively assigns dest(I_idx, 0) = src(I_idx + 1, 0) and recurses
+   * down to I_idx == 0.
+   *
+   * @tparam Dest_Type The destination vector type.
+   * @tparam Src_Type  The source vector type (must have at least
+   *                   Dest_Type::COLS + 1 columns).
+   * @tparam I_idx     Current row index in the recursion.
+   * @param dest Destination vector.
+   * @param src  Source vector.
+   */
+  static inline void compute(Dest_Type &dest, const Src_Type &src) {
+    dest.template set<I_idx, 0>(src.template get<I_idx + 1, 0>());
+    Assign<Dest_Type, Src_Type, I_idx - 1>::compute(dest, src);
+  }
+};
+
+// Recursion termination for I_idx == 0
+template <typename Dest_Type, typename Src_Type>
+struct Assign<Dest_Type, Src_Type, 0> {
+  /**
+   * @brief Base case: assigns dest(0, 0) = src(1, 0).
+   *
+   * @tparam Dest_Type The destination vector type.
+   * @tparam Src_Type  The source vector type.
+   * @param dest Destination vector.
+   * @param src  Source vector.
+   */
+  static inline void compute(Dest_Type &dest, const Src_Type &src) {
+    dest.template set<0, 0>(src.template get<1, 0>());
+  }
+};
+
+/**
+ * @brief Copy elements from src to dest with a +1 row offset on the source
+ * side, using compile-time loop unrolling.
+ *
+ * Equivalent runtime loop:
+ * @code
+ *   for (std::size_t i = 0; i < Dest_Type::COLS; ++i) {
+ *     dest(i, 0) = src(i + 1, 0);
+ *   }
+ * @endcode
+ *
+ * @tparam Dest_Type The destination vector type. Must define COLS, get<R,C>(),
+ *                   and set<R,C>().
+ * @tparam Src_Type  The source vector type. Must have at least
+ *                   Dest_Type::COLS + 1 columns.
+ * @param dest Destination vector (overwritten).
+ * @param src  Source vector.
+ */
+template <typename Dest_Type, typename Src_Type>
+inline void compute(Dest_Type &dest, const Src_Type &src) {
+  Assign<Dest_Type, Src_Type, Dest_Type::COLS - 1>::compute(dest, src);
+}
+
+} // namespace SubstituteGetOneOffset
+
+namespace SubstituteSetOneOffset {
+
+// Recursion when I_idx > 0
+// dest.set<I_idx + 1, 0>(src.get<I_idx, 0>())
+template <typename Dest_Type, typename Src_Type, std::size_t I_idx>
+struct Assign {
+  /**
+   * @brief Recursively assigns dest(I_idx + 1, 0) = src(I_idx, 0) and recurses
+   * down to I_idx == 0.
+   *
+   * @tparam Dest_Type The destination vector type (must have at least
+   *                   Src_Type::COLS + 1 columns).
+   * @tparam Src_Type  The source vector type.
+   * @tparam I_idx     Current row index in the recursion.
+   * @param dest Destination vector.
+   * @param src  Source vector.
+   */
+  static inline void compute(Dest_Type &dest, const Src_Type &src) {
+    dest.template set<I_idx + 1, 0>(src.template get<I_idx, 0>());
+    Assign<Dest_Type, Src_Type, I_idx - 1>::compute(dest, src);
+  }
+};
+
+// Recursion termination for I_idx == 0
+template <typename Dest_Type, typename Src_Type>
+struct Assign<Dest_Type, Src_Type, 0> {
+  /**
+   * @brief Base case: assigns dest(1, 0) = src(0, 0).
+   *
+   * @tparam Dest_Type The destination vector type.
+   * @tparam Src_Type  The source vector type.
+   * @param dest Destination vector.
+   * @param src  Source vector.
+   */
+  static inline void compute(Dest_Type &dest, const Src_Type &src) {
+    dest.template set<1, 0>(src.template get<0, 0>());
+  }
+};
+
+/**
+ * @brief Copy elements from src to dest with a +1 row offset on the
+ * destination side, using compile-time loop unrolling.
+ *
+ * Equivalent runtime loop:
+ * @code
+ *   for (std::size_t i = 0; i < Src_Type::COLS; ++i) {
+ *     dest(i + 1, 0) = src(i, 0);
+ *   }
+ * @endcode
+ *
+ * @tparam Dest_Type The destination vector type. Must have at least
+ *                   Src_Type::COLS + 1 columns.
+ * @tparam Src_Type  The source vector type. Must define COLS, get<R,C>(),
+ *                   and set<R,C>().
+ * @param dest Destination vector (partially overwritten at columns 1..COLS).
+ * @param src  Source vector.
+ */
+template <typename Dest_Type, typename Src_Type>
+inline void compute(Dest_Type &dest, const Src_Type &src) {
+  Assign<Dest_Type, Src_Type, Src_Type::COLS - 1>::compute(dest, src);
+}
+
+} // namespace SubstituteSetOneOffset
+
 } // namespace MatrixOperation
 
 /* Cost Function Objects */
