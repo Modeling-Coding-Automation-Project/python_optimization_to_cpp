@@ -310,11 +310,7 @@ public:
       d = x;
     }
 
-    T norm_d = static_cast<T>(0);
-    for (std::size_t i = 0; i < Size; ++i) {
-      norm_d += d(i, 0) * d(i, 0);
-    }
-    norm_d = static_cast<T>(std::sqrt(static_cast<double>(norm_d)));
+    T norm_d = PythonMath::sqrt(PythonNumpy::inner_product(d, d));
 
     if (norm_d > this->_radius) {
       T scale = this->_radius / norm_d;
