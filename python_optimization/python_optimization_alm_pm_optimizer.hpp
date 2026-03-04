@@ -219,13 +219,13 @@ public:
   inline void project(Vector_Type &x) const {
     for (std::size_t i = 0; i < Size; ++i) {
       if (this->_has_lower) {
-        if (x(i, 0) < this->_lower(i, 0)) {
-          x(i, 0) = this->_lower(i, 0);
+        if (x.access(i, 0) < this->_lower.access(i, 0)) {
+          x.access(i, 0) = this->_lower.access(i, 0);
         }
       }
       if (this->_has_upper) {
-        if (x(i, 0) > this->_upper(i, 0)) {
-          x(i, 0) = this->_upper(i, 0);
+        if (x.access(i, 0) > this->_upper.access(i, 0)) {
+          x.access(i, 0) = this->_upper.access(i, 0);
         }
       }
     }
