@@ -1,3 +1,13 @@
+/**
+ * @file python_optimization_matrix_utility_common.hpp
+ *
+ * @brief Common type definitions for matrix utilities in Python optimization.
+ * This header defines common type aliases for function objects related to state
+ * space models, including state functions, measurement functions, and their
+ * Jacobians and Hessians. These type aliases are used across various
+ * optimization modules to ensure consistency and readability when working with
+ * state space models in the context of optimization problems.
+ */
 #ifndef __PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP__
 #define __PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP__
 
