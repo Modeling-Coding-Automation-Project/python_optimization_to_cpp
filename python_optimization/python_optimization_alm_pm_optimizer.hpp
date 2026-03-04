@@ -133,8 +133,69 @@ using ALM_ExitStatus = PANOC_ExitStatus;
  * @tparam T Scalar value type.
  * @tparam N1 Dimension of ALM constraint output (F1).
  */
-template <typename T, std::size_t N1> struct ALM_SolverStatus {
+template <typename T, std::size_t N1> class ALM_SolverStatus {
+public:
   using Lagrange_Type = PythonNumpy::DenseMatrix_Type<T, N1, 1>;
+
+  /* Constructor */
+  ALM_SolverStatus()
+      : exit_status(ALM_ExitStatus::CONVERGED), num_outer_iterations(0),
+        num_inner_iterations(0),
+        last_problem_norm_fpr(
+            static_cast<T>(ALM_Constants::INNER_PROBLEM_NORM_FPR_INITIAL)),
+        lagrange_multipliers(), penalty(static_cast<T>(0)),
+        delta_y_norm(static_cast<T>(0)), f2_norm(static_cast<T>(0)),
+        cost(static_cast<T>(0)) {}
+
+  /* Copy Constructor */
+  ALM_SolverStatus(const ALM_SolverStatus &input)
+      : exit_status(input.exit_status),
+        num_outer_iterations(input.num_outer_iterations),
+        num_inner_iterations(input.num_inner_iterations),
+        last_problem_norm_fpr(input.last_problem_norm_fpr),
+        lagrange_multipliers(input.lagrange_multipliers),
+        penalty(input.penalty), delta_y_norm(input.delta_y_norm),
+        f2_norm(input.f2_norm), cost(input.cost) {}
+
+  ALM_SolverStatus &operator=(const ALM_SolverStatus &input) {
+    if (this != &input) {
+      this->exit_status = input.exit_status;
+      this->num_outer_iterations = input.num_outer_iterations;
+      this->num_inner_iterations = input.num_inner_iterations;
+      this->last_problem_norm_fpr = input.last_problem_norm_fpr;
+      this->lagrange_multipliers = input.lagrange_multipliers;
+      this->penalty = input.penalty;
+      this->delta_y_norm = input.delta_y_norm;
+      this->f2_norm = input.f2_norm;
+      this->cost = input.cost;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  ALM_SolverStatus(ALM_SolverStatus &&input) noexcept
+      : exit_status(input.exit_status),
+        num_outer_iterations(input.num_outer_iterations),
+        num_inner_iterations(input.num_inner_iterations),
+        last_problem_norm_fpr(input.last_problem_norm_fpr),
+        lagrange_multipliers(std::move(input.lagrange_multipliers)),
+        penalty(input.penalty), delta_y_norm(input.delta_y_norm),
+        f2_norm(input.f2_norm), cost(input.cost) {}
+
+  ALM_SolverStatus &operator=(ALM_SolverStatus &&input) noexcept {
+    if (this != &input) {
+      this->exit_status = input.exit_status;
+      this->num_outer_iterations = input.num_outer_iterations;
+      this->num_inner_iterations = input.num_inner_iterations;
+      this->last_problem_norm_fpr = input.last_problem_norm_fpr;
+      this->lagrange_multipliers = std::move(input.lagrange_multipliers);
+      this->penalty = input.penalty;
+      this->delta_y_norm = input.delta_y_norm;
+      this->f2_norm = input.f2_norm;
+      this->cost = input.cost;
+    }
+    return *this;
+  }
 
   ALM_ExitStatus exit_status;
   std::size_t num_outer_iterations;
