@@ -1647,32 +1647,93 @@ protected:
 
   /**
    * @brief Check if (epsilon, delta)-AKKT conditions are satisfied.
-   *
-   * Three criteria must hold simultaneously:
-   *   1. ||delta y|| <= c * delta   (or no ALM constraints)
-   *   2. ||F2(u)|| <= delta         (or no PM constraints)
-   *   3. epsilon_nu <= epsilon      (inner tolerance has reached target)
+   * Specialization for N1 == 0, N2 == 0: only criterion 3 (inner tolerance).
    *
    * @return true if all criteria are satisfied.
    */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
+  inline bool _is_exit_criterion_satisfied(void) const {
+    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+
+    /* Criterion 3: current inner tolerance <= target epsilon */
+    return (this->_cache.panoc_cache.tolerance <=
+            this->_epsilon_tolerance + small_eps);
+  }
+
+  /**
+   * @brief Check if (epsilon, delta)-AKKT conditions are satisfied.
+   * Specialization for N1 > 0, N2 == 0: criteria 1 and 3.
+   *   1. ||delta y|| <= c * delta
+   *   3. epsilon_nu <= epsilon
+   *
+   * @return true if all criteria are satisfied.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
   inline bool _is_exit_criterion_satisfied(void) const {
     const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 1: ||delta y|| <= c * delta */
-    bool criterion_1 = true;
-    if (N1 > 0) {
-      _T c = this->_cache.xi.access(0, 0);
-      criterion_1 = (this->_cache.iteration > 0) &&
-                    (this->_cache.delta_y_norm_plus <=
-                     c * this->_delta_tolerance + small_eps);
-    }
+    _T c = this->_cache.xi.access(0, 0);
+    bool criterion_1 = (this->_cache.iteration > 0) &&
+                       (this->_cache.delta_y_norm_plus <=
+                        c * this->_delta_tolerance + small_eps);
+
+    /* Criterion 3: current inner tolerance <= target epsilon */
+    bool criterion_3 = (this->_cache.panoc_cache.tolerance <=
+                        this->_epsilon_tolerance + small_eps);
+
+    return criterion_1 && criterion_3;
+  }
+
+  /**
+   * @brief Check if (epsilon, delta)-AKKT conditions are satisfied.
+   * Specialization for N1 == 0, N2 > 0: criteria 2 and 3.
+   *   2. ||F2(u)|| <= delta
+   *   3. epsilon_nu <= epsilon
+   *
+   * @return true if all criteria are satisfied.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
+  inline bool _is_exit_criterion_satisfied(void) const {
+    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 2: ||F2(u)|| <= delta */
-    bool criterion_2 = true;
-    if (N2 > 0) {
-      criterion_2 =
-          (this->_cache.f2_norm_plus <= this->_delta_tolerance + small_eps);
-    }
+    bool criterion_2 =
+        (this->_cache.f2_norm_plus <= this->_delta_tolerance + small_eps);
+
+    /* Criterion 3: current inner tolerance <= target epsilon */
+    bool criterion_3 = (this->_cache.panoc_cache.tolerance <=
+                        this->_epsilon_tolerance + small_eps);
+
+    return criterion_2 && criterion_3;
+  }
+
+  /**
+   * @brief Check if (epsilon, delta)-AKKT conditions are satisfied.
+   * Specialization for N1 > 0, N2 > 0: all three criteria.
+   *   1. ||delta y|| <= c * delta
+   *   2. ||F2(u)|| <= delta
+   *   3. epsilon_nu <= epsilon
+   *
+   * @return true if all criteria are satisfied.
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
+  inline bool _is_exit_criterion_satisfied(void) const {
+    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+
+    /* Criterion 1: ||delta y|| <= c * delta */
+    _T c = this->_cache.xi.access(0, 0);
+    bool criterion_1 = (this->_cache.iteration > 0) &&
+                       (this->_cache.delta_y_norm_plus <=
+                        c * this->_delta_tolerance + small_eps);
+
+    /* Criterion 2: ||F2(u)|| <= delta */
+    bool criterion_2 =
+        (this->_cache.f2_norm_plus <= this->_delta_tolerance + small_eps);
 
     /* Criterion 3: current inner tolerance <= target epsilon */
     bool criterion_3 = (this->_cache.panoc_cache.tolerance <=
