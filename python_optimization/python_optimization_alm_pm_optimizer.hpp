@@ -64,6 +64,7 @@
 
 #include <cmath>
 #include <functional>
+#include <tuple>
 #include <type_traits>
 
 namespace PythonOptimization {
@@ -1423,13 +1424,12 @@ public:
 
   /**
    * @brief Get the number of outer and inner iterations from last solve.
-   * @param outer_count Output: number of outer iterations.
-   * @param inner_count Output: number of inner iterations.
+   * @return std::tuple<std::size_t, std::size_t> {outer_count, inner_count}.
    */
-  inline void get_solver_step_iterated_number(std::size_t &outer_count,
-                                              std::size_t &inner_count) const {
-    outer_count = this->_solver_status.num_outer_iterations;
-    inner_count = this->_solver_status.num_inner_iterations;
+  inline auto get_solver_step_iterated_number(void) const
+      -> std::tuple<std::size_t, std::size_t> {
+    return std::make_tuple(this->_solver_status.num_outer_iterations,
+                           this->_solver_status.num_inner_iterations);
   }
 
   /**
