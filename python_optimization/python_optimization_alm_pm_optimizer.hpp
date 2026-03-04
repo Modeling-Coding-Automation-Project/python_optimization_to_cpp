@@ -1843,18 +1843,35 @@ protected:
 
   /**
    * @brief End-of-iteration bookkeeping: increment counter, shift
-   * infeasibility measures, copy y^+ -> y, and reset PANOC cache.
+   * infeasibility measures, and reset PANOC cache.
+   * Specialization for N1 == 0: no y^+ -> y copy needed.
    */
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  inline void _final_cache_update(void) {
+    this->_cache.iteration += 1;
+    this->_cache.delta_y_norm = this->_cache.delta_y_norm_plus;
+    this->_cache.f2_norm = this->_cache.f2_norm_plus;
+
+    /* Reset PANOC cache for next inner solve */
+    this->_cache.panoc_cache.reset();
+  }
+
+  /**
+   * @brief End-of-iteration bookkeeping: increment counter, shift
+   * infeasibility measures, copy y^+ -> y, and reset PANOC cache.
+   * Specialization for N1 > 0: copies y^+ into xi.
+   */
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 > 0), int>::type = 0>
   inline void _final_cache_update(void) {
     this->_cache.iteration += 1;
     this->_cache.delta_y_norm = this->_cache.delta_y_norm_plus;
     this->_cache.f2_norm = this->_cache.f2_norm_plus;
 
     /* Copy y^+ into xi (update y) */
-    if (N1 > 0) {
-      for (std::size_t i = 0; i < N1; ++i) {
-        this->_cache.xi.access(i + 1, 0) = this->_cache.y_plus.access(i, 0);
-      }
+    for (std::size_t i = 0; i < _N1; ++i) {
+      this->_cache.xi.access(i + 1, 0) = this->_cache.y_plus.access(i, 0);
     }
 
     /* Reset PANOC cache for next inner solve */
