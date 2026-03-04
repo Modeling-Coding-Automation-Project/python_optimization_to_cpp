@@ -1495,15 +1495,26 @@ protected:
 
   /**
    * @brief Project Lagrange multipliers y onto set Y (in-place on xi).
+   * Specialization for N1 == 0: no ALM constraints, no-op.
    */
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  inline void _project_on_set_y(void) {}
+
+  /**
+   * @brief Project Lagrange multipliers y onto set Y (in-place on xi).
+   * Specialization for N1 > 0: extract y from xi, project, write back.
+   */
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 > 0), int>::type = 0>
   inline void _project_on_set_y(void) {
-    if (N1 > 0 && this->_problem.set_y_project) {
+    if (this->_problem.set_y_project) {
       _F1_Output_Type y;
-      for (std::size_t i = 0; i < N1; ++i) {
+      for (std::size_t i = 0; i < _N1; ++i) {
         y.access(i, 0) = this->_cache.xi.access(i + 1, 0);
       }
       this->_problem.set_y_project(y);
-      for (std::size_t i = 0; i < N1; ++i) {
+      for (std::size_t i = 0; i < _N1; ++i) {
         this->_cache.xi.access(i + 1, 0) = y.access(i, 0);
       }
     }
