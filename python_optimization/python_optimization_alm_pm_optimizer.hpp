@@ -310,7 +310,7 @@ public:
       d = x;
     }
 
-    T norm_d = PythonMath::sqrt(PythonNumpy::inner_product(d, d));
+    T norm_d = PythonNumpy::norm(d, d);
 
     if (norm_d > this->_radius) {
       T scale = this->_radius / norm_d;
