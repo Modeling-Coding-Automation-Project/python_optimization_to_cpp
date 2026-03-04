@@ -1,6 +1,8 @@
 ﻿#include <type_traits>
 #include <iostream>
 #include <cmath>
+#include <tuple>
+#include <stdexcept>
 
 #include "python_optimization.hpp"
 
@@ -1229,15 +1231,14 @@ void test_alm_pm_optimizer() {
 
     std::size_t outer_count = 0;
     std::size_t inner_count = 0;
-    solver.get_solver_step_iterated_number(outer_count, inner_count);
+    std::tie(outer_count, inner_count) = solver.get_solver_step_iterated_number();
 
-    tester.expect_near(static_cast<T>(outer_count > 0), static_cast<T>(true),
-        NEAR_LIMIT_STRICT,
-        "check outer iteration count positive.");
-
-    tester.expect_near(static_cast<T>(inner_count > 0), static_cast<T>(true),
-        NEAR_LIMIT_STRICT,
-        "check inner iteration count positive.");
+    if (outer_count == 0) {
+        throw std::runtime_error("outer_count should be greater than 0 after update_manipulation.");
+    }
+    if (inner_count == 0) {
+        throw std::runtime_error("inner_count should be greater than 0 after update_manipulation.");
+    }
 
 
     tester.throw_error_if_test_failed();
