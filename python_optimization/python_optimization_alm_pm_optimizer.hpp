@@ -1743,26 +1743,72 @@ protected:
   }
 
   /**
-   * @brief Check if penalty update should be skipped (sufficient
-   * decrease).
+   * @brief Check if penalty update should be skipped (sufficient decrease).
+   * Specialization for N1 == 0, N2 == 0: no constraints, always returns false.
    *
-   * Returns true if the penalty should NOT be updated (stall),
-   * which happens when iteration == 0 or there was sufficient
-   * decrease in the infeasibility measures.
+   * @return false (no stall; penalty update proceeds).
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
+  inline bool _is_penalty_stall_criterion(void) const {
+    return false;
+  }
+
+  /**
+   * @brief Check if penalty update should be skipped (sufficient decrease).
+   * Specialization for N1 > 0, N2 == 0: ALM constraint only.
    *
-   * @return true if sufficient decrease occurred (no penalty update
+   * @return true if sufficient decrease in ||delta y|| (no penalty update
    * needed).
    */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
   inline bool _is_penalty_stall_criterion(void) const {
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
-
     if (this->_cache.iteration == 0) {
       return true;
     }
 
-    bool is_alm = (N1 > 0);
-    bool is_pm = (N2 > 0);
+    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    return (this->_cache.delta_y_norm_plus <=
+            this->_sufficient_decrease_coefficient * this->_cache.delta_y_norm +
+                small_eps);
+  }
 
+  /**
+   * @brief Check if penalty update should be skipped (sufficient decrease).
+   * Specialization for N1 == 0, N2 > 0: PM constraint only.
+   *
+   * @return true if sufficient decrease in ||F2(u)|| (no penalty update
+   * needed).
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
+  inline bool _is_penalty_stall_criterion(void) const {
+    if (this->_cache.iteration == 0) {
+      return true;
+    }
+
+    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    return (this->_cache.f2_norm_plus <=
+            this->_sufficient_decrease_coefficient * this->_cache.f2_norm +
+                small_eps);
+  }
+
+  /**
+   * @brief Check if penalty update should be skipped (sufficient decrease).
+   * Specialization for N1 > 0, N2 > 0: both ALM and PM constraints.
+   *
+   * @return true if sufficient decrease in both ||delta y|| and ||F2(u)||
+   * (no penalty update needed).
+   */
+  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
+            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
+  inline bool _is_penalty_stall_criterion(void) const {
+    if (this->_cache.iteration == 0) {
+      return true;
+    }
+
+    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
     bool criterion_alm =
         (this->_cache.delta_y_norm_plus <=
          this->_sufficient_decrease_coefficient * this->_cache.delta_y_norm +
@@ -1773,15 +1819,7 @@ protected:
          this->_sufficient_decrease_coefficient * this->_cache.f2_norm +
              small_eps);
 
-    if (is_alm && !is_pm) {
-      return criterion_alm;
-    } else if (!is_alm && is_pm) {
-      return criterion_pm;
-    } else if (is_alm && is_pm) {
-      return criterion_alm && criterion_pm;
-    }
-
-    return false;
+    return criterion_alm && criterion_pm;
   }
 
   /**
