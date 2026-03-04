@@ -1612,19 +1612,26 @@ protected:
 
   /**
    * @brief Compute ALM infeasibility: ||y^+ - y||.
+   * Specialization for N1 == 0: no ALM constraints, no-op.
    */
-  inline void _compute_alm_infeasibility(void) {
-    if (N1 > 0) {
-      _F1_Output_Type y;
-      for (std::size_t i = 0; i < N1; ++i) {
-        y.access(i, 0) = this->_cache.xi.access(i + 1, 0);
-      }
-      _F1_Output_Type diff = this->_cache.y_plus - y;
-      _T norm_sq = PythonNumpy::inner_product(diff, diff);
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  inline void _compute_alm_infeasibility(void) {}
 
-      this->_cache.delta_y_norm_plus =
-          static_cast<_T>(std::sqrt(static_cast<double>(norm_sq)));
+  /**
+   * @brief Compute ALM infeasibility: ||y^+ - y||.
+   * Specialization for N1 > 0: computes delta_y_norm_plus = ||y^+ - y||.
+   */
+  template <std::size_t _N1 = N1,
+            typename std::enable_if<(_N1 > 0), int>::type = 0>
+  inline void _compute_alm_infeasibility(void) {
+    _F1_Output_Type y;
+    for (std::size_t i = 0; i < _N1; ++i) {
+      y.access(i, 0) = this->_cache.xi.access(i + 1, 0);
     }
+    _F1_Output_Type diff = this->_cache.y_plus - y;
+
+    this->_cache.delta_y_norm_plus = PythonNumpy::norm(diff);
   }
 
   /**
@@ -1633,11 +1640,8 @@ protected:
   inline void _compute_pm_infeasibility(const U_Horizon_Type &u) {
     if (N2 > 0 && this->_problem.mapping_f2) {
       this->_cache.w_pm = this->_problem.mapping_f2(u);
-      _T norm_sq =
-          PythonNumpy::inner_product(this->_cache.w_pm, this->_cache.w_pm);
 
-      this->_cache.f2_norm_plus =
-          static_cast<_T>(std::sqrt(static_cast<double>(norm_sq)));
+      this->_cache.f2_norm_plus = PythonNumpy::norm(this->_cache.w_pm);
     }
   }
 
