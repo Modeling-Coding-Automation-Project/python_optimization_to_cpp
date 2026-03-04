@@ -172,11 +172,35 @@ public:
   BoxProjectionOperator(const Vector_Type &lower, const Vector_Type &upper)
       : _lower(lower), _upper(upper), _has_lower(true), _has_upper(true) {}
 
-  /* Copy / Move: use defaults */
-  BoxProjectionOperator(const BoxProjectionOperator &) = default;
-  BoxProjectionOperator &operator=(const BoxProjectionOperator &) = default;
-  BoxProjectionOperator(BoxProjectionOperator &&) noexcept = default;
-  BoxProjectionOperator &operator=(BoxProjectionOperator &&) noexcept = default;
+  /* Copy Constructor */
+  BoxProjectionOperator(const BoxProjectionOperator &input)
+      : _lower(input._lower), _upper(input._upper),
+        _has_lower(input._has_lower), _has_upper(input._has_upper) {}
+
+  BoxProjectionOperator &operator=(const BoxProjectionOperator &input) {
+    if (this != &input) {
+      this->_lower = input._lower;
+      this->_upper = input._upper;
+      this->_has_lower = input._has_lower;
+      this->_has_upper = input._has_upper;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  BoxProjectionOperator(BoxProjectionOperator &&input) noexcept
+      : _lower(std::move(input._lower)), _upper(std::move(input._upper)),
+        _has_lower(input._has_lower), _has_upper(input._has_upper) {}
+
+  BoxProjectionOperator &operator=(BoxProjectionOperator &&input) noexcept {
+    if (this != &input) {
+      this->_lower = std::move(input._lower);
+      this->_upper = std::move(input._upper);
+      this->_has_lower = input._has_lower;
+      this->_has_upper = input._has_upper;
+    }
+    return *this;
+  }
 
   inline void set_lower(const Vector_Type &lower) {
     this->_lower = lower;
@@ -239,12 +263,33 @@ public:
   explicit BallProjectionOperator(const T &radius)
       : _center(), _radius(radius), _has_center(false) {}
 
-  /* Copy / Move: use defaults */
-  BallProjectionOperator(const BallProjectionOperator &) = default;
-  BallProjectionOperator &operator=(const BallProjectionOperator &) = default;
-  BallProjectionOperator(BallProjectionOperator &&) noexcept = default;
-  BallProjectionOperator &
-  operator=(BallProjectionOperator &&) noexcept = default;
+  /* Copy Constructor */
+  BallProjectionOperator(const BallProjectionOperator &input)
+      : _center(input._center), _radius(input._radius),
+        _has_center(input._has_center) {}
+
+  BallProjectionOperator &operator=(const BallProjectionOperator &input) {
+    if (this != &input) {
+      this->_center = input._center;
+      this->_radius = input._radius;
+      this->_has_center = input._has_center;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  BallProjectionOperator(BallProjectionOperator &&input) noexcept
+      : _center(std::move(input._center)), _radius(input._radius),
+        _has_center(input._has_center) {}
+
+  BallProjectionOperator &operator=(BallProjectionOperator &&input) noexcept {
+    if (this != &input) {
+      this->_center = std::move(input._center);
+      this->_radius = input._radius;
+      this->_has_center = input._has_center;
+    }
+    return *this;
+  }
 
   inline void set_center(const Vector_Type &center) {
     this->_center = center;
@@ -337,11 +382,62 @@ public:
     this->xi(0, 0) = static_cast<T>(ALM_Constants::DEFAULT_INITIAL_PENALTY);
   }
 
-  /* Copy / Move: use defaults */
-  ALM_Cache(const ALM_Cache &) = default;
-  ALM_Cache &operator=(const ALM_Cache &) = default;
-  ALM_Cache(ALM_Cache &&) noexcept = default;
-  ALM_Cache &operator=(ALM_Cache &&) noexcept = default;
+  /* Copy Constructor */
+  ALM_Cache(const ALM_Cache &input)
+      : panoc_cache(input.panoc_cache), y_plus(input.y_plus), xi(input.xi),
+        w_alm_aux(input.w_alm_aux), w_pm(input.w_pm),
+        delta_y_norm(input.delta_y_norm),
+        delta_y_norm_plus(input.delta_y_norm_plus), f2_norm(input.f2_norm),
+        f2_norm_plus(input.f2_norm_plus), iteration(input.iteration),
+        inner_iteration_count(input.inner_iteration_count),
+        last_inner_problem_norm_fpr(input.last_inner_problem_norm_fpr) {}
+
+  ALM_Cache &operator=(const ALM_Cache &input) {
+    if (this != &input) {
+      this->panoc_cache = input.panoc_cache;
+      this->y_plus = input.y_plus;
+      this->xi = input.xi;
+      this->w_alm_aux = input.w_alm_aux;
+      this->w_pm = input.w_pm;
+      this->delta_y_norm = input.delta_y_norm;
+      this->delta_y_norm_plus = input.delta_y_norm_plus;
+      this->f2_norm = input.f2_norm;
+      this->f2_norm_plus = input.f2_norm_plus;
+      this->iteration = input.iteration;
+      this->inner_iteration_count = input.inner_iteration_count;
+      this->last_inner_problem_norm_fpr = input.last_inner_problem_norm_fpr;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  ALM_Cache(ALM_Cache &&input) noexcept
+      : panoc_cache(std::move(input.panoc_cache)),
+        y_plus(std::move(input.y_plus)), xi(std::move(input.xi)),
+        w_alm_aux(std::move(input.w_alm_aux)), w_pm(std::move(input.w_pm)),
+        delta_y_norm(input.delta_y_norm),
+        delta_y_norm_plus(input.delta_y_norm_plus), f2_norm(input.f2_norm),
+        f2_norm_plus(input.f2_norm_plus), iteration(input.iteration),
+        inner_iteration_count(input.inner_iteration_count),
+        last_inner_problem_norm_fpr(input.last_inner_problem_norm_fpr) {}
+
+  ALM_Cache &operator=(ALM_Cache &&input) noexcept {
+    if (this != &input) {
+      this->panoc_cache = std::move(input.panoc_cache);
+      this->y_plus = std::move(input.y_plus);
+      this->xi = std::move(input.xi);
+      this->w_alm_aux = std::move(input.w_alm_aux);
+      this->w_pm = std::move(input.w_pm);
+      this->delta_y_norm = input.delta_y_norm;
+      this->delta_y_norm_plus = input.delta_y_norm_plus;
+      this->f2_norm = input.f2_norm;
+      this->f2_norm_plus = input.f2_norm_plus;
+      this->iteration = input.iteration;
+      this->inner_iteration_count = input.inner_iteration_count;
+      this->last_inner_problem_norm_fpr = input.last_inner_problem_norm_fpr;
+    }
+    return *this;
+  }
 
   /**
    * @brief Reset the cache to its initial state (called at the start of each
@@ -463,11 +559,47 @@ public:
         _jacobian_f1_trans(nullptr), _set_c_project(nullptr),
         _mapping_f2(nullptr), _jacobian_f2_trans(nullptr) {}
 
-  /* Copy / Move: use defaults */
-  ALM_Factory(const ALM_Factory &) = default;
-  ALM_Factory &operator=(const ALM_Factory &) = default;
-  ALM_Factory(ALM_Factory &&) noexcept = default;
-  ALM_Factory &operator=(ALM_Factory &&) noexcept = default;
+  /* Copy Constructor */
+  ALM_Factory(const ALM_Factory &input)
+      : _f(input._f), _df(input._df), _mapping_f1(input._mapping_f1),
+        _jacobian_f1_trans(input._jacobian_f1_trans),
+        _set_c_project(input._set_c_project), _mapping_f2(input._mapping_f2),
+        _jacobian_f2_trans(input._jacobian_f2_trans) {}
+
+  ALM_Factory &operator=(const ALM_Factory &input) {
+    if (this != &input) {
+      this->_f = input._f;
+      this->_df = input._df;
+      this->_mapping_f1 = input._mapping_f1;
+      this->_jacobian_f1_trans = input._jacobian_f1_trans;
+      this->_set_c_project = input._set_c_project;
+      this->_mapping_f2 = input._mapping_f2;
+      this->_jacobian_f2_trans = input._jacobian_f2_trans;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  ALM_Factory(ALM_Factory &&input) noexcept
+      : _f(std::move(input._f)), _df(std::move(input._df)),
+        _mapping_f1(std::move(input._mapping_f1)),
+        _jacobian_f1_trans(std::move(input._jacobian_f1_trans)),
+        _set_c_project(std::move(input._set_c_project)),
+        _mapping_f2(std::move(input._mapping_f2)),
+        _jacobian_f2_trans(std::move(input._jacobian_f2_trans)) {}
+
+  ALM_Factory &operator=(ALM_Factory &&input) noexcept {
+    if (this != &input) {
+      this->_f = std::move(input._f);
+      this->_df = std::move(input._df);
+      this->_mapping_f1 = std::move(input._mapping_f1);
+      this->_jacobian_f1_trans = std::move(input._jacobian_f1_trans);
+      this->_set_c_project = std::move(input._set_c_project);
+      this->_mapping_f2 = std::move(input._mapping_f2);
+      this->_jacobian_f2_trans = std::move(input._jacobian_f2_trans);
+    }
+    return *this;
+  }
 
   /* Setters */
   inline void set_cost_function(const Cost_Func_Type &f) { this->_f = f; }
@@ -670,11 +802,52 @@ public:
         u_max_matrix(), mapping_f1(nullptr), set_c_project(nullptr),
         set_y_project(nullptr), mapping_f2(nullptr) {}
 
-  /* Copy / Move: use defaults */
-  ALM_Problem(const ALM_Problem &) = default;
-  ALM_Problem &operator=(const ALM_Problem &) = default;
-  ALM_Problem(ALM_Problem &&) noexcept = default;
-  ALM_Problem &operator=(ALM_Problem &&) noexcept = default;
+  /* Copy Constructor */
+  ALM_Problem(const ALM_Problem &input)
+      : parametric_cost(input.parametric_cost),
+        parametric_gradient(input.parametric_gradient),
+        u_min_matrix(input.u_min_matrix), u_max_matrix(input.u_max_matrix),
+        mapping_f1(input.mapping_f1), set_c_project(input.set_c_project),
+        set_y_project(input.set_y_project), mapping_f2(input.mapping_f2) {}
+
+  ALM_Problem &operator=(const ALM_Problem &input) {
+    if (this != &input) {
+      this->parametric_cost = input.parametric_cost;
+      this->parametric_gradient = input.parametric_gradient;
+      this->u_min_matrix = input.u_min_matrix;
+      this->u_max_matrix = input.u_max_matrix;
+      this->mapping_f1 = input.mapping_f1;
+      this->set_c_project = input.set_c_project;
+      this->set_y_project = input.set_y_project;
+      this->mapping_f2 = input.mapping_f2;
+    }
+    return *this;
+  }
+
+  /* Move Constructor */
+  ALM_Problem(ALM_Problem &&input) noexcept
+      : parametric_cost(std::move(input.parametric_cost)),
+        parametric_gradient(std::move(input.parametric_gradient)),
+        u_min_matrix(std::move(input.u_min_matrix)),
+        u_max_matrix(std::move(input.u_max_matrix)),
+        mapping_f1(std::move(input.mapping_f1)),
+        set_c_project(std::move(input.set_c_project)),
+        set_y_project(std::move(input.set_y_project)),
+        mapping_f2(std::move(input.mapping_f2)) {}
+
+  ALM_Problem &operator=(ALM_Problem &&input) noexcept {
+    if (this != &input) {
+      this->parametric_cost = std::move(input.parametric_cost);
+      this->parametric_gradient = std::move(input.parametric_gradient);
+      this->u_min_matrix = std::move(input.u_min_matrix);
+      this->u_max_matrix = std::move(input.u_max_matrix);
+      this->mapping_f1 = std::move(input.mapping_f1);
+      this->set_c_project = std::move(input.set_c_project);
+      this->set_y_project = std::move(input.set_y_project);
+      this->mapping_f2 = std::move(input.mapping_f2);
+    }
+    return *this;
+  }
 
   /* Setters */
   inline void set_parametric_cost(const Parametric_Cost_Type &cost) {
