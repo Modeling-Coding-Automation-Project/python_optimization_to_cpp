@@ -1681,9 +1681,24 @@ protected:
 
   /**
    * @brief Compute PM infeasibility: ||F2(u)||.
+   * Specialization for N2 == 0: no PM constraints, nothing to compute.
    */
+  template <std::size_t _N2 = N2,
+            typename std::enable_if<(_N2 == 0), int>::type = 0>
   inline void _compute_pm_infeasibility(const U_Horizon_Type &u) {
-    if (N2 > 0 && this->_problem.mapping_f2) {
+    /* No PM constraints (N2 == 0): nothing to do. */
+    static_cast<void>(u);
+  }
+
+  /**
+   * @brief Compute PM infeasibility: ||F2(u)||.
+   * Specialization for N2 > 0: computes w_pm = F2(u) and f2_norm_plus =
+   * ||F2(u)||.
+   */
+  template <std::size_t _N2 = N2,
+            typename std::enable_if<(_N2 > 0), int>::type = 0>
+  inline void _compute_pm_infeasibility(const U_Horizon_Type &u) {
+    if (this->_problem.mapping_f2) {
       this->_cache.w_pm = this->_problem.mapping_f2(u);
 
       this->_cache.f2_norm_plus = PythonNumpy::norm(this->_cache.w_pm);
