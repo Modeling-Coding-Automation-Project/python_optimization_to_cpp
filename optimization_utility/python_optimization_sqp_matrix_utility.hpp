@@ -19,6 +19,7 @@
 
 #include <array>
 #include <functional>
+#include <tuple>
 #include <type_traits>
 
 namespace PythonOptimization {
@@ -1064,17 +1065,18 @@ public:
    * limits.
    * @param Y_limit_active Output matrix to store the active status of Y limits.
    */
-  inline void
-  calculate_Y_limit_penalty_and_active(const Y_Horizon_Type &Y_horizon,
-                                       Y_Horizon_Type &Y_limit_penalty,
-                                       Y_Horizon_Type &Y_limit_active) {
+  inline auto
+  calculate_Y_limit_penalty_and_active(const Y_Horizon_Type &Y_horizon)
+      -> std::tuple<Y_Horizon_Type, Y_Horizon_Type> {
 
-    Y_limit_penalty = Y_Horizon_Type();
-    Y_limit_active = Y_Horizon_Type();
+    Y_Horizon_Type Y_limit_penalty;
+    Y_Horizon_Type Y_limit_active;
 
     MatrixOperation::calculate_Y_limit_penalty_and_active(
         Y_horizon, this->_Y_min_matrix, this->_Y_max_matrix, Y_limit_penalty,
         Y_limit_active);
+
+    return std::make_tuple(Y_limit_penalty, Y_limit_active);
   }
 
   /**
@@ -1346,8 +1348,8 @@ public:
 
     Y_Horizon_Type Y_limit_penalty;
     Y_Horizon_Type Y_limit_active;
-    this->calculate_Y_limit_penalty_and_active(Y_horizon, Y_limit_penalty,
-                                               Y_limit_active);
+    std::tie(Y_limit_penalty, Y_limit_active) =
+        this->calculate_Y_limit_penalty_and_active(Y_horizon);
 
     // /* --- 2) first-order adjoint (costate lambda) with output terms */
     X_Horizon_Type lam;
