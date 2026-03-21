@@ -71,10 +71,8 @@ int main(void) {
       typename X_Type::Value_Type { return cost_matrices.compute_cost(X, U); };
   CostAndGradientFunction_Object<X_Type, U_horizon_Type, Gradient_Type>
       cost_and_gradient_function =
-          [&cost_matrices](const X_Type &X, const U_horizon_Type &U,
-                           typename X_Type::Value_Type &J,
-                           Gradient_Type &gradient) {
-            cost_matrices.compute_cost_and_gradient(X, U, J, gradient);
+          [&cost_matrices](const X_Type &X, const U_horizon_Type &U) {
+            return cost_matrices.compute_cost_and_gradient(X, U);
           };
   HVP_Function_Object<X_Type, U_horizon_Type, V_Horizon_Type, HVP_Type>
       hvp_function = [&cost_matrices](const X_Type &X, const U_horizon_Type &U,
