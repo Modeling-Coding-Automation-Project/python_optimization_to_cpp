@@ -17,6 +17,7 @@
 
 #include <array>
 #include <functional>
+#include <tuple>
 #include <type_traits>
 
 namespace PythonOptimization {
@@ -3545,20 +3546,22 @@ struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
  * @param U_min_matrix   Matrix of lower bounds.
  * @param U_max_matrix   Matrix of upper bounds.
  * @param atol           Absolute tolerance for bound checking.
- * @param at_lower       Output mask matrix indicating elements at lower bounds.
- * @param at_upper       Output mask matrix indicating elements at upper bounds.
+ *
+ * @return std::tuple<AtLower_Type, AtUpper_Type> A tuple containing the mask
+ * matrix indicating elements at lower bounds and the mask matrix indicating
+ * elements at upper bounds.
  *
  * @note All matrix types must have matching dimensions. Static assertions are
  * used to enforce this.
  */
-template <typename U_Mat_Type, typename U_Min_Matrix_Type,
-          typename U_Max_Matrix_Type, typename AtLower_Type,
-          typename AtUpper_Type, typename Value_Type>
-inline void free_mask_at_check(const U_Mat_Type &U_horizon_in,
+template <typename AtLower_Type, typename AtUpper_Type, typename U_Mat_Type,
+          typename U_Min_Matrix_Type, typename U_Max_Matrix_Type,
+          typename Value_Type>
+inline auto free_mask_at_check(const U_Mat_Type &U_horizon_in,
                                const U_Min_Matrix_Type &U_min_matrix,
                                const U_Max_Matrix_Type &U_max_matrix,
-                               const Value_Type &atol, AtLower_Type &at_lower,
-                               AtUpper_Type &at_upper) {
+                               const Value_Type &atol)
+    -> std::tuple<AtLower_Type, AtUpper_Type> {
 
   constexpr std::size_t M = U_Mat_Type::COLS; // INPUT_SIZE
   constexpr std::size_t N = U_Mat_Type::ROWS; // NP
@@ -3581,11 +3584,16 @@ inline void free_mask_at_check(const U_Mat_Type &U_horizon_in,
   static_assert(AtUpper_Type::ROWS == N,
                 "at_upper ROWS mismatch with U_horizon_in");
 
+  AtLower_Type at_lower;
+  AtUpper_Type at_upper;
+
   FreeMaskAtCheck::Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type,
                        AtLower_Type, AtUpper_Type, Value_Type, M, N,
                        (M - 1)>::compute(U_horizon_in, U_min_matrix,
                                          U_max_matrix, atol, at_lower,
                                          at_upper);
+
+  return std::make_tuple(std::move(at_lower), std::move(at_upper));
 }
 
 /* free_mask push active */

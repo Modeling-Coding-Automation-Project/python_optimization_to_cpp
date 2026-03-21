@@ -443,11 +443,14 @@ public:
     auto m = _Mask_Type::ones();
 
     this->_active_set.clear();
+
     _At_Lower_Upper_Type at_lower;
     _At_Lower_Upper_Type at_upper;
 
-    MatrixOperation::free_mask_at_check(U_horizon_in, U_min_matrix,
-                                        U_max_matrix, atol, at_lower, at_upper);
+    std::tie(at_lower, at_upper) =
+        MatrixOperation::free_mask_at_check<_At_Lower_Upper_Type,
+                                            _At_Lower_Upper_Type>(
+            U_horizon_in, U_min_matrix, U_max_matrix, atol);
 
     MatrixOperation::free_mask_push_active(m, gradient, at_lower, at_upper,
                                            gtol, this->_active_set);
