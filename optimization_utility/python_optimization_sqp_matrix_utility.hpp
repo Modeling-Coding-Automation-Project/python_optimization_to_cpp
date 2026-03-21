@@ -1171,9 +1171,9 @@ public:
    *
    * @param X_initial Initial state vector.
    * @param U_horizon Control input horizon matrix.
-   * @param[out] J Computed cost function value (accumulated over the horizon).
-   * @param[out] gradient Gradient of the cost function with respect to the
-   * control inputs.
+   *
+   * @return std::tuple of (J, gradient), where J is the computed cost value
+   * and gradient is the gradient of the cost with respect to control inputs.
    *
    * @note
    * - Assumes that all required system parameters and matrices (e.g., Qx, Qy,
@@ -1181,9 +1181,12 @@ public:
    * - The function is intended for use in sequential quadratic programming
    * (SQP) or similar optimization routines.
    */
-  inline void compute_cost_and_gradient(const X_Type X_initial,
-                                        const U_Horizon_Type &U_horizon, _T &J,
-                                        _Gradient_Type &gradient) {
+  inline auto compute_cost_and_gradient(const X_Type X_initial,
+                                        const U_Horizon_Type &U_horizon)
+      -> std::tuple<_T, _Gradient_Type> {
+
+    _T J;
+    _Gradient_Type gradient;
 
     U_Type U_dummy;
 
@@ -1293,6 +1296,8 @@ public:
                           Cx_k, (Qy_ek_y + Y_min_max_rho_Yk_limit_penalty))) +
           A_k_T_lam_next;
     }
+
+    return std::make_tuple(J, gradient);
   }
 
   /**

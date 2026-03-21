@@ -507,7 +507,8 @@ public:
          solver_iteration < this->_solver_max_iteration; ++solver_iteration) {
       /* Calculate cost and gradient */
       _Gradient_Type gradient;
-      cost_and_gradient_function(X_initial, U_horizon_store, J, gradient);
+      std::tie(J, gradient) =
+          cost_and_gradient_function(X_initial, U_horizon_store);
 
       this->_solver_step_iterated_number = solver_iteration + 1;
       if (PythonNumpy::norm(gradient) < this->_gradient_norm_zero_limit) {

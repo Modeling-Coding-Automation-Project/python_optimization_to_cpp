@@ -2,6 +2,7 @@
 #define __PYTHON_OPTIMIZATION_COMMON_HPP__
 
 #include <functional>
+#include <tuple>
 
 namespace PythonOptimization {
 
@@ -370,9 +371,9 @@ using CostFunction_Object = std::function<typename X_Type::Value_Type(
     const X_Type &, const U_Horizon_Type &)>;
 
 template <typename X_Type, typename U_Horizon_Type, typename Gradient_Type>
-using CostAndGradientFunction_Object =
-    std::function<void(const X_Type &, const U_Horizon_Type &,
-                       typename X_Type::Value_Type &, Gradient_Type &)>;
+using CostAndGradientFunction_Object = std::function<
+    std::tuple<typename X_Type::Value_Type, Gradient_Type>(
+        const X_Type &, const U_Horizon_Type &)>;
 
 } // namespace PythonOptimization
 
