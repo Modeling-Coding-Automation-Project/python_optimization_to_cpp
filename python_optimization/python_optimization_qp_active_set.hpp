@@ -600,22 +600,22 @@ public:
   inline auto solve(const E_Type &E, const L_Type &L, const M_Type &M,
                     const Gamma_Type &gamma) -> X_Type {
     /* Check Compatibility */
-    static_assert(E_Type::COLS == NUMBER_OF_VARIABLES &&
-                      E_Type::ROWS == NUMBER_OF_VARIABLES,
+    static_assert(E_Type::ROWS == NUMBER_OF_VARIABLES &&
+                      E_Type::COLS == NUMBER_OF_VARIABLES,
                   "E must be a square matrix of size (n, n) where n is the "
                   "number of variables.");
 
-    static_assert(L_Type::COLS == NUMBER_OF_VARIABLES && L_Type::ROWS == 1,
+    static_assert(L_Type::ROWS == NUMBER_OF_VARIABLES && L_Type::COLS == 1,
                   "L must be a column vector of size (n, 1) where n is the "
                   "number of variables.");
 
-    static_assert(M_Type::COLS == NUMBER_OF_CONSTRAINTS &&
-                      M_Type::ROWS == NUMBER_OF_VARIABLES,
+    static_assert(M_Type::ROWS == NUMBER_OF_CONSTRAINTS &&
+                      M_Type::COLS == NUMBER_OF_VARIABLES,
                   "M must be a matrix of size (m, n) where m is the number of "
                   "constraints and n is the number of variables.");
 
-    static_assert(Gamma_Type::COLS == NUMBER_OF_CONSTRAINTS &&
-                      Gamma_Type::ROWS == 1,
+    static_assert(Gamma_Type::ROWS == NUMBER_OF_CONSTRAINTS &&
+                      Gamma_Type::COLS == 1,
                   "gamma must be a column vector of size (m, 1) where m is the "
                   "number of constraints.");
 

@@ -231,8 +231,8 @@ using Active_Flags_Type = std::array<std::array<bool, N>, M>;
  * using the `fill` method, and then recursively calls itself with `I - 1` until
  * the base case is reached.
  *
- * @tparam M Number of rows in the flags structure.
- * @tparam N Number of columns in the flags structure.
+ * @tparam M Number of columns in the flags structure.
+ * @tparam N Number of rows in the flags structure.
  * @tparam I Current row index to clear (should be non-negative).
  * @param flags Reference to the Active_Flags_Type<M, N> object whose flags are
  * to be cleared.
@@ -251,12 +251,12 @@ template <std::size_t M, std::size_t N, std::size_t I> struct ClearLoop {
  * index is 0.
  *
  * This specialization provides a static inline function `run` that clears (sets
- * to false) all elements of the first row (index 0) of the `flags` object,
+ * to false) all elements of the first column (index 0) of the `flags` object,
  * which is of type `Active_Flags_Type<M, N>`. This is typically used to reset
- * or clear the active set flags for the first row in an optimization algorithm.
+ * or clear the active set flags for the first column in an optimization algorithm.
  *
- * @tparam M Number of rows in the flags structure.
- * @tparam N Number of columns in the flags structure.
+ * @tparam M Number of columns in the flags structure.
+ * @tparam N Number of rows in the flags structure.
  * @param flags Reference to the flags object to be cleared.
  */
 template <std::size_t M, std::size_t N> struct ClearLoop<M, N, 0> {
@@ -272,12 +272,12 @@ template <std::size_t M, std::size_t N> struct ClearLoop<M, N, 0> {
  *
  * This function resets or clears all flags within the given Active_Flags_Type
  * instance by invoking the ClearLoop helper template. It is templated on the
- * number of columns and rows, allowing for compile-time optimization and type
+ * number of rows and cols, allowing for compile-time optimization and type
  * safety.
  *
- * @tparam NUMBER_OF_COLUMNS The number of columns in the active flags
+ * @tparam NUMBER_OF_COLUMNS The number of rows in the active flags
  * structure.
- * @tparam NUMBER_OF_ROWS The number of rows in the active flags structure.
+ * @tparam NUMBER_OF_ROWS The number of cols in the active flags structure.
  * @param active_flags Reference to the Active_Flags_Type object whose flags are
  * to be cleared.
  */
@@ -297,7 +297,7 @@ inline void clear_all_active_flags(
  * matrix.
  *
  * @details
- * Template parameters define compile-time fixed numbers of columns and rows.
+ * Template parameters define compile-time fixed numbers of rows and cols.
  * Similar to the 1D ActiveSet, this class stores:
  *  - _active_flags  : A 2D array (flattened) of bool indicating if (col,row) is
  * active.
@@ -318,7 +318,7 @@ public:
       NUMBER_OF_COLUMNS * NUMBER_OF_ROWS;
 
   static constexpr std::size_t COLUMN = 0;
-  static constexpr std::size_t ROW = 1;
+  static constexpr std::size_t COL = 1;
 
 protected:
   /* Type */
@@ -384,7 +384,7 @@ public:
     if (!this->_active_flags[column_clamped][row_clamped]) {
       this->_active_flags[column_clamped][row_clamped] = true;
       this->_active_pairs[this->_number_of_active][COLUMN] = column_clamped;
-      this->_active_pairs[this->_number_of_active][ROW] = row_clamped;
+      this->_active_pairs[this->_number_of_active][COL] = row_clamped;
       this->_number_of_active++;
     }
   }
@@ -415,17 +415,17 @@ public:
       bool found = false;
       for (std::size_t i = 0; i < this->_number_of_active; ++i) {
         if (!found && this->_active_pairs[i][COLUMN] == column_clamped &&
-            this->_active_pairs[i][ROW] == row_clamped) {
+            this->_active_pairs[i][COL] == row_clamped) {
           found = true;
         }
         if (found && i < this->_number_of_active - 1) {
           this->_active_pairs[i][COLUMN] = this->_active_pairs[i + 1][COLUMN];
-          this->_active_pairs[i][ROW] = this->_active_pairs[i + 1][ROW];
+          this->_active_pairs[i][COL] = this->_active_pairs[i + 1][COL];
         }
       }
       if (found) {
         this->_active_pairs[this->_number_of_active - 1][COLUMN] = 0;
-        this->_active_pairs[this->_number_of_active - 1][ROW] = 0;
+        this->_active_pairs[this->_number_of_active - 1][COL] = 0;
         this->_number_of_active--;
       }
     }
@@ -513,7 +513,7 @@ public:
    * This function performs the following actions:
    * - Calls ActiveSet2D_Operation::clear_all_active_flags to reset all active
    * flags.
-   * - Iterates through the current active pairs and sets their COLUMN and ROW
+   * - Iterates through the current active pairs and sets their COLUMN and COL
    * values to 0.
    * - Resets the number of active pairs to zero.
    *
@@ -525,7 +525,7 @@ public:
 
     for (std::size_t i = 0; i < this->_number_of_active; ++i) {
       this->_active_pairs[i][COLUMN] = 0;
-      this->_active_pairs[i][ROW] = 0;
+      this->_active_pairs[i][COL] = 0;
     }
     this->_number_of_active = 0;
   }
@@ -570,10 +570,10 @@ protected:
  * dimensions.
  *
  * This function template constructs an ActiveSet2D object with the given number
- * of columns and rows, as specified by the template parameters.
+ * of rows and cols, as specified by the template parameters.
  *
- * @tparam Number_Of_Columns The number of columns for the ActiveSet2D.
- * @tparam Number_Of_Rows The number of rows for the ActiveSet2D.
+ * @tparam Number_Of_Columns The number of rows for the ActiveSet2D.
+ * @tparam Number_Of_Rows The number of cols for the ActiveSet2D.
  * @return An instance of ActiveSet2D<Number_Of_Columns, Number_Of_Rows>.
  */
 template <std::size_t Number_Of_Columns, std::size_t Number_Of_Rows>
@@ -601,10 +601,10 @@ using ActiveSet2D_Type = ActiveSet2D<Number_Of_Columns, Number_Of_Rows>;
  * are left as zero in the result.
  *
  * @tparam T  Matrix element type.
- * @tparam M  Number of columns in the matrix.
- * @tparam N  Number of rows in the matrix.
- * @tparam MA Number of columns in the ActiveSet2D.
- * @tparam NA Number of rows in the ActiveSet2D.
+ * @tparam M  Number of rows in the matrix.
+ * @tparam N  Number of columns in the matrix.
+ * @tparam MA Number of rows in the ActiveSet2D.
+ * @tparam NA Number of columns in the ActiveSet2D.
  *
  * @section Methods
  * - element_wise_product: Computes the element-wise product of two matrices
@@ -625,7 +625,7 @@ public:
 
   /* Constant */
   static constexpr std::size_t COLUMN = 0;
-  static constexpr std::size_t ROW = 1;
+  static constexpr std::size_t COL = 1;
 
 public:
   /* Function */
@@ -640,10 +640,10 @@ public:
    * left uninitialized or default-initialized.
    *
    * @tparam T   The type of the matrix elements.
-   * @tparam M   Number of rows in the matrices.
-   * @tparam N   Number of columns in the matrices.
-   * @tparam MA  Number of rows in the active set (must match M).
-   * @tparam NA  Number of columns in the active set (must match N).
+   * @tparam M   Number of columns in the matrices.
+   * @tparam N   Number of rows in the matrices.
+   * @tparam MA  Number of columns in the active set (must match M).
+   * @tparam NA  Number of rows in the active set (must match N).
    * @param A          The first input matrix.
    * @param B          The second input matrix.
    * @param active_set The set of active indices where the element-wise product
@@ -668,8 +668,8 @@ public:
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
 
-      result.access(pair[COLUMN], pair[ROW]) =
-          A.access(pair[COLUMN], pair[ROW]) * B.access(pair[COLUMN], pair[ROW]);
+      result.access(pair[COLUMN], pair[COL]) =
+          A.access(pair[COLUMN], pair[COL]) * B.access(pair[COLUMN], pair[COL]);
     }
     return result;
   }
@@ -683,10 +683,10 @@ public:
    * active set defines which elements are included in the computation.
    *
    * @tparam T   The type of the matrix elements.
-   * @tparam M   Number of rows in matrices A and B.
-   * @tparam N   Number of columns in matrices A and B.
-   * @tparam MA  Number of rows in the ActiveSet2D.
-   * @tparam NA  Number of columns in the ActiveSet2D.
+   * @tparam M   Number of columns in matrices A and B.
+   * @tparam N   Number of rows in matrices A and B.
+   * @tparam MA  Number of columns in the ActiveSet2D.
+   * @tparam NA  Number of rows in the ActiveSet2D.
    * @param A          The first input matrix.
    * @param B          The second input matrix.
    * @param active_set The set of active indices to include in the dot product.
@@ -706,7 +706,7 @@ public:
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
       total +=
-          A.access(pair[COLUMN], pair[ROW]) * B.access(pair[COLUMN], pair[ROW]);
+          A.access(pair[COLUMN], pair[COL]) * B.access(pair[COLUMN], pair[COL]);
     }
     return total;
   }
@@ -721,10 +721,10 @@ public:
    * elements in the active set are updated (others remain default-initialized).
    *
    * @tparam T   The type of the matrix elements.
-   * @tparam M   Number of rows in the matrix.
-   * @tparam N   Number of columns in the matrix.
-   * @tparam MA  Number of rows in the active set.
-   * @tparam NA  Number of columns in the active set.
+   * @tparam M   Number of columns in the matrix.
+   * @tparam N   Number of rows in the matrix.
+   * @tparam MA  Number of columns in the active set.
+   * @tparam NA  Number of rows in the active set.
    * @param A         The input matrix to be multiplied.
    * @param scalar    The scalar value to multiply with.
    * @param active_set The set of active positions to apply the multiplication.
@@ -746,8 +746,8 @@ public:
     Matrix_Type<T, M, N> result;
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      result.access(pair[COLUMN], pair[ROW]) =
-          A.access(pair[COLUMN], pair[ROW]) * scalar;
+      result.access(pair[COLUMN], pair[COL]) =
+          A.access(pair[COLUMN], pair[COL]) * scalar;
     }
     return result;
   }
@@ -762,10 +762,10 @@ public:
    * the matrix and the active set match.
    *
    * @tparam T   The type of the matrix elements (e.g., float, double).
-   * @tparam M   Number of rows in the matrix.
-   * @tparam N   Number of columns in the matrix.
-   * @tparam MA  Number of rows in the active set.
-   * @tparam NA  Number of columns in the active set.
+   * @tparam M   Number of columns in the matrix.
+   * @tparam N   Number of rows in the matrix.
+   * @tparam MA  Number of columns in the active set.
+   * @tparam NA  Number of rows in the active set.
    * @param A           The matrix whose norm is to be computed.
    * @param active_set  The ActiveSet2D object specifying which elements are
    * active.
@@ -781,7 +781,7 @@ public:
     T total = static_cast<T>(0);
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      const T v = A.access(pair[COLUMN], pair[ROW]);
+      const T v = A.access(pair[COLUMN], pair[COL]);
       total += v * v;
     }
 

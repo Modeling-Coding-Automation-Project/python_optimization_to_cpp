@@ -76,36 +76,36 @@ class SQP_CostMatrices_NMPC {
 public:
   /* Constant */
   static constexpr std::size_t STATE_SIZE =
-      State_Jacobian_X_Matrix_Type_In::ROWS;
+      State_Jacobian_X_Matrix_Type_In::COLS;
   static constexpr std::size_t INPUT_SIZE =
-      State_Jacobian_U_Matrix_Type_In::ROWS;
+      State_Jacobian_U_Matrix_Type_In::COLS;
   static constexpr std::size_t OUTPUT_SIZE =
-      Measurement_Jacobian_X_Matrix_Type_In::COLS;
+      Measurement_Jacobian_X_Matrix_Type_In::ROWS;
 
   // static constexpr std::size_t NP = Np_In;
   // To avoid ODR violation in C++11/14, use enum hack.
   enum : std::size_t { NP = Np_In };
 
-  static constexpr std::size_t STATE_JACOBIAN_X_COLS = STATE_SIZE;
   static constexpr std::size_t STATE_JACOBIAN_X_ROWS = STATE_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_X_COLS = STATE_SIZE;
 
-  static constexpr std::size_t STATE_JACOBIAN_U_COLS = STATE_SIZE;
-  static constexpr std::size_t STATE_JACOBIAN_U_ROWS = INPUT_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_U_ROWS = STATE_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_U_COLS = INPUT_SIZE;
 
-  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_COLS = OUTPUT_SIZE;
-  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_ROWS = STATE_SIZE;
+  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_ROWS = OUTPUT_SIZE;
+  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_COLS = STATE_SIZE;
 
-  static constexpr std::size_t STATE_HESSIAN_XX_COLS = STATE_SIZE * STATE_SIZE;
-  static constexpr std::size_t STATE_HESSIAN_XX_ROWS = STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_XX_ROWS = STATE_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_XX_COLS = STATE_SIZE;
 
-  static constexpr std::size_t STATE_HESSIAN_XU_COLS = STATE_SIZE * STATE_SIZE;
-  static constexpr std::size_t STATE_HESSIAN_XU_ROWS = INPUT_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_XU_ROWS = STATE_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_XU_COLS = INPUT_SIZE;
 
-  static constexpr std::size_t STATE_HESSIAN_UX_COLS = INPUT_SIZE * STATE_SIZE;
-  static constexpr std::size_t STATE_HESSIAN_UX_ROWS = STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_UX_ROWS = INPUT_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_UX_COLS = STATE_SIZE;
 
-  static constexpr std::size_t STATE_HESSIAN_UU_COLS = INPUT_SIZE * STATE_SIZE;
-  static constexpr std::size_t STATE_HESSIAN_UU_ROWS = INPUT_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_UU_ROWS = INPUT_SIZE * STATE_SIZE;
+  static constexpr std::size_t STATE_HESSIAN_UU_COLS = INPUT_SIZE;
 
   static constexpr std::size_t MEASUREMENT_HESSIAN_XX_COLS =
       OUTPUT_SIZE * STATE_SIZE;
@@ -172,68 +172,68 @@ public:
                    T>::value,
       "Measurement_Hessian_XX_Matrix_Type::Value_Type != T");
 
-  static_assert(U_Min_Type_In::COLS == INPUT_SIZE,
-                "U_Min_Type_In::COLS != INPUT_SIZE");
-  static_assert(U_Min_Type_In::ROWS == 1, "U_Min_Type_In::ROWS != 1");
+  static_assert(U_Min_Type_In::ROWS == INPUT_SIZE,
+                "U_Min_Type_In::ROWS != INPUT_SIZE");
+  static_assert(U_Min_Type_In::COLS == 1, "U_Min_Type_In::COLS != 1");
 
-  static_assert(U_Max_Type_In::COLS == INPUT_SIZE,
-                "U_Max_Type_In::COLS != INPUT_SIZE");
-  static_assert(U_Max_Type_In::ROWS == 1, "U_Max_Type_In::ROWS != 1");
+  static_assert(U_Max_Type_In::ROWS == INPUT_SIZE,
+                "U_Max_Type_In::ROWS != INPUT_SIZE");
+  static_assert(U_Max_Type_In::COLS == 1, "U_Max_Type_In::COLS != 1");
 
-  static_assert(Y_Min_Type_In::COLS == OUTPUT_SIZE,
-                "Y_Min_Type_In::COLS != OUTPUT_SIZE");
-  static_assert(Y_Min_Type_In::ROWS == 1, "Y_Min_Type_In::ROWS != 1");
+  static_assert(Y_Min_Type_In::ROWS == OUTPUT_SIZE,
+                "Y_Min_Type_In::ROWS != OUTPUT_SIZE");
+  static_assert(Y_Min_Type_In::COLS == 1, "Y_Min_Type_In::COLS != 1");
 
-  static_assert(Y_Max_Type_In::COLS == OUTPUT_SIZE,
-                "Y_Max_Type_In::COLS != OUTPUT_SIZE");
-  static_assert(Y_Max_Type_In::ROWS == 1, "Y_Max_Type_In::ROWS != 1");
+  static_assert(Y_Max_Type_In::ROWS == OUTPUT_SIZE,
+                "Y_Max_Type_In::ROWS != OUTPUT_SIZE");
+  static_assert(Y_Max_Type_In::COLS == 1, "Y_Max_Type_In::COLS != 1");
 
-  static_assert(State_Jacobian_X_Matrix_Type_In::COLS == STATE_JACOBIAN_X_COLS,
-                "State_Jacobian_X_Matrix_Type::COLS != STATE_JACOBIAN_X_COLS");
   static_assert(State_Jacobian_X_Matrix_Type_In::ROWS == STATE_JACOBIAN_X_ROWS,
                 "State_Jacobian_X_Matrix_Type::ROWS != STATE_JACOBIAN_X_ROWS");
+  static_assert(State_Jacobian_X_Matrix_Type_In::COLS == STATE_JACOBIAN_X_COLS,
+                "State_Jacobian_X_Matrix_Type::COLS != STATE_JACOBIAN_X_COLS");
 
-  static_assert(State_Jacobian_U_Matrix_Type_In::COLS == STATE_JACOBIAN_U_COLS,
-                "State_Jacobian_U_Matrix_Type::COLS != STATE_JACOBIAN_U_COLS");
   static_assert(State_Jacobian_U_Matrix_Type_In::ROWS == STATE_JACOBIAN_U_ROWS,
                 "State_Jacobian_U_Matrix_Type::ROWS != STATE_JACOBIAN_U_ROWS");
+  static_assert(State_Jacobian_U_Matrix_Type_In::COLS == STATE_JACOBIAN_U_COLS,
+                "State_Jacobian_U_Matrix_Type::COLS != STATE_JACOBIAN_U_COLS");
 
-  static_assert(Measurement_Jacobian_X_Matrix_Type_In::COLS ==
-                    MEASUREMENT_JACOBIAN_X_COLS,
-                "Measurement_Jacobian_X_Matrix_Type::COLS != "
-                "MEASUREMENT_JACOBIAN_X_COLS");
   static_assert(Measurement_Jacobian_X_Matrix_Type_In::ROWS ==
                     MEASUREMENT_JACOBIAN_X_ROWS,
                 "Measurement_Jacobian_X_Matrix_Type::ROWS != "
                 "MEASUREMENT_JACOBIAN_X_ROWS");
+  static_assert(Measurement_Jacobian_X_Matrix_Type_In::COLS ==
+                    MEASUREMENT_JACOBIAN_X_COLS,
+                "Measurement_Jacobian_X_Matrix_Type::COLS != "
+                "MEASUREMENT_JACOBIAN_X_COLS");
 
-  static_assert(State_Hessian_XX_Matrix_Type_In::COLS == STATE_HESSIAN_XX_COLS,
-                "State_Hessian_XX_Matrix_Type::COLS != STATE_HESSIAN_XX_COLS");
   static_assert(State_Hessian_XX_Matrix_Type_In::ROWS == STATE_HESSIAN_XX_ROWS,
                 "State_Hessian_XX_Matrix_Type::ROWS != STATE_HESSIAN_XX_ROWS");
+  static_assert(State_Hessian_XX_Matrix_Type_In::COLS == STATE_HESSIAN_XX_COLS,
+                "State_Hessian_XX_Matrix_Type::COLS != STATE_HESSIAN_XX_COLS");
 
-  static_assert(State_Hessian_XU_Matrix_Type_In::COLS == STATE_HESSIAN_XU_COLS,
-                "State_Hessian_XU_Matrix_Type::COLS != STATE_HESSIAN_XU_COLS");
   static_assert(State_Hessian_XU_Matrix_Type_In::ROWS == STATE_HESSIAN_XU_ROWS,
                 "State_Hessian_XU_Matrix_Type::ROWS != STATE_HESSIAN_XU_ROWS");
+  static_assert(State_Hessian_XU_Matrix_Type_In::COLS == STATE_HESSIAN_XU_COLS,
+                "State_Hessian_XU_Matrix_Type::COLS != STATE_HESSIAN_XU_COLS");
 
-  static_assert(State_Hessian_UX_Matrix_Type_In::COLS == STATE_HESSIAN_UX_COLS,
-                "State_Hessian_UX_Matrix_Type::COLS != STATE_HESSIAN_UX_COLS");
   static_assert(State_Hessian_UX_Matrix_Type_In::ROWS == STATE_HESSIAN_UX_ROWS,
                 "State_Hessian_UX_Matrix_Type::ROWS != STATE_HESSIAN_UX_ROWS");
+  static_assert(State_Hessian_UX_Matrix_Type_In::COLS == STATE_HESSIAN_UX_COLS,
+                "State_Hessian_UX_Matrix_Type::COLS != STATE_HESSIAN_UX_COLS");
 
-  static_assert(State_Hessian_UU_Matrix_Type_In::COLS == STATE_HESSIAN_UU_COLS,
-                "State_Hessian_UU_Matrix_Type::COLS != STATE_HESSIAN_UU_COLS");
   static_assert(State_Hessian_UU_Matrix_Type_In::ROWS == STATE_HESSIAN_UU_ROWS,
                 "State_Hessian_UU_Matrix_Type::ROWS != STATE_HESSIAN_UU_ROWS");
+  static_assert(State_Hessian_UU_Matrix_Type_In::COLS == STATE_HESSIAN_UU_COLS,
+                "State_Hessian_UU_Matrix_Type::COLS != STATE_HESSIAN_UU_COLS");
 
-  static_assert(Measurement_Hessian_XX_Matrix_Type_In::COLS ==
-                    MEASUREMENT_HESSIAN_XX_COLS,
-                "Measurement_Hessian_XX_Matrix_Type::COLS != "
-                "MEASUREMENT_HESSIAN_XX_COLS");
   static_assert(Measurement_Hessian_XX_Matrix_Type_In::ROWS ==
-                    MEASUREMENT_HESSIAN_XX_ROWS,
+                    MEASUREMENT_HESSIAN_XX_COLS,
                 "Measurement_Hessian_XX_Matrix_Type::ROWS != "
+                "MEASUREMENT_HESSIAN_XX_COLS");
+  static_assert(Measurement_Hessian_XX_Matrix_Type_In::COLS ==
+                    MEASUREMENT_HESSIAN_XX_ROWS,
+                "Measurement_Hessian_XX_Matrix_Type::COLS != "
                 "MEASUREMENT_HESSIAN_XX_ROWS");
 
 protected:
@@ -638,8 +638,8 @@ public:
    * consistency but are not used in the function.
    *
    * @tparam _T         The data type of the matrix elements.
-   * @tparam STATE_SIZE Number of rows in the matrix.
-   * @tparam INPUT_SIZE Number of columns in the matrix.
+   * @tparam STATE_SIZE Number of columns in the matrix.
+   * @tparam INPUT_SIZE Number of rows in the matrix.
    * @param X           State vector (unused).
    * @param U           Input vector (unused).
    * @return PythonNumpy::SparseMatrixEmpty_Type<_T, STATE_SIZE, INPUT_SIZE> An
@@ -663,8 +663,8 @@ public:
    * computation and are only present to match the expected function signature.
    *
    * @tparam _T         The data type of the matrix elements.
-   * @tparam INPUT_SIZE The number of input variables (columns).
-   * @tparam STATE_SIZE The number of state variables (rows).
+   * @tparam INPUT_SIZE The number of input variables (rows).
+   * @tparam STATE_SIZE The number of state variables (cols).
    * @param X           The state vector (unused).
    * @param U           The input vector (unused).
    * @return PythonNumpy::SparseMatrixEmpty_Type<_T, INPUT_SIZE, STATE_SIZE>
@@ -793,7 +793,7 @@ public:
    * `MatrixOperation::compute_fxx_lambda_contract`.
    *
    * @tparam Lambda_Vector_Type Type of the lambda vector, must be a row vector
-   * with STATE_SIZE columns.
+   * with STATE_SIZE rows.
    * @param X Current state vector.
    * @param U Current control vector.
    * @param parameter Additional parameters required for the state function.
@@ -802,7 +802,7 @@ public:
    * @param dX Direction vector for contraction.
    * @return X_Type Result of the contraction operation.
    *
-   * @note Lambda_Vector_Type must have COLS == STATE_SIZE and ROWS == 1.
+   * @note Lambda_Vector_Type must have ROWS == STATE_SIZE and COLS == 1.
    */
   template <typename Lambda_Vector_Type>
   inline auto fx_xx_lambda_contract(const X_Type &X, const U_Type &U,
@@ -810,10 +810,10 @@ public:
                                     const Lambda_Vector_Type &lam_next,
                                     const X_Type &dX) -> X_Type {
 
-    static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
-                  "Lambda_Vector_Type::COLS != STATE_SIZE");
-    static_assert(Lambda_Vector_Type::ROWS == 1,
-                  "Lambda_Vector_Type::ROWS != 1");
+    static_assert(Lambda_Vector_Type::ROWS == STATE_SIZE,
+                  "Lambda_Vector_Type::ROWS != STATE_SIZE");
+    static_assert(Lambda_Vector_Type::COLS == 1,
+                  "Lambda_Vector_Type::COLS != 1");
 
     auto Hf_xx = this->_state_function_hessian_xx(X, U, parameter);
 
@@ -833,8 +833,8 @@ public:
    * (`dU`), and the lambda vector (`lam_next`). The result is stored in an
    * output state vector and returned.
    *
-   * @tparam Lambda_Vector_Type Type of the lambda vector, must have COLS ==
-   * STATE_SIZE and ROWS == 1.
+   * @tparam Lambda_Vector_Type Type of the lambda vector, must have ROWS ==
+   * STATE_SIZE and COLS == 1.
    * @param X Current state vector.
    * @param U Current input vector.
    * @param parameter Model or optimization parameters.
@@ -851,10 +851,10 @@ public:
                                     const Lambda_Vector_Type &lam_next,
                                     const U_Type &dU) -> X_Type {
 
-    static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
-                  "Lambda_Vector_Type::COLS != STATE_SIZE");
-    static_assert(Lambda_Vector_Type::ROWS == 1,
-                  "Lambda_Vector_Type::ROWS != 1");
+    static_assert(Lambda_Vector_Type::ROWS == STATE_SIZE,
+                  "Lambda_Vector_Type::ROWS != STATE_SIZE");
+    static_assert(Lambda_Vector_Type::COLS == 1,
+                  "Lambda_Vector_Type::COLS != 1");
 
     auto Hf_xu = this->_state_function_hessian_xu(X, U, parameter);
 
@@ -875,7 +875,7 @@ public:
    * output variable of type `U_Type`.
    *
    * @tparam Lambda_Vector_Type Type of the lambda vector, must be a row vector
-   * with STATE_SIZE columns.
+   * with STATE_SIZE rows.
    * @param X Current state vector.
    * @param U Current control vector.
    * @param parameter Model or optimization parameters.
@@ -895,10 +895,10 @@ public:
                                     const Lambda_Vector_Type &lam_next,
                                     const X_Type &dX) -> U_Type {
 
-    static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
-                  "Lambda_Vector_Type::COLS != STATE_SIZE");
-    static_assert(Lambda_Vector_Type::ROWS == 1,
-                  "Lambda_Vector_Type::ROWS != 1");
+    static_assert(Lambda_Vector_Type::ROWS == STATE_SIZE,
+                  "Lambda_Vector_Type::ROWS != STATE_SIZE");
+    static_assert(Lambda_Vector_Type::COLS == 1,
+                  "Lambda_Vector_Type::COLS != 1");
 
     auto Hf_ux = this->_state_function_hessian_ux(X, U, parameter);
 
@@ -921,7 +921,7 @@ public:
    * the Hessian, input direction, and lambda vector to produce the output.
    *
    * @tparam Lambda_Vector_Type Type of the lambda vector, must be a row vector
-   * with `STATE_SIZE` columns.
+   * with `STATE_SIZE` rows.
    * @param X The current state vector.
    * @param U The current input vector.
    * @param parameter The parameter set for the state function.
@@ -931,7 +931,7 @@ public:
    * @return U_Type The result of the contraction operation.
    *
    * @note Compile-time assertions ensure that `lam_next` is a row vector with
-   * the correct number of columns.
+   * the correct number of rows.
    */
   template <typename Lambda_Vector_Type>
   inline auto fu_uu_lambda_contract(const X_Type &X, const U_Type &U,
@@ -939,10 +939,10 @@ public:
                                     const Lambda_Vector_Type &lam_next,
                                     const U_Type &dU) -> U_Type {
 
-    static_assert(Lambda_Vector_Type::COLS == STATE_SIZE,
-                  "Lambda_Vector_Type::COLS != STATE_SIZE");
-    static_assert(Lambda_Vector_Type::ROWS == 1,
-                  "Lambda_Vector_Type::ROWS != 1");
+    static_assert(Lambda_Vector_Type::ROWS == STATE_SIZE,
+                  "Lambda_Vector_Type::ROWS != STATE_SIZE");
+    static_assert(Lambda_Vector_Type::COLS == 1,
+                  "Lambda_Vector_Type::COLS != 1");
 
     auto Hf_uu = this->_state_function_hessian_uu(X, U, parameter);
 
@@ -962,8 +962,8 @@ public:
    * the weight vector `weight`. The result is stored in `out` and returned. The
    * function asserts that the weight vector has the correct dimensions.
    *
-   * @tparam Weight_Vector_Type Type of the weight vector, must have COLS ==
-   * OUTPUT_SIZE and ROWS == 1.
+   * @tparam Weight_Vector_Type Type of the weight vector, must have ROWS ==
+   * OUTPUT_SIZE and COLS == 1.
    * @param X The input variable for which the Hessian is computed.
    * @param parameter Additional parameters required for the measurement
    * function.
@@ -977,10 +977,10 @@ public:
                                   const Weight_Vector_Type &weight,
                                   const X_Type &dX) -> X_Type {
 
-    static_assert(Weight_Vector_Type::COLS == OUTPUT_SIZE,
-                  "Weight_Vector_Type::COLS != OUTPUT_SIZE");
-    static_assert(Weight_Vector_Type::ROWS == 1,
-                  "Weight_Vector_Type::ROWS != 1");
+    static_assert(Weight_Vector_Type::ROWS == OUTPUT_SIZE,
+                  "Weight_Vector_Type::ROWS != OUTPUT_SIZE");
+    static_assert(Weight_Vector_Type::COLS == 1,
+                  "Weight_Vector_Type::COLS != 1");
 
     U_Type U;
     auto Hh_xx = this->_measurement_function_hessian_xx(X, U, parameter);
@@ -1658,12 +1658,12 @@ template <typename T, std::size_t Np, typename Parameter_Type,
           typename State_Hessian_UU_Matrix_Type,
           typename Measurement_Hessian_XX_Matrix_Type>
 inline auto make_SQP_CostMatrices_NMPC(
-    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_X_Matrix_Type::ROWS>
+    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_X_Matrix_Type::COLS>
         &Qx,
-    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_U_Matrix_Type::ROWS>
+    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_U_Matrix_Type::COLS>
         &R,
     const PythonNumpy::DiagMatrix_Type<
-        T, Measurement_Jacobian_X_Matrix_Type::COLS> &Qy,
+        T, Measurement_Jacobian_X_Matrix_Type::ROWS> &Qy,
     U_Min_Type U_min, U_Max_Type U_max, Y_Min_Type Y_min, Y_Max_Type Y_max)
     -> SQP_CostMatrices_NMPC<
         T, Np, Parameter_Type, U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,

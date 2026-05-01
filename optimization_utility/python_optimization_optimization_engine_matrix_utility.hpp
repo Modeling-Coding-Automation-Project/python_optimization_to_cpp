@@ -66,23 +66,23 @@ class OptimizationEngine_CostMatrices {
 public:
   /* Constant */
   static constexpr std::size_t STATE_SIZE =
-      State_Jacobian_X_Matrix_Type_In::ROWS;
+      State_Jacobian_X_Matrix_Type_In::COLS;
   static constexpr std::size_t INPUT_SIZE =
-      State_Jacobian_U_Matrix_Type_In::ROWS;
+      State_Jacobian_U_Matrix_Type_In::COLS;
   static constexpr std::size_t OUTPUT_SIZE =
-      Measurement_Jacobian_X_Matrix_Type_In::COLS;
+      Measurement_Jacobian_X_Matrix_Type_In::ROWS;
 
   // To avoid ODR violation in C++11/14, use enum hack.
   enum : std::size_t { NP = Np_In };
 
-  static constexpr std::size_t STATE_JACOBIAN_X_COLS = STATE_SIZE;
   static constexpr std::size_t STATE_JACOBIAN_X_ROWS = STATE_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_X_COLS = STATE_SIZE;
 
-  static constexpr std::size_t STATE_JACOBIAN_U_COLS = STATE_SIZE;
-  static constexpr std::size_t STATE_JACOBIAN_U_ROWS = INPUT_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_U_ROWS = STATE_SIZE;
+  static constexpr std::size_t STATE_JACOBIAN_U_COLS = INPUT_SIZE;
 
-  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_COLS = OUTPUT_SIZE;
-  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_ROWS = STATE_SIZE;
+  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_ROWS = OUTPUT_SIZE;
+  static constexpr std::size_t MEASUREMENT_JACOBIAN_X_COLS = STATE_SIZE;
 
 public:
   /* Type */
@@ -124,40 +124,40 @@ public:
                    T>::value,
       "Measurement_Jacobian_X_Matrix_Type::Value_Type != T");
 
-  static_assert(U_Min_Type_In::COLS == INPUT_SIZE,
-                "U_Min_Type_In::COLS != INPUT_SIZE");
-  static_assert(U_Min_Type_In::ROWS == 1, "U_Min_Type_In::ROWS != 1");
+  static_assert(U_Min_Type_In::ROWS == INPUT_SIZE,
+                "U_Min_Type_In::ROWS != INPUT_SIZE");
+  static_assert(U_Min_Type_In::COLS == 1, "U_Min_Type_In::COLS != 1");
 
-  static_assert(U_Max_Type_In::COLS == INPUT_SIZE,
-                "U_Max_Type_In::COLS != INPUT_SIZE");
-  static_assert(U_Max_Type_In::ROWS == 1, "U_Max_Type_In::ROWS != 1");
+  static_assert(U_Max_Type_In::ROWS == INPUT_SIZE,
+                "U_Max_Type_In::ROWS != INPUT_SIZE");
+  static_assert(U_Max_Type_In::COLS == 1, "U_Max_Type_In::COLS != 1");
 
-  static_assert(Y_Min_Type_In::COLS == OUTPUT_SIZE,
-                "Y_Min_Type_In::COLS != OUTPUT_SIZE");
-  static_assert(Y_Min_Type_In::ROWS == 1, "Y_Min_Type_In::ROWS != 1");
+  static_assert(Y_Min_Type_In::ROWS == OUTPUT_SIZE,
+                "Y_Min_Type_In::ROWS != OUTPUT_SIZE");
+  static_assert(Y_Min_Type_In::COLS == 1, "Y_Min_Type_In::COLS != 1");
 
-  static_assert(Y_Max_Type_In::COLS == OUTPUT_SIZE,
-                "Y_Max_Type_In::COLS != OUTPUT_SIZE");
-  static_assert(Y_Max_Type_In::ROWS == 1, "Y_Max_Type_In::ROWS != 1");
+  static_assert(Y_Max_Type_In::ROWS == OUTPUT_SIZE,
+                "Y_Max_Type_In::ROWS != OUTPUT_SIZE");
+  static_assert(Y_Max_Type_In::COLS == 1, "Y_Max_Type_In::COLS != 1");
 
-  static_assert(State_Jacobian_X_Matrix_Type_In::COLS == STATE_JACOBIAN_X_COLS,
-                "State_Jacobian_X_Matrix_Type::COLS != STATE_JACOBIAN_X_COLS");
   static_assert(State_Jacobian_X_Matrix_Type_In::ROWS == STATE_JACOBIAN_X_ROWS,
                 "State_Jacobian_X_Matrix_Type::ROWS != STATE_JACOBIAN_X_ROWS");
+  static_assert(State_Jacobian_X_Matrix_Type_In::COLS == STATE_JACOBIAN_X_COLS,
+                "State_Jacobian_X_Matrix_Type::COLS != STATE_JACOBIAN_X_COLS");
 
-  static_assert(State_Jacobian_U_Matrix_Type_In::COLS == STATE_JACOBIAN_U_COLS,
-                "State_Jacobian_U_Matrix_Type::COLS != STATE_JACOBIAN_U_COLS");
   static_assert(State_Jacobian_U_Matrix_Type_In::ROWS == STATE_JACOBIAN_U_ROWS,
                 "State_Jacobian_U_Matrix_Type::ROWS != STATE_JACOBIAN_U_ROWS");
+  static_assert(State_Jacobian_U_Matrix_Type_In::COLS == STATE_JACOBIAN_U_COLS,
+                "State_Jacobian_U_Matrix_Type::COLS != STATE_JACOBIAN_U_COLS");
 
-  static_assert(Measurement_Jacobian_X_Matrix_Type_In::COLS ==
-                    MEASUREMENT_JACOBIAN_X_COLS,
-                "Measurement_Jacobian_X_Matrix_Type::COLS != "
-                "MEASUREMENT_JACOBIAN_X_COLS");
   static_assert(Measurement_Jacobian_X_Matrix_Type_In::ROWS ==
                     MEASUREMENT_JACOBIAN_X_ROWS,
                 "Measurement_Jacobian_X_Matrix_Type::ROWS != "
                 "MEASUREMENT_JACOBIAN_X_ROWS");
+  static_assert(Measurement_Jacobian_X_Matrix_Type_In::COLS ==
+                    MEASUREMENT_JACOBIAN_X_COLS,
+                "Measurement_Jacobian_X_Matrix_Type::COLS != "
+                "MEASUREMENT_JACOBIAN_X_COLS");
 
 protected:
   /* Type */
@@ -867,12 +867,12 @@ template <typename T, std::size_t Np, typename Parameter_Type,
           typename State_Jacobian_U_Matrix_Type,
           typename Measurement_Jacobian_X_Matrix_Type>
 inline auto make_OptimizationEngine_CostMatrices(
-    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_X_Matrix_Type::ROWS>
+    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_X_Matrix_Type::COLS>
         &Qx,
-    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_U_Matrix_Type::ROWS>
+    const PythonNumpy::DiagMatrix_Type<T, State_Jacobian_U_Matrix_Type::COLS>
         &R,
     const PythonNumpy::DiagMatrix_Type<
-        T, Measurement_Jacobian_X_Matrix_Type::COLS> &Qy,
+        T, Measurement_Jacobian_X_Matrix_Type::ROWS> &Qy,
     U_Min_Type U_min, U_Max_Type U_max, Y_Min_Type Y_min, Y_Max_Type Y_max)
     -> OptimizationEngine_CostMatrices<
         T, Np, Parameter_Type, U_Min_Type, U_Max_Type, Y_Min_Type, Y_Max_Type,

@@ -53,7 +53,7 @@ template <typename Vector_Type> struct Accumulate<Vector_Type, 0> {
  * loop unrolling.
  *
  * @tparam Vector_Type The type of the input vectors. Must define static member
- * ROWS and nested Value_Type.
+ * COLS and nested Value_Type.
  * @param a The first vector.
  * @param b The second vector.
  * @return The scalar inner product value.
@@ -61,7 +61,7 @@ template <typename Vector_Type> struct Accumulate<Vector_Type, 0> {
 template <typename Vector_Type>
 inline auto compute(const Vector_Type &a, const Vector_Type &b) ->
     typename Vector_Type::Value_Type {
-  return Accumulate<Vector_Type, Vector_Type::ROWS - 1>::compute(a, b);
+  return Accumulate<Vector_Type, Vector_Type::COLS - 1>::compute(a, b);
 }
 
 } // namespace InnerProduct
@@ -72,7 +72,7 @@ inline auto compute(const Vector_Type &a, const Vector_Type &b) ->
  * This function creates a copy of the input matrix and adds the specified
  * scalar to every element. The resulting matrix is returned.
  *
- * @tparam Matrix_Type Type of the matrix, which must define COLS, ROWS,
+ * @tparam Matrix_Type Type of the matrix, which must define ROWS, COLS,
  * Value_Type, and operator().
  * @param matrix The input matrix to which the scalar will be added.
  * @param scalar The scalar value to add to each element of the matrix.
@@ -85,8 +85,8 @@ inline auto add_scalar_to_matrix(Matrix_Type &matrix,
 
   Matrix_Type out = matrix;
 
-  for (std::size_t i = 0; i < Matrix_Type::COLS; i++) {
-    for (std::size_t j = 0; j < Matrix_Type::ROWS; j++) {
+  for (std::size_t i = 0; i < Matrix_Type::ROWS; i++) {
+    for (std::size_t j = 0; j < Matrix_Type::COLS; j++) {
       out(i, j) += scalar;
     }
   }
@@ -99,14 +99,14 @@ namespace AbsoluteMaxScalarToMatrix {
 // Column recursion when J_idx > 0
 template <typename Matrix_Type, std::size_t M, std::size_t N, std::size_t I,
           std::size_t J_idx>
-struct Column {
+struct Row {
   /**
    * @brief Recursively computes h(I, J_idx) = max(delta, epsilon * |u(I,
    * J_idx)|) and recurses down to J_idx == 0.
    *
-   * @tparam Matrix_Type The matrix type (ROWS x COLS).
-   * @tparam M           Number of rows in the matrix.
-   * @tparam N           Number of columns in the matrix.
+   * @tparam Matrix_Type The matrix type (COLS x ROWS).
+   * @tparam M           Number of columns in the matrix.
+   * @tparam N           Number of rows in the matrix.
    * @tparam I           Current row index (fixed for this Column recursion).
    * @tparam J_idx       Current column index in the recursion.
    * @param U       Source matrix.
@@ -125,19 +125,19 @@ struct Column {
     typename Matrix_Type::Value_Type val = epsilon * abs_ui;
     H.template set<I, J_idx>((delta > val) ? delta : val);
 
-    Column<Matrix_Type, M, N, I, J_idx - 1>::compute(U, delta, epsilon, H);
+    Row<Matrix_Type, M, N, I, J_idx - 1>::compute(U, delta, epsilon, H);
   }
 };
 
 // Column recursion termination for J_idx == 0
 template <typename Matrix_Type, std::size_t M, std::size_t N, std::size_t I>
-struct Column<Matrix_Type, M, N, I, 0> {
+struct Row<Matrix_Type, M, N, I, 0> {
   /**
    * @brief Base case: computes H(I, 0) = max(delta, epsilon * |U(I, 0)|).
    *
-   * @tparam Matrix_Type The matrix type (ROWS x COLS).
-   * @tparam M           Number of rows in the matrix.
-   * @tparam N           Number of columns in the matrix.
+   * @tparam Matrix_Type The matrix type (COLS x ROWS).
+   * @tparam M           Number of columns in the matrix.
+   * @tparam N           Number of rows in the matrix.
    * @tparam I           Current row index.
    * @param U       Source matrix.
    * @param delta   Minimum perturbation scalar.
@@ -158,13 +158,13 @@ struct Column<Matrix_Type, M, N, I, 0> {
 
 // Row recursion when I_idx > 0
 template <typename Matrix_Type, std::size_t M, std::size_t N, std::size_t I_idx>
-struct Row {
+struct Column {
   /**
-   * @brief Processes all columns of row I_idx, then recurses to row I_idx - 1.
+   * @brief Processes all rows of row I_idx, then recurses to row I_idx - 1.
    *
-   * @tparam Matrix_Type The matrix type (ROWS x COLS).
-   * @tparam M           Number of rows in the matrix.
-   * @tparam N           Number of columns in the matrix.
+   * @tparam Matrix_Type The matrix type (COLS x ROWS).
+   * @tparam M           Number of columns in the matrix.
+   * @tparam N           Number of rows in the matrix.
    * @tparam I_idx       Current row index in the recursion.
    * @param U       Source matrix.
    * @param delta   Minimum perturbation scalar.
@@ -175,20 +175,20 @@ struct Row {
                              const typename Matrix_Type::Value_Type &delta,
                              const typename Matrix_Type::Value_Type &epsilon,
                              Matrix_Type &H) {
-    Column<Matrix_Type, M, N, I_idx, N - 1>::compute(U, delta, epsilon, H);
-    Row<Matrix_Type, M, N, I_idx - 1>::compute(U, delta, epsilon, H);
+    Row<Matrix_Type, M, N, I_idx, N - 1>::compute(U, delta, epsilon, H);
+    Column<Matrix_Type, M, N, I_idx - 1>::compute(U, delta, epsilon, H);
   }
 };
 
 // Row recursion termination for I_idx == 0
 template <typename Matrix_Type, std::size_t M, std::size_t N>
-struct Row<Matrix_Type, M, N, 0> {
+struct Column<Matrix_Type, M, N, 0> {
   /**
-   * @brief Base case: processes all columns of row 0.
+   * @brief Base case: processes all rows of row 0.
    *
-   * @tparam Matrix_Type The matrix type (ROWS x COLS).
-   * @tparam M           Number of rows in the matrix.
-   * @tparam N           Number of columns in the matrix.
+   * @tparam Matrix_Type The matrix type (COLS x ROWS).
+   * @tparam M           Number of columns in the matrix.
+   * @tparam N           Number of rows in the matrix.
    * @param U       Source matrix.
    * @param delta   Minimum perturbation scalar.
    * @param epsilon Relative perturbation scalar.
@@ -198,7 +198,7 @@ struct Row<Matrix_Type, M, N, 0> {
                              const typename Matrix_Type::Value_Type &delta,
                              const typename Matrix_Type::Value_Type &epsilon,
                              Matrix_Type &H) {
-    Column<Matrix_Type, M, N, 0, N - 1>::compute(U, delta, epsilon, H);
+    Row<Matrix_Type, M, N, 0, N - 1>::compute(U, delta, epsilon, H);
   }
 };
 
@@ -208,8 +208,8 @@ struct Row<Matrix_Type, M, N, 0> {
  *
  * Equivalent runtime loop:
  * @code
- *   for (std::size_t i = 0; i < ROWS; ++i) {
- *     for (std::size_t j = 0; j < COLS; ++j) {
+ *   for (std::size_t i = 0; i < COLS; ++i) {
+ *     for (std::size_t j = 0; j < ROWS; ++j) {
  *       _T abs_ui = u(i, j);
  *       if (abs_ui < 0) abs_ui = -abs_ui;
  *       _T val = epsilon * abs_ui;
@@ -218,7 +218,7 @@ struct Row<Matrix_Type, M, N, 0> {
  *   }
  * @endcode
  *
- * @tparam Matrix_Type The matrix type (ROWS x COLS). Must define ROWS, COLS,
+ * @tparam Matrix_Type The matrix type (COLS x ROWS). Must define COLS, ROWS,
  *         Value_Type, get<R,C>(), and set<R,C>().
  * @param U       Source matrix.
  * @param delta   Minimum perturbation value.
@@ -229,8 +229,8 @@ template <typename Matrix_Type>
 inline void
 compute(const Matrix_Type &U, const typename Matrix_Type::Value_Type &delta,
         const typename Matrix_Type::Value_Type &epsilon, Matrix_Type &H) {
-  Row<Matrix_Type, Matrix_Type::COLS, Matrix_Type::ROWS,
-      Matrix_Type::COLS - 1>::compute(U, delta, epsilon, H);
+  Column<Matrix_Type, Matrix_Type::ROWS, Matrix_Type::COLS,
+      Matrix_Type::ROWS - 1>::compute(U, delta, epsilon, H);
 }
 
 } // namespace AbsoluteMaxScalarToMatrix
@@ -247,7 +247,7 @@ struct Assign {
    *
    * @tparam Dest_Type The destination vector type.
    * @tparam Src_Type  The source vector type (must have at least
-   *                   Dest_Type::COLS + 1 columns).
+   *                   Dest_Type::ROWS + 1 rows).
    * @tparam I_idx     Current row index in the recursion.
    * @param dest Destination vector.
    * @param src  Source vector.
@@ -280,21 +280,21 @@ struct Assign<Dest_Type, Src_Type, 0> {
  *
  * Equivalent runtime loop:
  * @code
- *   for (std::size_t i = 0; i < Dest_Type::COLS; ++i) {
+ *   for (std::size_t i = 0; i < Dest_Type::ROWS; ++i) {
  *     dest(i, 0) = src(i + 1, 0);
  *   }
  * @endcode
  *
- * @tparam Dest_Type The destination vector type. Must define COLS, get<R,C>(),
+ * @tparam Dest_Type The destination vector type. Must define ROWS, get<R,C>(),
  *                   and set<R,C>().
  * @tparam Src_Type  The source vector type. Must have at least
- *                   Dest_Type::COLS + 1 columns.
+ *                   Dest_Type::ROWS + 1 rows.
  * @param dest Destination vector (overwritten).
  * @param src  Source vector.
  */
 template <typename Dest_Type, typename Src_Type>
 inline void compute(Dest_Type &dest, const Src_Type &src) {
-  Assign<Dest_Type, Src_Type, Dest_Type::COLS - 1>::compute(dest, src);
+  Assign<Dest_Type, Src_Type, Dest_Type::ROWS - 1>::compute(dest, src);
 }
 
 } // namespace SubstituteGetOneOffset
@@ -310,7 +310,7 @@ struct Assign {
    * down to I_idx == 0.
    *
    * @tparam Dest_Type The destination vector type (must have at least
-   *                   Src_Type::COLS + 1 columns).
+   *                   Src_Type::ROWS + 1 rows).
    * @tparam Src_Type  The source vector type.
    * @tparam I_idx     Current row index in the recursion.
    * @param dest Destination vector.
@@ -344,21 +344,21 @@ struct Assign<Dest_Type, Src_Type, 0> {
  *
  * Equivalent runtime loop:
  * @code
- *   for (std::size_t i = 0; i < Src_Type::COLS; ++i) {
+ *   for (std::size_t i = 0; i < Src_Type::ROWS; ++i) {
  *     dest(i + 1, 0) = src(i, 0);
  *   }
  * @endcode
  *
  * @tparam Dest_Type The destination vector type. Must have at least
- *                   Src_Type::COLS + 1 columns.
- * @tparam Src_Type  The source vector type. Must define COLS, get<R,C>(),
+ *                   Src_Type::ROWS + 1 rows.
+ * @tparam Src_Type  The source vector type. Must define ROWS, get<R,C>(),
  *                   and set<R,C>().
- * @param dest Destination vector (partially overwritten at columns 1..COLS).
+ * @param dest Destination vector (partially overwritten at rows 1..ROWS).
  * @param src  Source vector.
  */
 template <typename Dest_Type, typename Src_Type>
 inline void compute(Dest_Type &dest, const Src_Type &src) {
-  Assign<Dest_Type, Src_Type, Src_Type::COLS - 1>::compute(dest, src);
+  Assign<Dest_Type, Src_Type, Src_Type::ROWS - 1>::compute(dest, src);
 }
 
 } // namespace SubstituteSetOneOffset
