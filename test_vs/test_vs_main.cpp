@@ -93,14 +93,14 @@ void test_active_set_2D() {
     //const T NEAR_LIMIT_SOFT = 1.0e-2F;
 
     /* 定義 */
-    constexpr std::size_t COLUMNS = 3;
-    constexpr std::size_t ROWS = 2;
+    constexpr std::size_t ROWS = 3;
+    constexpr std::size_t COLS = 2;
 
-    ActiveSet2D<COLUMNS, ROWS> active_set;
+    ActiveSet2D<ROWS, COLS> active_set;
     active_set.push_active(1, 0);
 
-    ActiveSet2D_Type<COLUMNS, ROWS> active_set_copy = active_set;
-    ActiveSet2D_Type<COLUMNS, ROWS> active_set_move = std::move(active_set_copy);
+    ActiveSet2D_Type<ROWS, COLS> active_set_copy = active_set;
+    ActiveSet2D_Type<ROWS, COLS> active_set_move = std::move(active_set_copy);
     active_set = std::move(active_set_move);
 
     auto active_pair = active_set.get_active(0);
@@ -144,13 +144,13 @@ void test_active_set_2D() {
         "check get active row after clear.");
 
     /* ActiveSet2D MatrixOperator */
-    auto A = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+    auto A = PythonNumpy::make_DenseMatrix<ROWS, COLS>(
         static_cast<T>(1), static_cast<T>(2),
         static_cast<T>(3), static_cast<T>(4),
         static_cast<T>(5), static_cast<T>(6)
     );
 
-    auto B = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+    auto B = PythonNumpy::make_DenseMatrix<ROWS, COLS>(
         static_cast<T>(7), static_cast<T>(8),
         static_cast<T>(9), static_cast<T>(10),
         static_cast<T>(11), static_cast<T>(12)
@@ -161,7 +161,7 @@ void test_active_set_2D() {
 
     auto C = ActiveSet2D_MatrixOperator::element_wise_product(A, B, active_set);
 
-    auto C_answer = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+    auto C_answer = PythonNumpy::make_DenseMatrix<ROWS, COLS>(
         static_cast<T>(0), static_cast<T>(0),
         static_cast<T>(0), static_cast<T>(40),
         static_cast<T>(0), static_cast<T>(72)
@@ -179,7 +179,7 @@ void test_active_set_2D() {
 
     auto D = ActiveSet2D_MatrixOperator::matrix_multiply_scalar(A, static_cast<T>(3), active_set);
 
-    auto D_answer = PythonNumpy::make_DenseMatrix<COLUMNS, ROWS>(
+    auto D_answer = PythonNumpy::make_DenseMatrix<ROWS, COLS>(
         static_cast<T>(0), static_cast<T>(0),
         static_cast<T>(0), static_cast<T>(12),
         static_cast<T>(0), static_cast<T>(18)

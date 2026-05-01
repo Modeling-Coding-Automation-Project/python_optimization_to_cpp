@@ -3,7 +3,7 @@
  *
  * @brief This header file defines common matrix operations used in Python-based
  * optimization utilities.
- * The operations include setting and getting rows of matrices, calculating
+ * The operations include setting and getting cols of matrices, calculating
  * quadratic forms, and computing penalties for constraint violations. The
  * implementations leverage template metaprogramming for compile-time
  * optimizations and are designed to work with custom matrix types that provide
@@ -28,13 +28,13 @@ namespace SetRow {
 
 // Row recursion when I_idx > 0
 template <typename Matrix_Out_Type, typename Matrix_In_Type, std::size_t I_idx>
-struct Row {
+struct Column {
   /**
    * @brief Recursively assigns out_matrix(I_idx, row_index) = in_matrix(I_idx,
    * 0).
    *
    * @tparam Matrix_Out_Type Output matrix type.
-   * @tparam Matrix_In_Type  Input matrix type (expected ROWS == 1).
+   * @tparam Matrix_In_Type  Input matrix type (expected COLS == 1).
    * @tparam I_idx           Current column index in the recursion (0-based).
    * @param out_matrix The destination matrix.
    * @param in_matrix  The source 1-row matrix.
@@ -46,14 +46,14 @@ struct Row {
 
     out_matrix.access(I_idx, row_index) = in_matrix.template get<I_idx, 0>();
 
-    Row<Matrix_Out_Type, Matrix_In_Type, I_idx - 1>::compute(
+    Column<Matrix_Out_Type, Matrix_In_Type, I_idx - 1>::compute(
         out_matrix, in_matrix, row_index);
   }
 };
 
 // Row recursion termination for I_idx == 0
 template <typename Matrix_Out_Type, typename Matrix_In_Type>
-struct Row<Matrix_Out_Type, Matrix_In_Type, 0> {
+struct Column<Matrix_Out_Type, Matrix_In_Type, 0> {
   /**
    * @brief Base case assignment for I_idx == 0.
    */
@@ -69,9 +69,9 @@ template <typename Matrix_Out_Type, typename Matrix_In_Type>
 inline void compute(Matrix_Out_Type &out_matrix,
                     const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index) {
-  static_assert(Matrix_In_Type::COLS > 0,
-                "Matrix_In_Type::COLS must be positive");
-  Row<Matrix_Out_Type, Matrix_In_Type, (Matrix_In_Type::COLS - 1)>::compute(
+  static_assert(Matrix_In_Type::ROWS > 0,
+                "Matrix_In_Type::ROWS must be positive");
+  Column<Matrix_Out_Type, Matrix_In_Type, (Matrix_In_Type::ROWS - 1)>::compute(
       out_matrix, in_matrix, row_index);
 }
 
@@ -84,14 +84,14 @@ inline void compute(Matrix_Out_Type &out_matrix,
  * to the specified row (`row_index`) of the output matrix (`out_matrix`).
  *
  * @tparam Matrix_Out_Type Type of the output matrix. Must define a static
- * member `COLS`.
+ * member `ROWS`.
  * @tparam Matrix_In_Type Type of the input matrix. Must define static members
- * `COLS` and `ROWS`.
+ * `ROWS` and `COLS`.
  * @param[out] out_matrix The matrix whose row will be set.
  * @param[in] in_matrix The single-row matrix providing the values.
- * @param[in] row_index The index of the row in `out_matrix` to be set.
+ * @param[in] row_index The index of the column in `out_matrix` to be set.
  *
- * @note The function enforces at compile time that the number of columns in
+ * @note The function enforces at compile time that the number of rows in
  * both matrices match, and that the input matrix has exactly one row.
  * @throws static_assert if the column counts do not match or if the input
  * matrix is not a single row.
@@ -101,9 +101,9 @@ inline void set_row(Matrix_Out_Type &out_matrix,
                     const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index) {
 
-  static_assert(Matrix_Out_Type::COLS == Matrix_In_Type::COLS,
-                "Matrix_Out_Type::COLS != Matrix_In_Type::COLS");
-  static_assert(Matrix_In_Type::ROWS == 1, "Matrix_In_Type::ROWS != 1");
+  static_assert(Matrix_Out_Type::ROWS == Matrix_In_Type::ROWS,
+                "Matrix_Out_Type::ROWS != Matrix_In_Type::ROWS");
+  static_assert(Matrix_In_Type::COLS == 1, "Matrix_In_Type::COLS != 1");
 
   SetRow::compute(out_matrix, in_matrix, row_index);
 }
@@ -112,7 +112,7 @@ namespace GetRow {
 
 // Column recursion when I_idx > 0
 template <typename Matrix_In_Type, typename Out_Type, std::size_t I_idx>
-struct Column {
+struct Row {
   /**
    * @brief Recursively copies elements from a given row into a column vector.
    *
@@ -124,14 +124,14 @@ struct Column {
 
     out.template set<I_idx, 0>(in_matrix.access(I_idx, row_index));
 
-    Column<Matrix_In_Type, Out_Type, I_idx - 1>::compute(in_matrix, row_index,
+    Row<Matrix_In_Type, Out_Type, I_idx - 1>::compute(in_matrix, row_index,
                                                          out);
   }
 };
 
 // Column recursion termination for I_idx == 0
 template <typename Matrix_In_Type, typename Out_Type>
-struct Column<Matrix_In_Type, Out_Type, 0> {
+struct Row<Matrix_In_Type, Out_Type, 0> {
   /**
    * @brief Base case: copy the element at column 0.
    */
@@ -147,11 +147,11 @@ template <typename Matrix_In_Type, typename Out_Type>
 inline void compute(const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index, Out_Type &out) {
 
-  static_assert(Out_Type::ROWS == 1, "Out_Type must be a (COLS x 1) vector");
-  static_assert(Out_Type::COLS == Matrix_In_Type::COLS,
-                "Output COLS must equal input COLS");
+  static_assert(Out_Type::COLS == 1, "Out_Type must be a (ROWS x 1) vector");
+  static_assert(Out_Type::ROWS == Matrix_In_Type::ROWS,
+                "Output ROWS must equal input ROWS");
 
-  Column<Matrix_In_Type, Out_Type, (Out_Type::COLS - 1)>::compute(
+  Row<Matrix_In_Type, Out_Type, (Out_Type::ROWS - 1)>::compute(
       in_matrix, row_index, out);
 }
 
@@ -163,9 +163,9 @@ inline void compute(const Matrix_In_Type &in_matrix,
  *
  * @tparam Matrix_In_Type Type of the input matrix.
  * @param in_matrix The input matrix from which the row will be extracted.
- * @param row_index The index of the row to extract.
+ * @param row_index The index of the column to extract.
  * @return A dense matrix containing the specified row, with the same value type
- * and number of columns as the input matrix.
+ * and number of rows as the input matrix.
  *
  * This function uses the GetRow::compute method to perform the extraction.
  */
@@ -173,11 +173,11 @@ template <typename Matrix_In_Type>
 inline auto get_row(const Matrix_In_Type &in_matrix,
                     const std::size_t &row_index)
     -> PythonNumpy::DenseMatrix_Type<typename Matrix_In_Type::Value_Type,
-                                     Matrix_In_Type::COLS, 1> {
+                                     Matrix_In_Type::ROWS, 1> {
 
   using Out_Type =
       PythonNumpy::DenseMatrix_Type<typename Matrix_In_Type::Value_Type,
-                                    Matrix_In_Type::COLS, 1>;
+                                    Matrix_In_Type::ROWS, 1>;
   Out_Type out;
 
   GetRow::compute<Matrix_In_Type, Out_Type>(in_matrix, row_index, out);
@@ -193,11 +193,11 @@ inline auto get_row(const Matrix_In_Type &in_matrix,
  * with W, then multiplying the result by X. The result is extracted as a scalar
  * value.
  *
- * @tparam X_Type Type of the input vector X. Must have a static member COLS and
- * ROWS.
- * @tparam W_Type Type of the input matrix W. Must have a static member ROWS.
- * @param X Input row vector of type X_Type. Must have ROWS == 1.
- * @param W Input matrix of type W_Type. Must have ROWS == X_Type::COLS.
+ * @tparam X_Type Type of the input vector X. Must have a static member ROWS and
+ * COLS.
+ * @tparam W_Type Type of the input matrix W. Must have a static member COLS.
+ * @param X Input row vector of type X_Type. Must have COLS == 1.
+ * @param W Input matrix of type W_Type. Must have COLS == X_Type::ROWS.
  * @return Scalar value representing the quadratic form.
  *
  * @note Compile-time assertions ensure that X is a row vector and that the
@@ -207,8 +207,8 @@ template <typename X_Type, typename W_Type>
 inline auto calculate_quadratic_form(const X_Type &X, const W_Type &W) ->
     typename X_Type::Value_Type {
 
-  static_assert(W_Type::ROWS == X_Type::COLS, "W_Type::ROWS != X_Type::COLS");
-  static_assert(X_Type::ROWS == 1, "X_Type::ROWS != 1");
+  static_assert(W_Type::COLS == X_Type::ROWS, "W_Type::COLS != X_Type::ROWS");
+  static_assert(X_Type::COLS == 1, "X_Type::COLS != 1");
 
   auto result = PythonNumpy::ATranspose_mul_B(X, W) * X;
 
@@ -219,10 +219,10 @@ inline auto calculate_quadratic_form(const X_Type &X, const W_Type &W) ->
  * @brief Calculates the quadratic form of a row vector without weighting.
  *
  * This function computes the quadratic form X * X^T for a given row vector X,
- * where X is expected to have exactly one row (i.e., X_Type::ROWS == 1).
+ * where X is expected to have exactly one row (i.e., X_Type::COLS == 1).
  * The result is the scalar value at position (0, 0) of the resulting matrix.
  *
- * @tparam X_Type Type of the input vector, must have a static member ROWS == 1
+ * @tparam X_Type Type of the input vector, must have a static member COLS == 1
  * and a nested Value_Type.
  * @param X The input row vector.
  * @return The scalar result of the quadratic form (X * X^T).
@@ -231,7 +231,7 @@ template <typename X_Type>
 inline auto calculate_quadratic_no_weighted(const X_Type &X) ->
     typename X_Type::Value_Type {
 
-  static_assert(X_Type::ROWS == 1, "X_Type::ROWS != 1");
+  static_assert(X_Type::COLS == 1, "X_Type::COLS != 1");
 
   auto result = PythonNumpy::ATranspose_mul_B(X, X);
 
@@ -255,9 +255,9 @@ namespace CalculateY_LimitPenalty {
  * @tparam Y_Min_Matrix_Type  The type representing the matrix to store minimum
  * values.
  * @tparam Out_Type           The output type for the operation.
- * @tparam I                  The number of columns (or a specific column index,
+ * @tparam I                  The number of rows (or a specific column index,
  * depending on usage).
- * @tparam J_idx              The number of rows (or a specific row index,
+ * @tparam J_idx              The number of cols (or a specific row index,
  * depending on usage).
  * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
  * enabled.
@@ -452,8 +452,8 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx,
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Type           Type of the output penalty accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I                  Current column index being processed.
  * @tparam J_idx              Current row index being processed (recursively
  * decremented).
@@ -471,7 +471,7 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Type, I, J_idx,
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
@@ -485,7 +485,7 @@ struct Column {
                    Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
         compute(Y_horizon, Y_max_matrix, Y_limit_penalty);
 
-    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, I,
+    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, I,
            (J_idx - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
                                  Y_limit_penalty);
   }
@@ -497,20 +497,20 @@ struct Column {
  * @brief Specialization of the Column struct for the base case when J_idx is 0.
  *
  * This struct template provides a static compute function that performs
- * conditional minimum and maximum operations on the first column (J_idx == 0)
+ * conditional minimum and maximum operations on the first row (J_idx == 0)
  * of the input matrices. It serves as the termination case for the recursive
- * processing of columns in the optimization utility.
+ * processing of rows in the optimization utility.
  *
  * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Type           Type of the output penalty accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I                  Current column index being processed.
  *
  * The compute() static method:
- *   - Applies MinConditional and MaxConditional operations for the first row
+ *   - Applies MinConditional and MaxConditional operations for the first column
  *   and column (J_idx == 0).
  *
  * @param Y_horizon           The main input matrix.
@@ -521,7 +521,7 @@ struct Column {
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I>
-struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
+struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
               I, 0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
@@ -541,7 +541,7 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
 // Row recursion when I_idx > 0
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization.
  *
  * This struct template performs column-wise processing for a specific row
@@ -553,8 +553,8 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Type           Type of the output penalty accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I_idx              Current column index being processed (recursively
  * decremented).
  *
@@ -570,15 +570,15 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I_idx>
-struct Row {
+struct Column {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Type &Y_limit_penalty) {
-    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
+    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
            I_idx, (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
                                     Y_limit_penalty);
-    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
+    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
         (I_idx - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
                               Y_limit_penalty);
   }
@@ -590,19 +590,19 @@ struct Row {
  * @brief Specialization of the Row struct for the base case when I_idx is 0.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first row (I_idx == 0) of the input matrices.
- * It serves as the termination case for the recursive processing of rows in the
+ * column-wise processing for the first column (I_idx == 0) of the input matrices.
+ * It serves as the termination case for the recursive processing of cols in the
  * optimization utility.
  *
  * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Type           Type of the output penalty accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  *
  * The compute() static method:
- *   - Invokes Column processing for the first row (I_idx == 0).
+ *   - Invokes Column processing for the first column (I_idx == 0).
  *
  * @param Y_horizon           The main input matrix.
  * @param Y_min_matrix        The matrix containing minimum constraints.
@@ -612,13 +612,13 @@ struct Row {
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N>
-struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
+struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
            0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Type &Y_limit_penalty) {
-    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, 0,
+    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, 0,
            (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
                              Y_limit_penalty);
   }
@@ -648,7 +648,7 @@ struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
  * Y_horizon.
  * @param Y_limit_penalty Output matrix where the computed penalties are stored.
  *
- * @note The dimensions of Out_Type (COLS and ROWS) must be positive.
+ * @note The dimensions of Out_Type (ROWS and COLS) must be positive.
  * @note This function uses a recursive template implementation for computation.
  */
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
@@ -658,11 +658,11 @@ inline void calculate_Y_limit_penalty(const Y_Mat_Type &Y_horizon,
                                       const Y_Max_Matrix_Type &Y_max_matrix,
                                       Out_Type &Y_limit_penalty) {
 
-  constexpr std::size_t M = Out_Type::COLS;
-  constexpr std::size_t N = Out_Type::ROWS;
+  constexpr std::size_t M = Out_Type::ROWS;
+  constexpr std::size_t N = Out_Type::COLS;
   static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
 
-  CalculateY_LimitPenalty::Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
+  CalculateY_LimitPenalty::Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
                                Out_Type, M, N,
                                (M - 1)>::compute(Y_horizon, Y_min_matrix,
                                                  Y_max_matrix, Y_limit_penalty);
@@ -689,9 +689,9 @@ namespace CalculateY_LimitPenaltyAndActive {
  * values.
  * @tparam Out_Penalty_Type   The output type for the penalty operation.
  * @tparam Active_Type        The type representing the active set matrix.
- * @tparam I                  The number of columns (or a specific column index,
+ * @tparam I                  The number of rows (or a specific column index,
  * depending on usage).
- * @tparam J_idx              The number of rows (or a specific row index,
+ * @tparam J_idx              The number of cols (or a specific row index,
  * depending on usage).
  * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
  * enabled.
@@ -805,9 +805,9 @@ struct MinConditional<Y_Mat_Type, Y_Min_Matrix_Type, Out_Penalty_Type,
  * values.
  * @tparam Out_Penalty_Type   The output type for the penalty operation.
  * @tparam Active_Type        The type representing the active set matrix.
- * @tparam I                  The number of columns (or a specific column index,
+ * @tparam I                  The number of rows (or a specific column index,
  * depending on usage).
- * @tparam J_idx              The number of rows (or a specific row index,
+ * @tparam J_idx              The number of cols (or a specific row index,
  * depending on usage).
  * @tparam limit_valid_flag   Boolean flag indicating if limit validation is
  * enabled.
@@ -922,8 +922,8 @@ struct MaxConditional<Y_Mat_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
  * @tparam Active_Type        Type of the active set accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I                  Current column index being processed.
  * @tparam J_idx              Current row index being processed (recursively
  * decremented).
@@ -944,7 +944,7 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I,
           std::size_t J_idx>
-struct Column {
+struct Row {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
@@ -961,7 +961,7 @@ struct Column {
                    Y_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
         compute(Y_horizon, Y_max_matrix, Y_limit_penalty, Y_limit_active);
 
-    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, I, (J_idx - 1)>::compute(Y_horizon, Y_min_matrix,
                                                        Y_max_matrix,
                                                        Y_limit_penalty,
@@ -976,9 +976,9 @@ struct Column {
  * updating both penalty and active set.
  *
  * This struct template provides a static compute function that performs
- * conditional minimum and maximum operations on the first column (J_idx == 0)
+ * conditional minimum and maximum operations on the first row (J_idx == 0)
  * of the input matrices, updating both penalty and active set. It serves as the
- * termination case for the recursive processing of columns in the optimization
+ * termination case for the recursive processing of rows in the optimization
  * utility.
  *
  * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
@@ -986,12 +986,12 @@ struct Column {
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
  * @tparam Active_Type        Type of the active set accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I                  Current column index being processed.
  *
  * The compute() static method:
- *   - Applies MinConditional and MaxConditional operations for the first row
+ *   - Applies MinConditional and MaxConditional operations for the first column
  *   and column (J_idx == 0), updating both penalty and active set.
  *
  * @param Y_horizon           The main input matrix.
@@ -1004,7 +1004,7 @@ struct Column {
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I>
-struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
+struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
               Out_Penalty_Type, Active_Type, M, N, I, 0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
@@ -1025,7 +1025,7 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
 // Row recursion when I_idx > 0
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating both penalty and active set.
  *
  * This struct template performs column-wise processing for a specific row
@@ -1039,8 +1039,8 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
  * @tparam Active_Type        Type of the active set accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I_idx              Current column index being processed (recursively
  * decremented).
  *
@@ -1059,18 +1059,18 @@ struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I_idx>
-struct Row {
+struct Column {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
-    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, I_idx, (N - 1)>::compute(Y_horizon, Y_min_matrix,
                                                        Y_max_matrix,
                                                        Y_limit_penalty,
                                                        Y_limit_active);
-    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
         Active_Type, M, N, (I_idx - 1)>::compute(Y_horizon, Y_min_matrix,
                                                  Y_max_matrix, Y_limit_penalty,
                                                  Y_limit_active);
@@ -1084,20 +1084,20 @@ struct Row {
  * updating both penalty and active set.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first row (I_idx == 0) of the input matrices,
+ * column-wise processing for the first column (I_idx == 0) of the input matrices,
  * updating both penalty and active set. It serves as the termination case for
- * the recursive processing of rows in the optimization utility.
+ * the recursive processing of cols in the optimization utility.
  *
  * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
  * @tparam Y_Max_Matrix_Type  Type of the maximum constraint matrix.
  * @tparam Out_Penalty_Type   Type of the output penalty accumulator.
  * @tparam Active_Type        Type of the active set accumulator.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  *
  * The compute() static method:
- *   - Invokes Column processing for the first row (I_idx == 0), updating both
+ *   - Invokes Column processing for the first column (I_idx == 0), updating both
  *   penalty and active set.
  *
  * @param Y_horizon           The main input matrix.
@@ -1110,14 +1110,14 @@ struct Row {
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N>
-struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, 0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
-    Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
            Active_Type, M, N, 0, (N - 1)>::compute(Y_horizon, Y_min_matrix,
                                                    Y_max_matrix,
                                                    Y_limit_penalty,
@@ -1158,15 +1158,15 @@ inline void calculate_Y_limit_penalty_and_active(
     const Y_Max_Matrix_Type &Y_max_matrix, Out_Penalty_Type &Y_limit_penalty,
     Active_Type &Y_limit_active) {
 
-  constexpr std::size_t M = Out_Penalty_Type::COLS;
-  constexpr std::size_t N = Out_Penalty_Type::ROWS;
+  constexpr std::size_t M = Out_Penalty_Type::ROWS;
+  constexpr std::size_t N = Out_Penalty_Type::COLS;
   static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
-  static_assert(Out_Penalty_Type::COLS == Active_Type::COLS,
-                "Penalty and Active COLS mismatch");
   static_assert(Out_Penalty_Type::ROWS == Active_Type::ROWS,
                 "Penalty and Active ROWS mismatch");
+  static_assert(Out_Penalty_Type::COLS == Active_Type::COLS,
+                "Penalty and Active COLS mismatch");
 
-  CalculateY_LimitPenaltyAndActive::Row<
+  CalculateY_LimitPenaltyAndActive::Column<
       Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
       Active_Type, M, N, (M - 1)>::compute(Y_horizon, Y_min_matrix,
                                            Y_max_matrix, Y_limit_penalty,
@@ -1291,7 +1291,7 @@ struct AccumulateK<Fxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static void compute(const Fxx_Type &Hf_xx, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -1303,7 +1303,7 @@ struct Column {
     const auto updated = out.template get<J_idx, 0>() + w * acc;
     out.template set<J_idx, 0>(updated);
 
-    Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
+    Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
            (J_idx - 1)>::compute(Hf_xx, dX, lam_next, out);
   }
 };
@@ -1341,7 +1341,7 @@ struct Column {
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I>
-struct Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+struct Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
               I, 0> {
   static void compute(const Fxx_Type &Hf_xx, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
@@ -1359,7 +1359,7 @@ struct Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 // Row recursion over i (OUTPUT_SIZE): iterates outputs
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating the output vector.
  *
  * This struct template performs column-wise processing for each output index
@@ -1389,12 +1389,12 @@ struct Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I_idx>
-struct Row {
+struct Column {
   static void compute(const Fxx_Type &Hf_xx, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           I_idx, (STATE_SIZE - 1)>::compute(Hf_xx, dX, lam_next, out);
     Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+           I_idx, (STATE_SIZE - 1)>::compute(Hf_xx, dX, lam_next, out);
+    Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
         (I_idx - 1)>::compute(Hf_xx, dX, lam_next, out);
   }
 };
@@ -1428,11 +1428,11 @@ struct Row {
  */
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
-struct Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+struct Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            0> {
   static void compute(const Fxx_Type &Hf_xx, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
+    Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
            (STATE_SIZE - 1)>::compute(Hf_xx, dX, lam_next, out);
   }
 };
@@ -1466,7 +1466,7 @@ struct Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
  * @param out            Output vector to store the result of the contraction.
  *
  * @note All types must satisfy the required static dimension checks. The
- * computation is delegated to FxxLambdaContract::Row.
+ * computation is delegated to FxxLambdaContract::Column.
  */
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type>
@@ -1474,24 +1474,24 @@ inline void
 compute_fxx_lambda_contract(const Fxx_Type &Hf_xx, const dX_Type &dX,
                             const Weight_Type &lam_next, Out_Type &out) {
 
-  static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
-  static_assert(Weight_Type::ROWS == 1,
+  static_assert(dX_Type::COLS == 1, "dX must be a (STATE_SIZE x 1) vector");
+  static_assert(Weight_Type::COLS == 1,
                 "lam_next must be a (OUTPUT_SIZE x 1) vector");
-  static_assert(Out_Type::ROWS == 1,
-                "out must be a (STATE_SIZE x 1) vector (ROWS == 1)");
+  static_assert(Out_Type::COLS == 1,
+                "out must be a (STATE_SIZE x 1) vector (COLS == 1)");
 
-  constexpr std::size_t STATE_SIZE = dX_Type::COLS;
-  constexpr std::size_t OUTPUT_SIZE = Weight_Type::COLS;
+  constexpr std::size_t STATE_SIZE = dX_Type::ROWS;
+  constexpr std::size_t OUTPUT_SIZE = Weight_Type::ROWS;
 
   static_assert(STATE_SIZE > 0 && OUTPUT_SIZE > 0,
                 "STATE_SIZE and OUTPUT_SIZE must be positive");
-  static_assert(Fxx_Type::ROWS == STATE_SIZE,
-                "Hf_xx ROWS must equal STATE_SIZE");
-  static_assert(Fxx_Type::COLS == OUTPUT_SIZE * STATE_SIZE,
-                "Hf_xx COLS must equal OUTPUT_SIZE * STATE_SIZE");
-  static_assert(Out_Type::COLS == STATE_SIZE, "out COLS must equal STATE_SIZE");
+  static_assert(Fxx_Type::COLS == STATE_SIZE,
+                "Hf_xx COLS must equal STATE_SIZE");
+  static_assert(Fxx_Type::ROWS == OUTPUT_SIZE * STATE_SIZE,
+                "Hf_xx ROWS must equal OUTPUT_SIZE * STATE_SIZE");
+  static_assert(Out_Type::ROWS == STATE_SIZE, "out ROWS must equal STATE_SIZE");
 
-  FxxLambdaContract::Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
+  FxxLambdaContract::Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
                          STATE_SIZE, (OUTPUT_SIZE - 1)>::compute(Hf_xx, dX,
                                                                  lam_next, out);
 }
@@ -1618,7 +1618,7 @@ struct AccumulateK<Fxu_Type, dU_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE,
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -1630,7 +1630,7 @@ struct Column {
     const auto updated = out.template get<J_idx, 0>() + w * acc;
     out.template set<J_idx, 0>(updated);
 
-    Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+    Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            INPUT_SIZE, I, (J_idx - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
@@ -1669,7 +1669,7 @@ struct Column {
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I>
-struct Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+struct Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
               INPUT_SIZE, I, 0> {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
@@ -1688,7 +1688,7 @@ struct Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 // Row recursion over i (OUTPUT_SIZE): iterates outputs
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating the output vector.
  *
  * This struct template performs column-wise processing for each output index
@@ -1719,13 +1719,13 @@ struct Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I_idx>
-struct Row {
+struct Column {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+    Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            INPUT_SIZE, I_idx, (STATE_SIZE - 1)>::compute(Hf_xu, dU, lam_next,
                                                          out);
-    Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+    Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
         INPUT_SIZE, (I_idx - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
@@ -1761,11 +1761,11 @@ struct Row {
 template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE>
-struct Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+struct Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            INPUT_SIZE, 0> {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+    Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            INPUT_SIZE, 0, (STATE_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
@@ -1841,7 +1841,7 @@ struct Conditional<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
 
-    Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+    Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
         INPUT_SIZE, (OUTPUT_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
@@ -1926,23 +1926,23 @@ inline void
 compute_fx_xu_lambda_contract(const Fxu_Type &Hf_xu, const dU_Type &dU,
                               const Weight_Type &lam_next, Out_Type &out) {
 
-  static_assert(dU_Type::ROWS == 1, "dU must be a (INPUT_SIZE x 1) vector");
-  static_assert(Weight_Type::ROWS == 1,
+  static_assert(dU_Type::COLS == 1, "dU must be a (INPUT_SIZE x 1) vector");
+  static_assert(Weight_Type::COLS == 1,
                 "lam_next must be a (OUTPUT_SIZE x 1) vector");
-  static_assert(Out_Type::ROWS == 1,
-                "out must be a (STATE_SIZE x 1) vector (ROWS == 1)");
+  static_assert(Out_Type::COLS == 1,
+                "out must be a (STATE_SIZE x 1) vector (COLS == 1)");
 
-  constexpr std::size_t STATE_SIZE = Out_Type::COLS;
-  constexpr std::size_t OUTPUT_SIZE = Weight_Type::COLS;
-  constexpr std::size_t INPUT_SIZE = dU_Type::COLS;
+  constexpr std::size_t STATE_SIZE = Out_Type::ROWS;
+  constexpr std::size_t OUTPUT_SIZE = Weight_Type::ROWS;
+  constexpr std::size_t INPUT_SIZE = dU_Type::ROWS;
 
   static_assert(STATE_SIZE > 0 && INPUT_SIZE > 0,
                 "STATE_SIZE, OUTPUT_SIZE and INPUT_SIZE must be positive");
-  static_assert(Fxu_Type::COLS == STATE_SIZE * STATE_SIZE,
-                "Hf_xu ROWS must equal OUTPUT_SIZE * STATE_SIZE");
-  static_assert(Fxu_Type::ROWS == INPUT_SIZE,
-                "Hf_xu COLS must equal INPUT_SIZE");
-  static_assert(Out_Type::COLS == STATE_SIZE, "out COLS must equal STATE_SIZE");
+  static_assert(Fxu_Type::ROWS == STATE_SIZE * STATE_SIZE,
+                "Hf_xu COLS must equal OUTPUT_SIZE * STATE_SIZE");
+  static_assert(Fxu_Type::COLS == INPUT_SIZE,
+                "Hf_xu ROWS must equal INPUT_SIZE");
+  static_assert(Out_Type::ROWS == STATE_SIZE, "out ROWS must equal STATE_SIZE");
 
   FxuLambdaContract::Conditional<
       Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
@@ -2068,7 +2068,7 @@ struct AccumulateJ<Fuxx_Type, dX_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, K,
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I, std::size_t K_idx>
-struct Column {
+struct Row {
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -2080,7 +2080,7 @@ struct Column {
     const auto updated = out.template get<K_idx, 0>() + w * acc;
     out.template set<K_idx, 0>(updated);
 
-    Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
+    Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
            (K_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
   }
 };
@@ -2118,7 +2118,7 @@ struct Column {
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I>
-struct Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
               I, 0> {
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
@@ -2136,7 +2136,7 @@ struct Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 // Row recursion over i (STATE_SIZE): iterates the outer state index
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating the output vector.
  *
  * This struct template performs column-wise processing for each state index
@@ -2166,12 +2166,12 @@ struct Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
-struct Row {
+struct Column {
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-           I_idx, (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
     Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+           I_idx, (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
+    Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
         (I_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
   }
 };
@@ -2205,11 +2205,11 @@ struct Row {
  */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
-struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+struct Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
            0> {
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
+    Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
            (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
   }
 };
@@ -2239,7 +2239,7 @@ struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
  * @note All types must satisfy the static assertions regarding their
  * dimensions.
  * @note This function delegates the computation to
- * FuxxLambdaContract::Row::compute.
+ * FuxxLambdaContract::Column::compute.
  */
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type>
@@ -2247,26 +2247,26 @@ inline void
 compute_fu_xx_lambda_contract(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                               const Weight_Type &lam_next, Out_Type &out) {
 
-  static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
-  static_assert(Weight_Type::ROWS == 1,
+  static_assert(dX_Type::COLS == 1, "dX must be a (STATE_SIZE x 1) vector");
+  static_assert(Weight_Type::COLS == 1,
                 "lam_next must be a (STATE_SIZE x 1) vector");
-  static_assert(Out_Type::ROWS == 1,
-                "out must be a (INPUT_SIZE x 1) vector (ROWS == 1)");
+  static_assert(Out_Type::COLS == 1,
+                "out must be a (INPUT_SIZE x 1) vector (COLS == 1)");
 
-  constexpr std::size_t STATE_SIZE = dX_Type::COLS;
-  constexpr std::size_t INPUT_SIZE = Out_Type::COLS;
+  constexpr std::size_t STATE_SIZE = dX_Type::ROWS;
+  constexpr std::size_t INPUT_SIZE = Out_Type::ROWS;
 
   static_assert(STATE_SIZE > 0 && INPUT_SIZE > 0,
                 "STATE_SIZE and INPUT_SIZE must be positive");
-  static_assert(Fuxx_Type::COLS == STATE_SIZE * INPUT_SIZE,
-                "Hf_ux ROWS must equal STATE_SIZE * INPUT_SIZE");
-  static_assert(Fuxx_Type::ROWS == STATE_SIZE,
-                "Hf_ux COLS must equal STATE_SIZE");
-  static_assert(Weight_Type::COLS == STATE_SIZE,
-                "lam_next COLS must equal STATE_SIZE");
-  static_assert(Out_Type::COLS == INPUT_SIZE, "out COLS must equal INPUT_SIZE");
+  static_assert(Fuxx_Type::ROWS == STATE_SIZE * INPUT_SIZE,
+                "Hf_ux COLS must equal STATE_SIZE * INPUT_SIZE");
+  static_assert(Fuxx_Type::COLS == STATE_SIZE,
+                "Hf_ux ROWS must equal STATE_SIZE");
+  static_assert(Weight_Type::ROWS == STATE_SIZE,
+                "lam_next ROWS must equal STATE_SIZE");
+  static_assert(Out_Type::ROWS == INPUT_SIZE, "out ROWS must equal INPUT_SIZE");
 
-  FuxxLambdaContract::Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE,
+  FuxxLambdaContract::Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE,
                           INPUT_SIZE, (STATE_SIZE - 1)>::compute(Hf_ux, dX,
                                                                  lam_next, out);
 }
@@ -2389,7 +2389,7 @@ struct AccumulateK<Fuu_Type, dU_Type, Value_Type, STATE_SIZE, INPUT_SIZE, I, J,
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -2401,7 +2401,7 @@ struct Column {
     const auto updated = out.template get<J_idx, 0>() + w * acc;
     out.template set<J_idx, 0>(updated);
 
-    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
+    Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
            (J_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
@@ -2439,7 +2439,7 @@ struct Column {
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I>
-struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
               I, 0> {
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
@@ -2457,7 +2457,7 @@ struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 // Row recursion over i (STATE_SIZE): iterates the outer state index
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating the output vector.
  *
  * This struct template performs column-wise processing for each state index
@@ -2487,12 +2487,12 @@ struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I_idx>
-struct Row {
+struct Column {
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-           I_idx, (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
     Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+           I_idx, (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
+    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
         (I_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
@@ -2526,11 +2526,11 @@ struct Row {
  */
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
-struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
            0> {
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
+    Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
            (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
@@ -2600,7 +2600,7 @@ struct Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE,
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
 
-    Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
+    Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
         (STATE_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
@@ -2682,22 +2682,22 @@ inline void
 compute_fu_uu_lambda_contract(const Fuu_Type &Hf_uu, const dU_Type &dU,
                               const Weight_Type &lam_next, Out_Type &out) {
 
-  static_assert(dU_Type::ROWS == 1, "dU must be a (INPUT_SIZE x 1) vector");
-  static_assert(Weight_Type::ROWS == 1,
+  static_assert(dU_Type::COLS == 1, "dU must be a (INPUT_SIZE x 1) vector");
+  static_assert(Weight_Type::COLS == 1,
                 "lam_next must be a (STATE_SIZE x 1) vector");
-  static_assert(Out_Type::ROWS == 1,
-                "out must be a (INPUT_SIZE x 1) vector (ROWS == 1)");
+  static_assert(Out_Type::COLS == 1,
+                "out must be a (INPUT_SIZE x 1) vector (COLS == 1)");
 
-  constexpr std::size_t INPUT_SIZE = dU_Type::COLS;
-  constexpr std::size_t STATE_SIZE = Weight_Type::COLS;
+  constexpr std::size_t INPUT_SIZE = dU_Type::ROWS;
+  constexpr std::size_t STATE_SIZE = Weight_Type::ROWS;
 
   static_assert(STATE_SIZE > 0 && INPUT_SIZE > 0,
                 "STATE_SIZE and INPUT_SIZE must be positive");
-  static_assert(Fuu_Type::COLS == STATE_SIZE * INPUT_SIZE,
-                "Hf_uu ROWS must equal STATE_SIZE * INPUT_SIZE");
-  static_assert(Fuu_Type::ROWS == INPUT_SIZE,
-                "Hf_uu COLS must equal INPUT_SIZE");
-  static_assert(Out_Type::COLS == INPUT_SIZE, "out COLS must equal INPUT_SIZE");
+  static_assert(Fuu_Type::ROWS == STATE_SIZE * INPUT_SIZE,
+                "Hf_uu COLS must equal STATE_SIZE * INPUT_SIZE");
+  static_assert(Fuu_Type::COLS == INPUT_SIZE,
+                "Hf_uu ROWS must equal INPUT_SIZE");
+  static_assert(Out_Type::ROWS == INPUT_SIZE, "out ROWS must equal INPUT_SIZE");
 
   FuuuLambdaContract::Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type,
                                   STATE_SIZE, INPUT_SIZE, (STATE_SIZE - 1),
@@ -2823,7 +2823,7 @@ struct AccumulateK<Hxx_Type, dX_Type, Value_Type, OUTPUT_SIZE, STATE_SIZE, I, J,
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -2835,7 +2835,7 @@ struct Column {
     const auto updated = out.template get<J_idx, 0>() + w * acc;
     out.template set<J_idx, 0>(updated);
 
-    Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
+    Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
            (J_idx - 1)>::compute(Hh_xx, dX, weight, out);
   }
 };
@@ -2873,7 +2873,7 @@ struct Column {
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I>
-struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
               I, 0> {
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
@@ -2891,7 +2891,7 @@ struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 // Row recursion over i (OUTPUT_SIZE): iterates outputs
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating the output vector.
  *
  * This struct template performs column-wise processing for each output index
@@ -2921,12 +2921,12 @@ struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I_idx>
-struct Row {
+struct Column {
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
-    Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           I_idx, (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
     Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+           I_idx, (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
+    Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
         (I_idx - 1)>::compute(Hh_xx, dX, weight, out);
   }
 };
@@ -2960,11 +2960,11 @@ struct Row {
  */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
-struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
+struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
            0> {
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
-    Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
+    Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
            (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
   }
 };
@@ -2997,7 +2997,7 @@ struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
  *
  * @note All input types are statically checked for correct dimensions.
  * @note This function delegates the actual computation to
- * HxxLambdaContract::Row.
+ * HxxLambdaContract::Column.
  */
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type>
@@ -3005,24 +3005,24 @@ inline void
 compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
                             const Weight_Type &weight, Out_Type &out) {
 
-  static_assert(dX_Type::ROWS == 1, "dX must be a (STATE_SIZE x 1) vector");
-  static_assert(Weight_Type::ROWS == 1,
+  static_assert(dX_Type::COLS == 1, "dX must be a (STATE_SIZE x 1) vector");
+  static_assert(Weight_Type::COLS == 1,
                 "weight must be a (OUTPUT_SIZE x 1) vector");
-  static_assert(Out_Type::ROWS == 1,
-                "out must be a (STATE_SIZE x 1) vector (ROWS == 1)");
+  static_assert(Out_Type::COLS == 1,
+                "out must be a (STATE_SIZE x 1) vector (COLS == 1)");
 
-  constexpr std::size_t STATE_SIZE = dX_Type::COLS;
-  constexpr std::size_t OUTPUT_SIZE = Weight_Type::COLS;
+  constexpr std::size_t STATE_SIZE = dX_Type::ROWS;
+  constexpr std::size_t OUTPUT_SIZE = Weight_Type::ROWS;
 
   static_assert(STATE_SIZE > 0 && OUTPUT_SIZE > 0,
                 "STATE_SIZE and OUTPUT_SIZE must be positive");
-  static_assert(Hxx_Type::ROWS == STATE_SIZE,
-                "Hh_xx ROWS must equal STATE_SIZE");
-  static_assert(Hxx_Type::COLS == OUTPUT_SIZE * STATE_SIZE,
-                "Hh_xx COLS must equal OUTPUT_SIZE * STATE_SIZE");
-  static_assert(Out_Type::COLS == STATE_SIZE, "out COLS must equal STATE_SIZE");
+  static_assert(Hxx_Type::COLS == STATE_SIZE,
+                "Hh_xx COLS must equal STATE_SIZE");
+  static_assert(Hxx_Type::ROWS == OUTPUT_SIZE * STATE_SIZE,
+                "Hh_xx ROWS must equal OUTPUT_SIZE * STATE_SIZE");
+  static_assert(Out_Type::ROWS == STATE_SIZE, "out ROWS must equal STATE_SIZE");
 
-  HxxLambdaContract::Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
+  HxxLambdaContract::Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
                          STATE_SIZE, (OUTPUT_SIZE - 1)>::compute(Hh_xx, dX,
                                                                  weight, out);
 }
@@ -3295,8 +3295,8 @@ struct UpperConditional<U_Mat_Type, U_Max_Matrix_Type, AtUpper_Type, Value_Type,
  * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
  * (`at_upper`).
  * @tparam Value_Type         Type of the values in the matrices.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I                  Current column index being processed.
  * @tparam J_idx              Current row index being processed (recursively
  * decremented).
@@ -3319,7 +3319,7 @@ template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
           std::size_t N, std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static inline void compute(const U_Mat_Type &U_horizon_in,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix,
@@ -3336,7 +3336,7 @@ struct Column {
                      U_Max_Matrix_Type::SparseAvailable_Type::lists[I][J_idx]>::
         compute(U_horizon_in, U_max_matrix, atol, at_upper);
 
-    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
            AtUpper_Type, Value_Type, M, N, I,
            (J_idx - 1)>::compute(U_horizon_in, U_min_matrix, U_max_matrix, atol,
                                  at_lower, at_upper);
@@ -3364,8 +3364,8 @@ struct Column {
  * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
  * (`at_upper`).
  * @tparam Value_Type         Type of the values in the matrices.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I                  Current column index being processed.
  *
  * The compute() static method:
@@ -3385,7 +3385,7 @@ template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
           std::size_t N, std::size_t I>
-struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
               AtUpper_Type, Value_Type, M, N, I, 0> {
   static inline void compute(const U_Mat_Type &U_horizon_in,
                              const U_Min_Matrix_Type &U_min_matrix,
@@ -3406,7 +3406,7 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
 // Row recursion for I (0..M-1), when I_idx > 0
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating boolean matrices indicating proximity to bounds.
  *
  * This struct template performs column-wise processing for each column index
@@ -3422,8 +3422,8 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
  * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
  * (`at_upper`).
  * @tparam Value_Type         Type of the values in the matrices.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  * @tparam I_idx             Current column index being processed (recursively
  * decremented).
  *
@@ -3445,18 +3445,18 @@ template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
           std::size_t N, std::size_t I_idx>
-struct Row {
+struct Column {
   static inline void compute(const U_Mat_Type &U_horizon_in,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix,
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
-    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
            AtUpper_Type, Value_Type, M, N, I_idx,
            (N - 1)>::compute(U_horizon_in, U_min_matrix, U_max_matrix, atol,
                              at_lower, at_upper);
 
-    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
         AtUpper_Type, Value_Type, M, N, (I_idx - 1)>::compute(U_horizon_in,
                                                               U_min_matrix,
                                                               U_max_matrix,
@@ -3472,7 +3472,7 @@ struct Row {
  * updating boolean matrices indicating proximity to bounds.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first column index (I_idx == 0) of the input
+ * column-wise processing for the first row index (I_idx == 0) of the input
  * matrices, updating the boolean matrices indicating proximity to lower and
  * upper bounds. It serves as the termination case for the recursive processing
  * of column indices in the optimization utility.
@@ -3485,11 +3485,11 @@ struct Row {
  * @tparam AtUpper_Type       Type of the output boolean matrix for upper bounds
  * (`at_upper`).
  * @tparam Value_Type         Type of the values in the matrices.
- * @tparam M                  Number of columns in the matrices.
- * @tparam N                  Number of rows in the matrices.
+ * @tparam M                  Number of rows in the matrices.
+ * @tparam N                  Number of columns in the matrices.
  *
  * The compute() static method:
- *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   - Invokes Column processing for the first row index (I_idx == 0),
  *   updating the boolean matrices.
  *
  * @param U_horizon_in  The input matrix to be checked.
@@ -3505,14 +3505,14 @@ template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, typename AtLower_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
           std::size_t N>
-struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
            AtUpper_Type, Value_Type, M, N, 0> {
   static inline void compute(const U_Mat_Type &U_horizon_in,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix,
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
-    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
            AtUpper_Type, Value_Type, M, N, 0, (N - 1)>::compute(U_horizon_in,
                                                                 U_min_matrix,
                                                                 U_max_matrix,
@@ -3563,31 +3563,31 @@ inline auto free_mask_at_check(const U_Mat_Type &U_horizon_in,
                                const Value_Type &atol)
     -> std::tuple<AtLower_Type, AtUpper_Type> {
 
-  constexpr std::size_t M = U_Mat_Type::COLS; // INPUT_SIZE
-  constexpr std::size_t N = U_Mat_Type::ROWS; // NP
+  constexpr std::size_t M = U_Mat_Type::ROWS; // INPUT_SIZE
+  constexpr std::size_t N = U_Mat_Type::COLS; // NP
 
   static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
-  static_assert(U_Min_Matrix_Type::COLS == M,
-                "U_min_matrix COLS mismatch with U_horizon_in");
-  static_assert(U_Min_Matrix_Type::ROWS == N,
+  static_assert(U_Min_Matrix_Type::ROWS == M,
                 "U_min_matrix ROWS mismatch with U_horizon_in");
-  static_assert(U_Max_Matrix_Type::COLS == M,
-                "U_max_matrix COLS mismatch with U_horizon_in");
-  static_assert(U_Max_Matrix_Type::ROWS == N,
+  static_assert(U_Min_Matrix_Type::COLS == N,
+                "U_min_matrix COLS mismatch with U_horizon_in");
+  static_assert(U_Max_Matrix_Type::ROWS == M,
                 "U_max_matrix ROWS mismatch with U_horizon_in");
-  static_assert(AtLower_Type::COLS == M,
-                "at_lower COLS mismatch with U_horizon_in");
-  static_assert(AtLower_Type::ROWS == N,
+  static_assert(U_Max_Matrix_Type::COLS == N,
+                "U_max_matrix COLS mismatch with U_horizon_in");
+  static_assert(AtLower_Type::ROWS == M,
                 "at_lower ROWS mismatch with U_horizon_in");
-  static_assert(AtUpper_Type::COLS == M,
-                "at_upper COLS mismatch with U_horizon_in");
-  static_assert(AtUpper_Type::ROWS == N,
+  static_assert(AtLower_Type::COLS == N,
+                "at_lower COLS mismatch with U_horizon_in");
+  static_assert(AtUpper_Type::ROWS == M,
                 "at_upper ROWS mismatch with U_horizon_in");
+  static_assert(AtUpper_Type::COLS == N,
+                "at_upper COLS mismatch with U_horizon_in");
 
   AtLower_Type at_lower;
   AtUpper_Type at_upper;
 
-  FreeMaskAtCheck::Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type,
+  FreeMaskAtCheck::Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type,
                        AtLower_Type, AtUpper_Type, Value_Type, M, N,
                        (M - 1)>::compute(U_horizon_in, U_min_matrix,
                                          U_max_matrix, atol, at_lower,
@@ -3619,8 +3619,8 @@ namespace FreeMaskPushActive {
  * status.
  * @tparam ActiveSet_Type    Type of the active set structure.
  * @tparam Value_Type        Type of the gradient tolerance value.
- * @tparam M                 Number of columns in the matrices.
- * @tparam N                 Number of rows in the matrices.
+ * @tparam M                 Number of rows in the matrices.
+ * @tparam N                 Number of columns in the matrices.
  * @tparam I                 Current column index being processed.
  * @tparam J_idx             Current row index being processed (recursively
  * decremented).
@@ -3641,7 +3641,7 @@ namespace FreeMaskPushActive {
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
                              const AtLower_Type &at_lower,
                              const AtUpper_Type &at_upper,
@@ -3658,7 +3658,7 @@ struct Column {
       active_set.push_active(I, J_idx);
     }
 
-    Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+    Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
            Value_Type, M, N, I, (J_idx - 1)>::compute(m, gradient, at_lower,
                                                       at_upper, gtol,
                                                       active_set);
@@ -3685,8 +3685,8 @@ struct Column {
  * status.
  * @tparam ActiveSet_Type    Type of the active set structure.
  * @tparam Value_Type        Type of the gradient tolerance value.
- * @tparam M                 Number of columns in the matrices.
- * @tparam N                 Number of rows in the matrices.
+ * @tparam M                 Number of rows in the matrices.
+ * @tparam N                 Number of columns in the matrices.
  * @tparam I                 Current column index being processed.
  *
  * The compute() static method:
@@ -3704,7 +3704,7 @@ struct Column {
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I>
-struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
+struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
               ActiveSet_Type, Value_Type, M, N, I, 0> {
   static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
                              const AtLower_Type &at_lower,
@@ -3727,7 +3727,7 @@ struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
 // Row recursion for I (0..M-1), when I_idx > 0
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * optimization, updating a mask and pushing active constraints.
  *
  * This struct template performs column-wise processing for each column index
@@ -3743,8 +3743,8 @@ struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
  * status.
  * @tparam ActiveSet_Type    Type of the active set structure.
  * @tparam Value_Type        Type of the gradient tolerance value.
- * @tparam M                 Number of columns in the matrices.
- * @tparam N                 Number of rows in the matrices.
+ * @tparam M                 Number of rows in the matrices.
+ * @tparam N                 Number of columns in the matrices.
  * @tparam I_idx            Current column index being processed (recursively
  * decremented).
  *
@@ -3763,19 +3763,19 @@ struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I_idx>
-struct Row {
+struct Column {
   static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
                              const AtLower_Type &at_lower,
                              const AtUpper_Type &at_upper,
                              const Value_Type &gtol,
                              ActiveSet_Type &active_set) {
 
-    Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+    Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
            Value_Type, M, N, I_idx, (N - 1)>::compute(m, gradient, at_lower,
                                                       at_upper, gtol,
                                                       active_set);
 
-    Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+    Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
         Value_Type, M, N, (I_idx - 1)>::compute(m, gradient, at_lower, at_upper,
                                                 gtol, active_set);
   }
@@ -3788,7 +3788,7 @@ struct Row {
  * updating a mask and pushing active constraints.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first column index (I_idx == 0) of the input
+ * column-wise processing for the first row index (I_idx == 0) of the input
  * matrices, updating the mask and pushing active constraints into the active
  * set. It serves as the termination case for the recursive processing of column
  * indices in the optimization utility.
@@ -3801,11 +3801,11 @@ struct Row {
  * status.
  * @tparam ActiveSet_Type    Type of the active set structure.
  * @tparam Value_Type        Type of the gradient tolerance value.
- * @tparam M                 Number of columns in the matrices.
- * @tparam N                 Number of rows in the matrices.
+ * @tparam M                 Number of rows in the matrices.
+ * @tparam N                 Number of columns in the matrices.
  *
  * The compute() static method:
- *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   - Invokes Column processing for the first row index (I_idx == 0),
  *   updating the mask and pushing active constraints.
  *
  * @param m            The mask matrix to be updated.
@@ -3818,7 +3818,7 @@ struct Row {
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N>
-struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
            Value_Type, M, N, 0> {
   static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
                              const AtLower_Type &at_lower,
@@ -3826,7 +3826,7 @@ struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
                              const Value_Type &gtol,
                              ActiveSet_Type &active_set) {
 
-    Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+    Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
            Value_Type, M, N, 0, (N - 1)>::compute(m, gradient, at_lower,
                                                   at_upper, gtol, active_set);
   }
@@ -3845,7 +3845,7 @@ struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
  * pushed to the active set. The function uses compile-time assertions to ensure
  * that the input matrices have compatible dimensions.
  *
- * @tparam Mask_Type        Type of the mask matrix (must define COLS and ROWS).
+ * @tparam Mask_Type        Type of the mask matrix (must define ROWS and COLS).
  * @tparam Gradient_Type    Type of the gradient matrix (must match mask
  * dimensions).
  * @tparam AtLower_Type     Type indicating which variables are at their lower
@@ -3869,18 +3869,18 @@ inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
                                   const Value_Type &gtol,
                                   ActiveSet_Type &active_set) {
 
-  constexpr std::size_t M = Mask_Type::COLS; // INPUT_SIZE
-  constexpr std::size_t N = Mask_Type::ROWS; // NP
+  constexpr std::size_t M = Mask_Type::ROWS; // INPUT_SIZE
+  constexpr std::size_t N = Mask_Type::COLS; // NP
 
   static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
-  static_assert(Gradient_Type::COLS == M, "gradient COLS mismatch with mask m");
-  static_assert(Gradient_Type::ROWS == N, "gradient ROWS mismatch with mask m");
-  static_assert(AtLower_Type::COLS == M, "at_lower COLS mismatch with mask m");
-  static_assert(AtLower_Type::ROWS == N, "at_lower ROWS mismatch with mask m");
-  static_assert(AtUpper_Type::COLS == M, "at_upper COLS mismatch with mask m");
-  static_assert(AtUpper_Type::ROWS == N, "at_upper ROWS mismatch with mask m");
+  static_assert(Gradient_Type::ROWS == M, "gradient ROWS mismatch with mask m");
+  static_assert(Gradient_Type::COLS == N, "gradient COLS mismatch with mask m");
+  static_assert(AtLower_Type::ROWS == M, "at_lower ROWS mismatch with mask m");
+  static_assert(AtLower_Type::COLS == N, "at_lower COLS mismatch with mask m");
+  static_assert(AtUpper_Type::ROWS == M, "at_upper ROWS mismatch with mask m");
+  static_assert(AtUpper_Type::COLS == N, "at_upper COLS mismatch with mask m");
 
-  FreeMaskPushActive::Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
+  FreeMaskPushActive::Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
                           ActiveSet_Type, Value_Type, M, N,
                           (M - 1)>::compute(m, gradient, at_lower, at_upper,
                                             gtol, active_set);
@@ -3906,8 +3906,8 @@ namespace SolverCalculateMInv {
  * @tparam In_Mat_Type      Type of the input diagonal matrix
  * (diag_R_full_lambda_factor).
  * @tparam Value_Type       Type of the scalar values in the matrices.
- * @tparam M                Number of columns in the matrices.
- * @tparam N                Number of rows in the matrices.
+ * @tparam M                Number of rows in the matrices.
+ * @tparam N                Number of columns in the matrices.
  * @tparam I                Current column index being processed.
  * @tparam J_idx            Current row index being processed (recursively
  * decremented).
@@ -3924,7 +3924,7 @@ namespace SolverCalculateMInv {
  */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static inline void compute(Out_Mat_Type &M_inv,
                              const In_Mat_Type &diag_R_full_lambda_factor,
                              const Value_Type &avoid_zero_limit) {
@@ -3935,7 +3935,7 @@ struct Column {
     const auto value = static_cast<Value_Type>(1) / denominator;
     M_inv.template set<I, J_idx>(value);
 
-    Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I,
+    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I,
            (J_idx - 1)>::compute(M_inv, diag_R_full_lambda_factor,
                                  avoid_zero_limit);
   }
@@ -3957,8 +3957,8 @@ struct Column {
  * @tparam In_Mat_Type      Type of the input diagonal matrix
  * (diag_R_full_lambda_factor).
  * @tparam Value_Type       Type of the scalar values in the matrices.
- * @tparam M                Number of columns in the matrices.
- * @tparam N                Number of rows in the matrices.
+ * @tparam M                Number of rows in the matrices.
+ * @tparam N                Number of columns in the matrices.
  * @tparam I                Current column index being processed.
  *
  * The compute() static method:
@@ -3972,7 +3972,7 @@ struct Column {
  */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I>
-struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
+struct Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
   static inline void compute(Out_Mat_Type &M_inv,
                              const In_Mat_Type &diag_R_full_lambda_factor,
                              const Value_Type &avoid_zero_limit) {
@@ -3988,7 +3988,7 @@ struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
 // Row recursion for I (0..M-1), when I_idx > 0
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * computing the inverse of a matrix M_inv using a diagonal matrix
  * diag_R_full_lambda_factor.
  *
@@ -4002,8 +4002,8 @@ struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
  * @tparam In_Mat_Type      Type of the input diagonal matrix
  * (diag_R_full_lambda_factor).
  * @tparam Value_Type       Type of the scalar values in the matrices.
- * @tparam M                Number of columns in the matrices.
- * @tparam N                Number of rows in the matrices.
+ * @tparam M                Number of rows in the matrices.
+ * @tparam N                Number of columns in the matrices.
  * @tparam I_idx           Current column index being processed (recursively
  * decremented).
  *
@@ -4019,15 +4019,15 @@ struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, 0> {
  */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I_idx>
-struct Row {
+struct Column {
   static inline void compute(Out_Mat_Type &M_inv,
                              const In_Mat_Type &diag_R_full_lambda_factor,
                              const Value_Type &avoid_zero_limit) {
-    Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I_idx,
+    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I_idx,
            (N - 1)>::compute(M_inv, diag_R_full_lambda_factor,
                              avoid_zero_limit);
 
-    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, (I_idx - 1)>::compute(
+    Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, (I_idx - 1)>::compute(
         M_inv, diag_R_full_lambda_factor, avoid_zero_limit);
   }
 };
@@ -4039,7 +4039,7 @@ struct Row {
  * computing the inverse of a matrix row.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first column index (I_idx == 0) of the input
+ * column-wise processing for the first row index (I_idx == 0) of the input
  * matrices, computing the inverse elements by taking the reciprocal of the
  * corresponding elements in the diagonal matrix. It serves as the termination
  * case for the recursive processing of column indices in the optimization
@@ -4049,11 +4049,11 @@ struct Row {
  * @tparam In_Mat_Type      Type of the input diagonal matrix
  * (diag_R_full_lambda_factor).
  * @tparam Value_Type       Type of the scalar values in the matrices.
- * @tparam M                Number of columns in the matrices.
- * @tparam N                Number of rows in the matrices.
+ * @tparam M                Number of rows in the matrices.
+ * @tparam N                Number of columns in the matrices.
  *
  * The compute() static method:
- *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   - Invokes Column processing for the first row index (I_idx == 0),
  *   computing the inverse elements.
  *
  * @param M_inv                        The output matrix to store the inverse.
@@ -4063,11 +4063,11 @@ struct Row {
  */
 template <typename Out_Mat_Type, typename In_Mat_Type, typename Value_Type,
           std::size_t M, std::size_t N>
-struct Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0> {
+struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0> {
   static inline void compute(Out_Mat_Type &M_inv,
                              const In_Mat_Type &diag_R_full_lambda_factor,
                              const Value_Type &avoid_zero_limit) {
-    Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0, (N - 1)>::compute(
+    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0, (N - 1)>::compute(
         M_inv, diag_R_full_lambda_factor, avoid_zero_limit);
   }
 };
@@ -4079,7 +4079,7 @@ struct Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0> {
  * matrix diag_R_full_lambda_factor.
  *
  * This function computes the inverse of a matrix by leveraging a specialized
- * row-wise computation defined in SolverCalculateMInv::Row. It ensures that the
+ * row-wise computation defined in SolverCalculateMInv::Column. It ensures that the
  * matrix dimensions are positive and that the input matrix dimensions match the
  * output matrix dimensions. The computation avoids division by zero by using
  * the provided avoid_zero_limit parameter.
@@ -4099,16 +4099,16 @@ inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
                                    const In_Mat_Type &diag_R_full_lambda_factor,
                                    const Value_Type &avoid_zero_limit) {
 
-  constexpr std::size_t M = Out_Mat_Type::COLS;
-  constexpr std::size_t N = Out_Mat_Type::ROWS;
+  constexpr std::size_t M = Out_Mat_Type::ROWS;
+  constexpr std::size_t N = Out_Mat_Type::COLS;
 
   static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
-  static_assert(In_Mat_Type::COLS == M,
-                "diag_R_full_lambda_factor COLS mismatch with M_inv");
-  static_assert(In_Mat_Type::ROWS == N,
+  static_assert(In_Mat_Type::ROWS == M,
                 "diag_R_full_lambda_factor ROWS mismatch with M_inv");
+  static_assert(In_Mat_Type::COLS == N,
+                "diag_R_full_lambda_factor COLS mismatch with M_inv");
 
-  SolverCalculateMInv::Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N,
+  SolverCalculateMInv::Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N,
                            (M - 1)>::compute(M_inv, diag_R_full_lambda_factor,
                                              avoid_zero_limit);
 }
@@ -4268,8 +4268,8 @@ struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, false> {
  * @tparam U_Mat_Type Type of the candidate matrix.
  * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
  * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
- * @tparam M Number of columns in the matrices.
- * @tparam N Number of rows in the matrices.
+ * @tparam M Number of rows in the matrices.
+ * @tparam N Number of columns in the matrices.
  * @tparam I Current column index being processed.
  * @tparam J_idx Current row index being processed (recursively decremented).
  *
@@ -4285,7 +4285,7 @@ struct MaxSaturateConditional<U_Mat_Type, U_Max_Matrix_Type, I, J_idx, false> {
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
           std::size_t I, std::size_t J_idx>
-struct Column {
+struct Row {
   static inline void compute(U_Mat_Type &U_candidate,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
@@ -4300,7 +4300,7 @@ struct Column {
                                 [I][J_idx])>::compute(U_candidate,
                                                       U_max_matrix);
 
-    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I,
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I,
            (J_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
   }
 };
@@ -4320,8 +4320,8 @@ struct Column {
  * @tparam U_Mat_Type Type of the candidate matrix.
  * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
  * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
- * @tparam M Number of columns in the matrices.
- * @tparam N Number of rows in the matrices.
+ * @tparam M Number of rows in the matrices.
+ * @tparam N Number of columns in the matrices.
  * @tparam I Current column index being processed.
  *
  * The compute() static method:
@@ -4335,7 +4335,7 @@ struct Column {
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
           std::size_t I>
-struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
+struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
   static inline void compute(U_Mat_Type &U_candidate,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
@@ -4353,7 +4353,7 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
 // Row recursion for I (0..M-1), when I_idx > 0
 
 /**
- * @brief Template struct to recursively process rows of matrix operations for
+ * @brief Template struct to recursively process cols of matrix operations for
  * applying saturation limits to a candidate matrix.
  *
  * This struct template performs column-wise processing for each column index
@@ -4364,8 +4364,8 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
  * @tparam U_Mat_Type Type of the candidate matrix.
  * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
  * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
- * @tparam M Number of columns in the matrices.
- * @tparam N Number of rows in the matrices.
+ * @tparam M Number of rows in the matrices.
+ * @tparam N Number of columns in the matrices.
  * @tparam I_idx Current column index being processed (recursively decremented).
  *
  * The compute() static method:
@@ -4380,14 +4380,14 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I, 0> {
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N,
           std::size_t I_idx>
-struct Row {
+struct Column {
   static inline void compute(U_Mat_Type &U_candidate,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
-    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I_idx,
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I_idx,
            (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
 
-    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
+    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
         (I_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
   }
 };
@@ -4399,7 +4399,7 @@ struct Row {
  * applying saturation limits to a matrix row.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first column index (I_idx == 0) of the input
+ * column-wise processing for the first row index (I_idx == 0) of the input
  * matrices, applying minimum and maximum saturation limits to the candidate
  * matrix. It serves as the termination case for the recursive processing of
  * column indices in the optimization utility.
@@ -4407,11 +4407,11 @@ struct Row {
  * @tparam U_Mat_Type Type of the candidate matrix.
  * @tparam U_Min_Matrix_Type Type of the minimum limit matrix.
  * @tparam U_Max_Matrix_Type Type of the maximum limit matrix.
- * @tparam M Number of columns in the matrices.
- * @tparam N Number of rows in the matrices.
+ * @tparam M Number of rows in the matrices.
+ * @tparam N Number of columns in the matrices.
  *
  * The compute() static method:
- *   - Invokes Column processing for the first column index (I_idx == 0),
+ *   - Invokes Column processing for the first row index (I_idx == 0),
  *   applying saturation limits.
  *
  * @param U_candidate The candidate matrix to be saturated.
@@ -4420,11 +4420,11 @@ struct Row {
  */
 template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename U_Max_Matrix_Type, std::size_t M, std::size_t N>
-struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
+struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
   static inline void compute(U_Mat_Type &U_candidate,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
-    Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0,
+    Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0,
            (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
   }
 };
@@ -4452,7 +4452,7 @@ struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
  * @param U_max_matrix  Matrix specifying the maximum allowable values for each
  * element.
  *
- * @note The function relies on the SaturateU_Horizon::Row helper for the actual
+ * @note The function relies on the SaturateU_Horizon::Column helper for the actual
  * saturation logic.
  * @note All matrices must have matching dimensions, enforced via static
  * assertions.
@@ -4463,20 +4463,20 @@ inline void saturate_U_horizon(U_Mat_Type &U_candidate,
                                const U_Min_Matrix_Type &U_min_matrix,
                                const U_Max_Matrix_Type &U_max_matrix) {
 
-  constexpr std::size_t M = U_Mat_Type::COLS; // INPUT_SIZE
-  constexpr std::size_t N = U_Mat_Type::ROWS; // NP
+  constexpr std::size_t M = U_Mat_Type::ROWS; // INPUT_SIZE
+  constexpr std::size_t N = U_Mat_Type::COLS; // NP
 
   static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
-  static_assert(U_Min_Matrix_Type::COLS == M,
-                "U_min_matrix COLS mismatch with U_candidate");
-  static_assert(U_Min_Matrix_Type::ROWS == N,
+  static_assert(U_Min_Matrix_Type::ROWS == M,
                 "U_min_matrix ROWS mismatch with U_candidate");
-  static_assert(U_Max_Matrix_Type::COLS == M,
-                "U_max_matrix COLS mismatch with U_candidate");
-  static_assert(U_Max_Matrix_Type::ROWS == N,
+  static_assert(U_Min_Matrix_Type::COLS == N,
+                "U_min_matrix COLS mismatch with U_candidate");
+  static_assert(U_Max_Matrix_Type::ROWS == M,
                 "U_max_matrix ROWS mismatch with U_candidate");
+  static_assert(U_Max_Matrix_Type::COLS == N,
+                "U_max_matrix COLS mismatch with U_candidate");
 
-  SaturateU_Horizon::Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
+  SaturateU_Horizon::Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
                          (M - 1)>::compute(U_candidate, U_min_matrix,
                                            U_max_matrix);
 }

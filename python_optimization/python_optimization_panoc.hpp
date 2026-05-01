@@ -100,7 +100,7 @@ template <typename T> struct PANOC_SolverStatus {
  *
  * @tparam T Scalar value type (e.g. double).
  * @tparam BufferSize Maximum number of entries the buffer can hold.
- * @tparam ELEMENT_SIZE Size of each vector element (number of rows).
+ * @tparam ELEMENT_SIZE Size of each vector element (number of cols).
  *                     If 0, each element is a scalar.
  */
 template <typename Matrix_Type, std::size_t BufferSize> class MatrixRingBuffer {
@@ -109,7 +109,7 @@ public:
   using T = typename Matrix_Type::Value_Type;
 
   static constexpr std::size_t ELEMENT_SIZE =
-      Matrix_Type::COLS * Matrix_Type::ROWS;
+      Matrix_Type::ROWS * Matrix_Type::COLS;
 
   /* Compatibility check */
   static_assert(BufferSize > 0, "BufferSize must be greater than 0");
