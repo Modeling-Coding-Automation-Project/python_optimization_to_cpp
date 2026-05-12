@@ -8,8 +8,8 @@
  * optimization modules to ensure consistency and readability when working with
  * state space models in the context of optimization problems.
  */
-#ifndef __PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP__
-#define __PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP__
+#ifndef PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP_
+#define PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP_
 
 #include <functional>
 
@@ -76,4 +76,4 @@ using MeasurementFunctionHessian_XX_Object =
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP__
+#endif // PYTHON_OPTIMIZATION_MATRIX_UTILITY_COMMON_HPP_

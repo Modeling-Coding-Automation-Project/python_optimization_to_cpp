@@ -1,5 +1,5 @@
-#ifndef __PYTHON_OPTIMIZATION_COMMON_HPP__
-#define __PYTHON_OPTIMIZATION_COMMON_HPP__
+#ifndef PYTHON_OPTIMIZATION_COMMON_HPP_
+#define PYTHON_OPTIMIZATION_COMMON_HPP_
 
 #include <functional>
 #include <tuple>
@@ -377,4 +377,4 @@ using CostAndGradientFunction_Object = std::function<
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_COMMON_HPP__
+#endif // PYTHON_OPTIMIZATION_COMMON_HPP_

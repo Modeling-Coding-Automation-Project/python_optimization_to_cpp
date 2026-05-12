@@ -14,8 +14,8 @@
  * constraint mapping and its Jacobian transpose for the Augmented Lagrangian
  * Method (ALM).
  */
-#ifndef __PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP__
-#define __PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP__
+#ifndef PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP_
+#define PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP_
 
 #include "python_optimization_matrix_utility_common.hpp"
 #include "python_optimization_utility_matrix_operation.hpp"
@@ -920,4 +920,4 @@ using OptimizationEngine_CostMatrices_Type = OptimizationEngine_CostMatrices<
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP__
+#endif // PYTHON_OPTIMIZATION_OPTIMIZATION_ENGINE_MATRIX_UTILITY_HPP_

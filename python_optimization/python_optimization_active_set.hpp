@@ -10,8 +10,8 @@
  * - Matrix operations (element-wise product, dot, norm) restricted to active
  * set elements.
  */
-#ifndef __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__
-#define __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__
+#ifndef PYTHON_OPTIMIZATION_ACTIVE_SET_HPP_
+#define PYTHON_OPTIMIZATION_ACTIVE_SET_HPP_
 
 #include "python_math.hpp"
 #include "python_numpy.hpp"
@@ -791,4 +791,4 @@ public:
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_ACTIVE_SET_HPP__
+#endif // PYTHON_OPTIMIZATION_ACTIVE_SET_HPP_

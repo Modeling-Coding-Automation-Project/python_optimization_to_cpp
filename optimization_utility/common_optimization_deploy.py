@@ -309,10 +309,10 @@ def create_and_write_parameter_class_code(
         pass
 
     code_text = ""
-    header_macro_text = "__" + file_name_no_extension.upper() + "_HPP__"
+    file_header_macro_name = file_name_no_extension.upper() + "_HPP_"
 
-    code_text += f"#ifndef {header_macro_text}\n"
-    code_text += f"#define {header_macro_text}\n\n"
+    code_text += f"#ifndef {file_header_macro_name}\n"
+    code_text += f"#define {file_header_macro_name}\n\n"
 
     code_text += f"namespace {file_name_no_extension} {{\n\n"
 
@@ -328,7 +328,7 @@ def create_and_write_parameter_class_code(
 
     code_text += f"}} // namespace {file_name_no_extension}\n\n"
 
-    code_text += f"#endif // {header_macro_text}\n"
+    code_text += f"#endif // {file_header_macro_name}\n"
 
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{file_name_no_extension}.hpp")
@@ -366,10 +366,10 @@ def create_and_write_state_function_code(function_name: str):
 
     # generate code text
     code_text = ""
-    header_macro_text = "__" + function_name.upper() + "_HPP__"
+    file_header_macro_name = function_name.upper() + "_HPP_"
 
-    code_text += f"#ifndef {header_macro_text}\n"
-    code_text += f"#define {header_macro_text}\n\n"
+    code_text += f"#ifndef {file_header_macro_name}\n"
+    code_text += f"#define {file_header_macro_name}\n\n"
 
     code_text += "#include \"python_math.hpp\"\n\n"
 
@@ -395,7 +395,7 @@ def create_and_write_state_function_code(function_name: str):
 
     code_text += f"}} // namespace {function_name}\n\n"
 
-    code_text += f"#endif // {header_macro_text}\n"
+    code_text += f"#endif // {file_header_macro_name}\n"
 
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{function_name}.hpp")
@@ -433,10 +433,10 @@ def create_and_write_measurement_function_code(function_name: str):
 
     # generate code text
     code_text = ""
-    header_macro_text = "__" + function_name.upper() + "_HPP__"
+    file_header_macro_name = function_name.upper() + "_HPP_"
 
-    code_text += f"#ifndef {header_macro_text}\n"
-    code_text += f"#define {header_macro_text}\n\n"
+    code_text += f"#ifndef {file_header_macro_name}\n"
+    code_text += f"#define {file_header_macro_name}\n\n"
 
     code_text += "#include \"python_math.hpp\"\n\n"
 
@@ -463,7 +463,7 @@ def create_and_write_measurement_function_code(function_name: str):
 
     code_text += f"}} // namespace {function_name}\n\n"
 
-    code_text += f"#endif // {header_macro_text}\n"
+    code_text += f"#endif // {file_header_macro_name}\n"
 
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{function_name}.hpp")
@@ -513,10 +513,10 @@ def create_and_write_state_measurement_jacobian_code(
 
     # generate code text
     code_text = ""
-    header_macro_text = "__" + function_name.upper() + "_HPP__"
+    file_header_macro_name = function_name.upper() + "_HPP_"
 
-    code_text += f"#ifndef {header_macro_text}\n"
-    code_text += f"#define {header_macro_text}\n\n"
+    code_text += f"#ifndef {file_header_macro_name}\n"
+    code_text += f"#define {file_header_macro_name}\n\n"
 
     code_text += "#include \"python_math.hpp\"\n"
     code_text += "#include \"python_numpy.hpp\"\n\n"
@@ -547,7 +547,7 @@ def create_and_write_state_measurement_jacobian_code(
 
     code_text += f"}} // namespace {function_name}\n\n"
 
-    code_text += f"#endif // {header_macro_text}\n"
+    code_text += f"#endif // {file_header_macro_name}\n"
 
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{function_name}.hpp")

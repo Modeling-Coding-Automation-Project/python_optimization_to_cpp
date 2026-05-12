@@ -9,8 +9,8 @@
  * optimizations and are designed to work with custom matrix types that provide
  * specific access and manipulation methods.
  */
-#ifndef __PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP__
-#define __PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP__
+#ifndef PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP_
+#define PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP_
 
 #include "python_control.hpp"
 #include "python_numpy.hpp"
@@ -4485,4 +4485,4 @@ inline void saturate_U_horizon(U_Mat_Type &U_candidate,
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP__
+#endif // PYTHON_OPTIMIZATION_SQP_MATRIX_OPERATION_HPP_

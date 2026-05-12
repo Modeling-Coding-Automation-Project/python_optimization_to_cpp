@@ -1,5 +1,5 @@
-#ifndef __PYTHON_OPTIMIZATION_HPP__
-#define __PYTHON_OPTIMIZATION_HPP__
+#ifndef PYTHON_OPTIMIZATION_HPP_
+#define PYTHON_OPTIMIZATION_HPP_
 
 #include "python_optimization_utility.hpp"
 
@@ -10,4 +10,4 @@
 #include "python_optimization_qp_active_set.hpp"
 #include "python_optimization_sqp_active_set_pcg_pls.hpp"
 
-#endif // __PYTHON_OPTIMIZATION_HPP__
+#endif // PYTHON_OPTIMIZATION_HPP_
