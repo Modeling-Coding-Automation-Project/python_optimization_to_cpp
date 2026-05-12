@@ -52,8 +52,8 @@
  * References:
  *     - optimization-engine: https://github.com/alphaville/optimization-engine
  */
-#ifndef __PYTHON_OPTIMIZATION_ALM_PM_OPTIMIZER_HPP__
-#define __PYTHON_OPTIMIZATION_ALM_PM_OPTIMIZER_HPP__
+#ifndef PYTHON_OPTIMIZATION_ALM_PM_OPTIMIZER_HPP_
+#define PYTHON_OPTIMIZATION_ALM_PM_OPTIMIZER_HPP_
 
 #include "python_optimization_common.hpp"
 #include "python_optimization_panoc.hpp"
@@ -2066,4 +2066,4 @@ using BallProjectionOperator_Type = BallProjectionOperator<T, Size>;
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_ALM_PM_OPTIMIZER_HPP__
+#endif // PYTHON_OPTIMIZATION_ALM_PM_OPTIMIZER_HPP_

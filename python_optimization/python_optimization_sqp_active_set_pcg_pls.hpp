@@ -22,8 +22,8 @@
  * - Customizable solver parameters (tolerances, iteration limits,
  * regularization factors).
  */
-#ifndef __PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP__
-#define __PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP__
+#ifndef PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP_
+#define PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP_
 
 #include "python_optimization_common.hpp"
 #include "python_optimization_utility.hpp"
@@ -651,4 +651,4 @@ using SQP_ActiveSet_PCG_PLS_Type = SQP_ActiveSet_PCG_PLS<CostMatrices_Type>;
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP__
+#endif // PYTHON_OPTIMIZATION_SQP_ACTIVE_SET_PCG_PLS_HPP_

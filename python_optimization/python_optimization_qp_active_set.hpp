@@ -8,8 +8,8 @@
  * for compile-time fixed problem sizes and is compatible with custom matrix
  * types defined in "python_numpy.hpp".
  */
-#ifndef __PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP__
-#define __PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP__
+#ifndef PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP_
+#define PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP_
 
 #include "python_numpy.hpp"
 #include "python_optimization_active_set.hpp"
@@ -906,4 +906,4 @@ using QP_ActiveSetSolver_Type =
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP__
+#endif // PYTHON_OPTIMIZATION_QP_ACTIVE_SET_HPP_

@@ -89,10 +89,10 @@ def create_and_write_state_measurement_hessian_code(
 
     # generate code text
     code_text = ""
-    header_macro_text = "__" + function_name.upper() + "_HPP__"
+    file_header_macro_name = function_name.upper() + "_HPP_"
 
-    code_text += f"#ifndef {header_macro_text}\n"
-    code_text += f"#define {header_macro_text}\n\n"
+    code_text += f"#ifndef {file_header_macro_name}\n"
+    code_text += f"#define {file_header_macro_name}\n\n"
 
     code_text += "#include \"python_math.hpp\"\n"
     code_text += "#include \"python_numpy.hpp\"\n\n"
@@ -123,7 +123,7 @@ def create_and_write_state_measurement_hessian_code(
 
     code_text += f"}} // namespace {function_name}\n\n"
 
-    code_text += f"#endif // {header_macro_text}\n"
+    code_text += f"#endif // {file_header_macro_name}\n"
 
     saved_file_name = ControlDeploy.write_to_file(
         code_text, f"{function_name}.hpp")
@@ -468,7 +468,7 @@ class SQP_MatrixUtilityDeploy:
         # %% create cpp code
         code_text = ""
 
-        file_header_macro_name = "__" + code_file_name.upper() + "_HPP__"
+        file_header_macro_name = code_file_name.upper() + "_HPP_"
 
         code_text += "#ifndef " + file_header_macro_name + "\n"
         code_text += "#define " + file_header_macro_name + "\n\n"

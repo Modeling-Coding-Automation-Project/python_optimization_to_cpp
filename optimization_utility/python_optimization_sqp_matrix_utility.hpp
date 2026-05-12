@@ -8,8 +8,8 @@
  * for handling cost matrices and related operations in Sequential Quadratic
  * Programming (SQP) for Nonlinear Model Predictive Control (NMPC) problems.
  */
-#ifndef __PYTHON_OPTIMIZATION_SQP_MATRIX_UTILITY_HPP__
-#define __PYTHON_OPTIMIZATION_SQP_MATRIX_UTILITY_HPP__
+#ifndef PYTHON_OPTIMIZATION_SQP_MATRIX_UTILITY_HPP_
+#define PYTHON_OPTIMIZATION_SQP_MATRIX_UTILITY_HPP_
 
 #include "python_optimization_matrix_utility_common.hpp"
 #include "python_optimization_utility_matrix_operation.hpp"
@@ -1732,4 +1732,4 @@ using SQP_CostMatrices_NMPC_Type = SQP_CostMatrices_NMPC<
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_SQP_MATRIX_UTILITY_HPP__
+#endif // PYTHON_OPTIMIZATION_SQP_MATRIX_UTILITY_HPP_

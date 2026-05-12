@@ -1,5 +1,5 @@
-#ifndef __PYTHON_OPTIMIZATION_PANOC_HPP__
-#define __PYTHON_OPTIMIZATION_PANOC_HPP__
+#ifndef PYTHON_OPTIMIZATION_PANOC_HPP_
+#define PYTHON_OPTIMIZATION_PANOC_HPP_
 
 #include "python_optimization_common.hpp"
 #include "python_optimization_utility.hpp"
@@ -1241,4 +1241,4 @@ using PANOC_Optimizer_Type = PANOC_Optimizer<CostMatrices_Type, LBFGSMemory>;
 
 } // namespace PythonOptimization
 
-#endif // __PYTHON_OPTIMIZATION_PANOC_HPP__
+#endif // PYTHON_OPTIMIZATION_PANOC_HPP_

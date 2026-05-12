@@ -1,5 +1,5 @@
-#ifndef __SQP_TEST_DATA_HPP__
-#define __SQP_TEST_DATA_HPP__
+#ifndef SQP_TEST_DATA_HPP_
+#define SQP_TEST_DATA_HPP_
 
 #include "python_math.hpp"
 #include "python_numpy.hpp"
@@ -696,4 +696,4 @@ public:
 
 } // namespace SQP_TestData
 
-#endif // __SQP_TEST_DATA_HPP__
+#endif // SQP_TEST_DATA_HPP_
