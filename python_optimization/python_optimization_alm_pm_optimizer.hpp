@@ -596,20 +596,20 @@ public:
 public:
   /* Types */
   using Value_Type = typename CostMatrices_Type_In::Value_Type;
-  using _T = Value_Type;
+  using T_ = Value_Type;
 
   using U_Horizon_Type = typename CostMatrices_Type_In::U_Horizon_Type;
-  using _Gradient_Type = U_Horizon_Type;
+  using Gradient_Type_ = U_Horizon_Type;
 
-  using F1_Output_Type = PythonNumpy::DenseMatrix_Type<_T, N1, 1>;
+  using F1_Output_Type = PythonNumpy::DenseMatrix_Type<T_, N1, 1>;
   using F2_Output_Type =
-      PythonNumpy::DenseMatrix_Type<_T, (N2 > 0 ? N2 : 1), 1>;
-  using Xi_Type = PythonNumpy::DenseMatrix_Type<_T, (1 + N1), 1>;
+      PythonNumpy::DenseMatrix_Type<T_, (N2 > 0 ? N2 : 1), 1>;
+  using Xi_Type = PythonNumpy::DenseMatrix_Type<T_, (1 + N1), 1>;
 
   /** @brief F1(u) -> F1_Output_Type */
   using Mapping_F1_Type = std::function<F1_Output_Type(const U_Horizon_Type &)>;
   /** @brief JF1(u)^T * d -> Gradient_Type */
-  using Jacobian_F1_Trans_Type = std::function<_Gradient_Type(
+  using Jacobian_F1_Trans_Type = std::function<Gradient_Type_(
       const U_Horizon_Type &, const F1_Output_Type &)>;
   /** @brief In-place projection onto C: project(x) */
   using Set_C_Project_Type = std::function<void(F1_Output_Type &)>;
@@ -617,14 +617,14 @@ public:
   /** @brief F2(u) -> F2_Output_Type */
   using Mapping_F2_Type = std::function<F2_Output_Type(const U_Horizon_Type &)>;
   /** @brief JF2(u)^T * d -> Gradient_Type */
-  using Jacobian_F2_Trans_Type = std::function<_Gradient_Type(
+  using Jacobian_F2_Trans_Type = std::function<Gradient_Type_(
       const U_Horizon_Type &, const F2_Output_Type &)>;
 
   /** @brief Cost function f(u) -> T */
-  using Cost_Func_Type = std::function<_T(const U_Horizon_Type &)>;
+  using Cost_Func_Type = std::function<T_(const U_Horizon_Type &)>;
   /** @brief Gradient function grad f(u) -> Gradient_Type */
   using Gradient_Func_Type =
-      std::function<_Gradient_Type(const U_Horizon_Type &)>;
+      std::function<Gradient_Type_(const U_Horizon_Type &)>;
 
   /* Constructor */
   ALM_Factory()
@@ -705,9 +705,9 @@ public:
    * @param xi Parameter vector xi = (c, y). Unused in this specialization.
    * @return Augmented cost value.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
-  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ == 0), int>::type = 0>
+  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> T_ {
     static_cast<void>(xi);
     return this->_f(u);
   }
@@ -722,23 +722,23 @@ public:
    * @param xi Parameter vector xi = (c, y).
    * @return Augmented cost value.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
-  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
-    _T cost = this->_f(u);
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ == 0), int>::type = 0>
+  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> T_ {
+    T_ cost = this->_f(u);
 
     /* ALM term: (c/2) * dist^2_C(F1(u) + y/c_bar) */
     if (this->_mapping_f1 && this->_set_c_project) {
-      _T c = xi(0, 0);
-      _T c_bar = (c > static_cast<_T>(1)) ? c : static_cast<_T>(1);
+      T_ c = xi(0, 0);
+      T_ c_bar = (c > static_cast<T_>(1)) ? c : static_cast<T_>(1);
 
-      /* Extract y from xi(1.._N1) */
+      /* Extract y from xi(1..N1_) */
       F1_Output_Type y;
       MatrixOperation::SubstituteGetOneOffset::compute(y, xi);
 
       /* t = F1(u) + y / c_bar */
       F1_Output_Type f1_u = this->_mapping_f1(u);
-      F1_Output_Type t = f1_u + (static_cast<_T>(1) / c_bar) * y;
+      F1_Output_Type t = f1_u + (static_cast<T_>(1) / c_bar) * y;
 
       /* s = Pi_C(t) */
       F1_Output_Type s = t;
@@ -746,9 +746,9 @@ public:
 
       /* dist^2_C(t) = ||t - s||^2 */
       F1_Output_Type diff = t - s;
-      _T dist_sq = PythonNumpy::inner_product(diff, diff);
+      T_ dist_sq = PythonNumpy::inner_product(diff, diff);
 
-      cost += static_cast<_T>(0.5) * c * dist_sq;
+      cost += static_cast<T_>(0.5) * c * dist_sq;
     }
 
     return cost;
@@ -764,18 +764,18 @@ public:
    * @param xi Parameter vector xi = (c, y).
    * @return Augmented cost value.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
-  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
-    _T cost = this->_f(u);
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ > 0), int>::type = 0>
+  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> T_ {
+    T_ cost = this->_f(u);
 
     /* PM term: (c/2) * ||F2(u)||^2 */
     if (this->_mapping_f2) {
-      _T c = xi.access(0, 0);
+      T_ c = xi.access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
-      _T f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
+      T_ f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
 
-      cost += static_cast<_T>(0.5) * c * f2_sq;
+      cost += static_cast<T_>(0.5) * c * f2_sq;
     }
 
     return cost;
@@ -791,23 +791,23 @@ public:
    * @param xi Parameter vector xi = (c, y).
    * @return Augmented cost value.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
-  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> _T {
-    _T cost = this->_f(u);
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ > 0), int>::type = 0>
+  inline auto psi(const U_Horizon_Type &u, const Xi_Type &xi) const -> T_ {
+    T_ cost = this->_f(u);
 
     /* ALM term: (c/2) * dist^2_C(F1(u) + y/c_bar) */
     if (this->_mapping_f1 && this->_set_c_project) {
-      _T c = xi.access(0, 0);
-      _T c_bar = (c > static_cast<_T>(1)) ? c : static_cast<_T>(1);
+      T_ c = xi.access(0, 0);
+      T_ c_bar = (c > static_cast<T_>(1)) ? c : static_cast<T_>(1);
 
-      /* Extract y from xi(1.._N1) */
+      /* Extract y from xi(1..N1_) */
       F1_Output_Type y;
       MatrixOperation::SubstituteGetOneOffset::compute(y, xi);
 
       /* t = F1(u) + y / c_bar */
       F1_Output_Type f1_u = this->_mapping_f1(u);
-      F1_Output_Type t = f1_u + (static_cast<_T>(1) / c_bar) * y;
+      F1_Output_Type t = f1_u + (static_cast<T_>(1) / c_bar) * y;
 
       /* s = Pi_C(t) */
       F1_Output_Type s = t;
@@ -815,18 +815,18 @@ public:
 
       /* dist^2_C(t) = ||t - s||^2 */
       F1_Output_Type diff = t - s;
-      _T dist_sq = PythonNumpy::inner_product(diff, diff);
+      T_ dist_sq = PythonNumpy::inner_product(diff, diff);
 
-      cost += static_cast<_T>(0.5) * c * dist_sq;
+      cost += static_cast<T_>(0.5) * c * dist_sq;
     }
 
     /* PM term: (c/2) * ||F2(u)||^2 */
     if (this->_mapping_f2) {
-      _T c = xi.access(0, 0);
+      T_ c = xi.access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
-      _T f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
+      T_ f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
 
-      cost += static_cast<_T>(0.5) * c * f2_sq;
+      cost += static_cast<T_>(0.5) * c * f2_sq;
     }
 
     return cost;
@@ -841,10 +841,10 @@ public:
    * @param xi Parameter vector xi = (c, y). Unused in this specialization.
    * @return Gradient of augmented cost.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ == 0), int>::type = 0>
   inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
-      -> _Gradient_Type {
+      -> Gradient_Type_ {
     (void)xi;
     return this->_df(u);
   }
@@ -859,15 +859,15 @@ public:
    * @param xi Parameter vector xi = (c, y).
    * @return Gradient of augmented cost.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ == 0), int>::type = 0>
   inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
-      -> _Gradient_Type {
-    _Gradient_Type grad = this->_df(u);
+      -> Gradient_Type_ {
+    Gradient_Type_ grad = this->_df(u);
 
     /* ALM gradient: c * JF1(u)^T [t(u) - Pi_C(t(u))] */
     if (this->_mapping_f1 && this->_jacobian_f1_trans && this->_set_c_project) {
-      _T c = xi.access(0, 0);
+      T_ c = xi.access(0, 0);
 
       /* Extract y from xi */
       F1_Output_Type y;
@@ -876,9 +876,9 @@ public:
       /* t = F1(u) + y/c  (note: uses c, not c_bar) */
       F1_Output_Type f1_u = this->_mapping_f1(u);
       F1_Output_Type t =
-          f1_u + (static_cast<_T>(1) /
+          f1_u + (static_cast<T_>(1) /
                   Base::Utility::avoid_zero_divide(
-                      c, static_cast<_T>(ALM_Constants::SMALL_EPSILON))) *
+                      c, static_cast<T_>(ALM_Constants::SMALL_EPSILON))) *
                      y;
 
       /* s = Pi_C(t) */
@@ -889,7 +889,7 @@ public:
       F1_Output_Type d = t - s;
 
       /* grad += c * JF1(u)^T * d */
-      _Gradient_Type jf1t_d = this->_jacobian_f1_trans(u, d);
+      Gradient_Type_ jf1t_d = this->_jacobian_f1_trans(u, d);
       grad = grad + c * jf1t_d;
     }
 
@@ -906,17 +906,17 @@ public:
    * @param xi Parameter vector xi = (c, y).
    * @return Gradient of augmented cost.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ > 0), int>::type = 0>
   inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
-      -> _Gradient_Type {
-    _Gradient_Type grad = this->_df(u);
+      -> Gradient_Type_ {
+    Gradient_Type_ grad = this->_df(u);
 
     /* PM gradient: c * JF2(u)^T * F2(u) */
     if (this->_mapping_f2 && this->_jacobian_f2_trans) {
-      _T c = xi.access(0, 0);
+      T_ c = xi.access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
-      _Gradient_Type jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
+      Gradient_Type_ jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
       grad = grad + c * jf2t_f2u;
     }
 
@@ -934,15 +934,15 @@ public:
    * @param xi Parameter vector xi = (c, y).
    * @return Gradient of augmented cost.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ > 0), int>::type = 0>
   inline auto d_psi(const U_Horizon_Type &u, const Xi_Type &xi) const
-      -> _Gradient_Type {
-    _Gradient_Type grad = this->_df(u);
+      -> Gradient_Type_ {
+    Gradient_Type_ grad = this->_df(u);
 
     /* ALM gradient: c * JF1(u)^T [t(u) - Pi_C(t(u))] */
     if (this->_mapping_f1 && this->_jacobian_f1_trans && this->_set_c_project) {
-      _T c = xi.access(0, 0);
+      T_ c = xi.access(0, 0);
 
       /* Extract y from xi */
       F1_Output_Type y;
@@ -951,9 +951,9 @@ public:
       /* t = F1(u) + y/c  (note: uses c, not c_bar) */
       F1_Output_Type f1_u = this->_mapping_f1(u);
       F1_Output_Type t =
-          f1_u + (static_cast<_T>(1) /
+          f1_u + (static_cast<T_>(1) /
                   Base::Utility::avoid_zero_divide(
-                      c, static_cast<_T>(ALM_Constants::SMALL_EPSILON))) *
+                      c, static_cast<T_>(ALM_Constants::SMALL_EPSILON))) *
                      y;
 
       /* s = Pi_C(t) */
@@ -964,15 +964,15 @@ public:
       F1_Output_Type d = t - s;
 
       /* grad += c * JF1(u)^T * d */
-      _Gradient_Type jf1t_d = this->_jacobian_f1_trans(u, d);
+      Gradient_Type_ jf1t_d = this->_jacobian_f1_trans(u, d);
       grad = grad + c * jf1t_d;
     }
 
     /* PM gradient: c * JF2(u)^T * F2(u) */
     if (this->_mapping_f2 && this->_jacobian_f2_trans) {
-      _T c = xi.access(0, 0);
+      T_ c = xi.access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
-      _Gradient_Type jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
+      Gradient_Type_ jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
       grad = grad + c * jf2t_f2u;
     }
 
@@ -1018,28 +1018,28 @@ public:
 public:
   /* Types */
   using Value_Type = typename CostMatrices_Type_In::Value_Type;
-  using _T = Value_Type;
+  using T_ = Value_Type;
 
   using U_Horizon_Type = typename CostMatrices_Type_In::U_Horizon_Type;
-  using _Gradient_Type = U_Horizon_Type;
+  using Gradient_Type_ = U_Horizon_Type;
 
-  using _U_min_Type = typename CostMatrices_Type_In::U_Min_Type;
-  using _U_max_Type = typename CostMatrices_Type_In::U_Max_Type;
+  using U_min_Type_ = typename CostMatrices_Type_In::U_Min_Type;
+  using U_max_Type_ = typename CostMatrices_Type_In::U_Max_Type;
 
-  using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_min_Type>;
-  using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_max_Type>;
+  using U_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_min_Type_>;
+  using U_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_max_Type_>;
 
-  using F1_Output_Type = PythonNumpy::DenseMatrix_Type<_T, N1, 1>;
+  using F1_Output_Type = PythonNumpy::DenseMatrix_Type<T_, N1, 1>;
   using F2_Output_Type =
-      PythonNumpy::DenseMatrix_Type<_T, (N2 > 0 ? N2 : 1), 1>;
-  using Xi_Type = PythonNumpy::DenseMatrix_Type<_T, (1 + N1), 1>;
+      PythonNumpy::DenseMatrix_Type<T_, (N2 > 0 ? N2 : 1), 1>;
+  using Xi_Type = PythonNumpy::DenseMatrix_Type<T_, (1 + N1), 1>;
 
   /** @brief Parametric cost: psi(u, xi) -> T */
   using Parametric_Cost_Type =
-      std::function<_T(const U_Horizon_Type &, const Xi_Type &)>;
+      std::function<T_(const U_Horizon_Type &, const Xi_Type &)>;
   /** @brief Parametric gradient: grad psi(u, xi) -> Gradient_Type */
   using Parametric_Gradient_Type =
-      std::function<_Gradient_Type(const U_Horizon_Type &, const Xi_Type &)>;
+      std::function<Gradient_Type_(const U_Horizon_Type &, const Xi_Type &)>;
 
   /** @brief F1(u) -> F1_Output_Type */
   using Mapping_F1_Type = std::function<F1_Output_Type(const U_Horizon_Type &)>;
@@ -1113,11 +1113,11 @@ public:
     this->parametric_gradient = gradient;
   }
 
-  inline void set_u_min_matrix(const _U_Min_Matrix_Type &u_min) {
+  inline void set_u_min_matrix(const U_Min_Matrix_Type_ &u_min) {
     this->u_min_matrix = u_min;
   }
 
-  inline void set_u_max_matrix(const _U_Max_Matrix_Type &u_max) {
+  inline void set_u_max_matrix(const U_Max_Matrix_Type_ &u_max) {
     this->u_max_matrix = u_max;
   }
 
@@ -1140,8 +1140,8 @@ public:
   /* Public members */
   Parametric_Cost_Type parametric_cost;
   Parametric_Gradient_Type parametric_gradient;
-  _U_Min_Matrix_Type u_min_matrix;
-  _U_Max_Matrix_Type u_max_matrix;
+  U_Min_Matrix_Type_ u_min_matrix;
+  U_Max_Matrix_Type_ u_max_matrix;
   Mapping_F1_Type mapping_f1;
   Set_C_Project_Type set_c_project;
   Set_Y_Project_Type set_y_project;
@@ -1193,42 +1193,42 @@ public:
   using Y_Horizon_Type = typename CostMatrices_Type_In::Y_Horizon_Type;
 
 protected:
-  using _CostMatrices_Type = CostMatrices_Type_In;
-  using _T = Value_Type;
-  using _Gradient_Type = U_Horizon_Type;
+  using CostMatrices_Type_ = CostMatrices_Type_In;
+  using T_ = Value_Type;
+  using Gradient_Type_ = U_Horizon_Type;
 
-  using _U_min_Type = typename _CostMatrices_Type::U_Min_Type;
-  using _U_max_Type = typename _CostMatrices_Type::U_Max_Type;
+  using U_min_Type_ = typename CostMatrices_Type_::U_Min_Type;
+  using U_max_Type_ = typename CostMatrices_Type_::U_Max_Type;
 
-  using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_min_Type>;
-  using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_max_Type>;
+  using U_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_min_Type_>;
+  using U_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_max_Type_>;
 
-  using _FlatVector_Type = PythonNumpy::DenseMatrix_Type<_T, PROBLEM_SIZE, 1>;
+  using FlatVector_Type_ = PythonNumpy::DenseMatrix_Type<T_, PROBLEM_SIZE, 1>;
 
-  using _F1_Output_Type = PythonNumpy::DenseMatrix_Type<_T, N1, 1>;
-  using _F2_Output_Type =
-      PythonNumpy::DenseMatrix_Type<_T, (N2 > 0 ? N2 : 1), 1>;
-  using _Xi_Type = PythonNumpy::DenseMatrix_Type<_T, (1 + N1), 1>;
+  using F1_Output_Type_ = PythonNumpy::DenseMatrix_Type<T_, N1, 1>;
+  using F2_Output_Type_ =
+      PythonNumpy::DenseMatrix_Type<T_, (N2 > 0 ? N2 : 1), 1>;
+  using Xi_Type_ = PythonNumpy::DenseMatrix_Type<T_, (1 + N1), 1>;
 
-  using _Cache_Type = ALM_Cache<_T, PROBLEM_SIZE, N1, N2, LBFGSMemory>;
-  using _Problem_Type = ALM_Problem<_CostMatrices_Type, N1, N2>;
+  using Cache_Type_ = ALM_Cache<T_, PROBLEM_SIZE, N1, N2, LBFGSMemory>;
+  using Problem_Type_ = ALM_Problem<CostMatrices_Type_, N1, N2>;
 
-  using _PANOC_Type = PANOC_Optimizer<_CostMatrices_Type, LBFGSMemory>;
-  using _PANOC_SolverStatus_Type = PANOC_SolverStatus<_T>;
+  using PANOC_Type_ = PANOC_Optimizer<CostMatrices_Type_, LBFGSMemory>;
+  using PANOC_SolverStatus_Type_ = PANOC_SolverStatus<T_>;
 
-  using _SolverStatus_Type = ALM_SolverStatus<_T, N1>;
+  using SolverStatus_Type_ = ALM_SolverStatus<T_, N1>;
 
   /**
    * @brief Cost function object type for PANOC: f(U_horizon) -> T.
    */
-  using _Cost_Function_Type = std::function<_T(const U_Horizon_Type &)>;
+  using Cost_Function_Type_ = std::function<T_(const U_Horizon_Type &)>;
 
   /**
    * @brief Gradient function object type for PANOC:
    *        grad_f(U_horizon) -> Gradient_Type.
    */
-  using _Gradient_Function_Type =
-      std::function<_Gradient_Type(const U_Horizon_Type &)>;
+  using Gradient_Function_Type_ =
+      std::function<Gradient_Type_(const U_Horizon_Type &)>;
 
 public:
   /* Constructor */
@@ -1237,17 +1237,17 @@ public:
         _max_outer_iterations(ALM_Constants::DEFAULT_MAX_OUTER_ITERATIONS),
         _max_inner_iterations(ALM_Constants::DEFAULT_MAX_INNER_ITERATIONS),
         _epsilon_tolerance(
-            static_cast<_T>(ALM_Constants::DEFAULT_EPSILON_TOLERANCE)),
+            static_cast<T_>(ALM_Constants::DEFAULT_EPSILON_TOLERANCE)),
         _delta_tolerance(
-            static_cast<_T>(ALM_Constants::DEFAULT_DELTA_TOLERANCE)),
+            static_cast<T_>(ALM_Constants::DEFAULT_DELTA_TOLERANCE)),
         _penalty_update_factor(
-            static_cast<_T>(ALM_Constants::DEFAULT_PENALTY_UPDATE_FACTOR)),
+            static_cast<T_>(ALM_Constants::DEFAULT_PENALTY_UPDATE_FACTOR)),
         _epsilon_update_factor(
-            static_cast<_T>(ALM_Constants::DEFAULT_EPSILON_UPDATE_FACTOR)),
-        _sufficient_decrease_coefficient(static_cast<_T>(
+            static_cast<T_>(ALM_Constants::DEFAULT_EPSILON_UPDATE_FACTOR)),
+        _sufficient_decrease_coefficient(static_cast<T_>(
             ALM_Constants::DEFAULT_INFEASIBLE_SUFFICIENT_DECREASE_FACTOR)),
         _initial_inner_tolerance(
-            static_cast<_T>(ALM_Constants::DEFAULT_INITIAL_TOLERANCE)),
+            static_cast<T_>(ALM_Constants::DEFAULT_INITIAL_TOLERANCE)),
         _solver_status() {}
 
   /* Copy constructor */
@@ -1326,7 +1326,7 @@ public:
    * @brief Set the ALM problem definition.
    * @param problem ALM_Problem instance with cost, gradient, constraints.
    */
-  inline void set_problem(const _Problem_Type &problem) {
+  inline void set_problem(const Problem_Type_ &problem) {
     this->_problem = problem;
 
     /* Configure PANOC with bounds from the problem */
@@ -1350,7 +1350,7 @@ public:
    * @brief Set the target tolerance for the inner solver (epsilon).
    * @param tol Positive convergence tolerance.
    */
-  inline void set_epsilon_tolerance(const _T &tol) {
+  inline void set_epsilon_tolerance(const T_ &tol) {
     this->_epsilon_tolerance = tol;
   }
 
@@ -1358,7 +1358,7 @@ public:
    * @brief Set the infeasibility tolerance (delta).
    * @param tol Positive infeasibility tolerance.
    */
-  inline void set_delta_tolerance(const _T &tol) {
+  inline void set_delta_tolerance(const T_ &tol) {
     this->_delta_tolerance = tol;
   }
 
@@ -1366,7 +1366,7 @@ public:
    * @brief Set the penalty update factor (rho > 1).
    * @param factor Penalty update factor.
    */
-  inline void set_penalty_update_factor(const _T &factor) {
+  inline void set_penalty_update_factor(const T_ &factor) {
     this->_penalty_update_factor = factor;
   }
 
@@ -1374,7 +1374,7 @@ public:
    * @brief Set the inner tolerance shrink factor (beta in (0,1)).
    * @param factor Epsilon update factor.
    */
-  inline void set_epsilon_update_factor(const _T &factor) {
+  inline void set_epsilon_update_factor(const T_ &factor) {
     this->_epsilon_update_factor = factor;
   }
 
@@ -1382,7 +1382,7 @@ public:
    * @brief Set the sufficient decrease coefficient (theta in (0,1)).
    * @param coeff Sufficient decrease coefficient.
    */
-  inline void set_sufficient_decrease_coefficient(const _T &coeff) {
+  inline void set_sufficient_decrease_coefficient(const T_ &coeff) {
     this->_sufficient_decrease_coefficient = coeff;
   }
 
@@ -1390,7 +1390,7 @@ public:
    * @brief Set the initial inner tolerance (epsilon_0 >= epsilon).
    * @param tol Initial inner tolerance.
    */
-  inline void set_initial_inner_tolerance(const _T &tol) {
+  inline void set_initial_inner_tolerance(const T_ &tol) {
     this->_initial_inner_tolerance = tol;
   }
 
@@ -1398,7 +1398,7 @@ public:
    * @brief Set the initial penalty parameter c_0.
    * @param penalty Initial penalty value (must be positive).
    */
-  inline void set_initial_penalty(const _T &penalty) {
+  inline void set_initial_penalty(const T_ &penalty) {
     this->_cache.xi.access(0, 0) = penalty;
   }
 
@@ -1406,7 +1406,7 @@ public:
    * @brief Set the initial Lagrange multiplier vector y_0.
    * @param y0 Initial Lagrange multipliers of size N1.
    */
-  inline void set_initial_y(const _F1_Output_Type &y0) {
+  inline void set_initial_y(const F1_Output_Type_ &y0) {
     for (std::size_t i = 0; i < N1; ++i) {
       this->_cache.xi.access(i + 1, 0) = y0.access(i, 0);
     }
@@ -1418,7 +1418,7 @@ public:
    * @brief Get the solver status from the last solve call.
    * @return Reference to the solver status.
    */
-  inline auto get_solver_status(void) const -> const _SolverStatus_Type & {
+  inline auto get_solver_status(void) const -> const SolverStatus_Type_ & {
     return this->_solver_status;
   }
 
@@ -1435,16 +1435,16 @@ public:
   /**
    * @brief Get a reference to the internal cache.
    */
-  inline auto get_cache(void) -> _Cache_Type & { return this->_cache; }
-  inline auto get_cache(void) const -> const _Cache_Type & {
+  inline auto get_cache(void) -> Cache_Type_ & { return this->_cache; }
+  inline auto get_cache(void) const -> const Cache_Type_ & {
     return this->_cache;
   }
 
   /**
    * @brief Get a reference to the internal PANOC optimizer.
    */
-  inline auto get_panoc(void) -> _PANOC_Type & { return this->_panoc; }
-  inline auto get_panoc(void) const -> const _PANOC_Type & {
+  inline auto get_panoc(void) -> PANOC_Type_ & { return this->_panoc; }
+  inline auto get_panoc(void) const -> const PANOC_Type_ & {
     return this->_panoc;
   }
 
@@ -1482,13 +1482,13 @@ public:
     }
 
     /* Extract final penalty parameter */
-    _T c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.access(0, 0);
 
     /* Compute original cost at solution (penalty terms excluded) */
-    _T cost_value = this->_compute_cost_at_solution(u);
+    T_ cost_value = this->_compute_cost_at_solution(u);
 
     /* Build result */
-    _F1_Output_Type lagrange = this->_cache.y_plus;
+    F1_Output_Type_ lagrange = this->_cache.y_plus;
 
     this->_solver_status.exit_status = exit_status;
     this->_solver_status.num_outer_iterations = num_outer_iterations;
@@ -1517,7 +1517,7 @@ protected:
     this->_project_on_set_y();
 
     /* 2. Solve inner problem via PANOC */
-    _PANOC_SolverStatus_Type inner_status = this->_solve_inner_problem(u);
+    PANOC_SolverStatus_Type_ inner_status = this->_solve_inner_problem(u);
     this->_cache.last_inner_problem_norm_fpr =
         inner_status.norm_fixed_point_residual;
     this->_cache.inner_iteration_count += inner_status.number_of_iteration;
@@ -1553,19 +1553,19 @@ protected:
    * @brief Project Lagrange multipliers y onto set Y (in-place on xi).
    * Specialization for N1 == 0: no ALM constraints, no-op.
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ == 0), int>::type = 0>
   inline void _project_on_set_y(void) {}
 
   /**
    * @brief Project Lagrange multipliers y onto set Y (in-place on xi).
    * Specialization for N1 > 0: extract y from xi, project, write back.
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ > 0), int>::type = 0>
   inline void _project_on_set_y(void) {
     if (this->_problem.set_y_project) {
-      _F1_Output_Type y;
+      F1_Output_Type_ y;
       MatrixOperation::SubstituteGetOneOffset::compute(y, this->_cache.xi);
       this->_problem.set_y_project(y);
       MatrixOperation::SubstituteSetOneOffset::compute(this->_cache.xi, y);
@@ -1579,23 +1579,23 @@ protected:
    * @return Inner PANOC solver status.
    */
   inline auto _solve_inner_problem(U_Horizon_Type &u)
-      -> _PANOC_SolverStatus_Type {
+      -> PANOC_SolverStatus_Type_ {
 
     /* Capture xi by pointer for lambda closures */
-    _Xi_Type *xi_ptr = &(this->_cache.xi);
-    const typename _Problem_Type::Parametric_Cost_Type &param_cost =
+    Xi_Type_ *xi_ptr = &(this->_cache.xi);
+    const typename Problem_Type_::Parametric_Cost_Type &param_cost =
         this->_problem.parametric_cost;
-    const typename _Problem_Type::Parametric_Gradient_Type &param_grad =
+    const typename Problem_Type_::Parametric_Gradient_Type &param_grad =
         this->_problem.parametric_gradient;
 
     /* Build non-parametric cost/gradient by capturing xi */
-    _Cost_Function_Type cost_func =
-        [xi_ptr, &param_cost](const U_Horizon_Type &u_) -> _T {
+    Cost_Function_Type_ cost_func =
+        [xi_ptr, &param_cost](const U_Horizon_Type &u_) -> T_ {
       return param_cost(u_, *xi_ptr);
     };
 
-    _Gradient_Function_Type grad_func =
-        [xi_ptr, &param_grad](const U_Horizon_Type &u_) -> _Gradient_Type {
+    Gradient_Function_Type_ grad_func =
+        [xi_ptr, &param_grad](const U_Horizon_Type &u_) -> Gradient_Type_ {
       return param_grad(u_, *xi_ptr);
     };
 
@@ -1613,8 +1613,8 @@ protected:
    * @brief Update Lagrange multipliers y^+ (in-place on cache).
    * Specialization for N1 == 0: no ALM constraints, no-op.
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ == 0), int>::type = 0>
   inline void _update_lagrange_multipliers(const U_Horizon_Type &u) {
     static_cast<void>(u);
   }
@@ -1627,30 +1627,30 @@ protected:
    *   3. y_plus = Pi_C(y_plus)
    *   4. y_plus = y + c * (w - y_plus)
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ > 0), int>::type = 0>
   inline void _update_lagrange_multipliers(const U_Horizon_Type &u) {
     if (!this->_problem.mapping_f1 || !this->_problem.set_c_project) {
       return;
     }
 
-    _T c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.access(0, 0);
 
     /* Extract y from xi */
-    _F1_Output_Type y;
+    F1_Output_Type_ y;
     MatrixOperation::SubstituteGetOneOffset::compute(y, this->_cache.xi);
 
     /* Step 1: w = F1(u) */
-    _F1_Output_Type w = this->_problem.mapping_f1(u);
+    F1_Output_Type_ w = this->_problem.mapping_f1(u);
 
     /* Store w in aux */
     this->_cache.w_alm_aux = w;
 
     /* Step 2: y_plus = F1(u) + y/c */
     this->_cache.y_plus =
-        w + (static_cast<_T>(1) /
+        w + (static_cast<T_>(1) /
              Base::Utility::avoid_zero_divide(
-                 c, static_cast<_T>(ALM_Constants::SMALL_EPSILON))) *
+                 c, static_cast<T_>(ALM_Constants::SMALL_EPSILON))) *
                 y;
 
     /* Step 3: y_plus = Pi_C(y_plus) */
@@ -1664,20 +1664,20 @@ protected:
    * @brief Compute ALM infeasibility: ||y^+ - y||.
    * Specialization for N1 == 0: no ALM constraints, no-op.
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ == 0), int>::type = 0>
   inline void _compute_alm_infeasibility(void) {}
 
   /**
    * @brief Compute ALM infeasibility: ||y^+ - y||.
    * Specialization for N1 > 0: computes delta_y_norm_plus = ||y^+ - y||.
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ > 0), int>::type = 0>
   inline void _compute_alm_infeasibility(void) {
-    _F1_Output_Type y;
+    F1_Output_Type_ y;
     MatrixOperation::SubstituteGetOneOffset::compute(y, this->_cache.xi);
-    _F1_Output_Type diff = this->_cache.y_plus - y;
+    F1_Output_Type_ diff = this->_cache.y_plus - y;
 
     this->_cache.delta_y_norm_plus = PythonNumpy::norm(diff);
   }
@@ -1686,8 +1686,8 @@ protected:
    * @brief Compute PM infeasibility: ||F2(u)||.
    * Specialization for N2 == 0: no PM constraints, nothing to compute.
    */
-  template <std::size_t _N2 = N2,
-            typename std::enable_if<(_N2 == 0), int>::type = 0>
+  template <std::size_t N2_ = N2,
+            typename std::enable_if<(N2_ == 0), int>::type = 0>
   inline void _compute_pm_infeasibility(const U_Horizon_Type &u) {
     /* No PM constraints (N2 == 0): nothing to do. */
     static_cast<void>(u);
@@ -1698,8 +1698,8 @@ protected:
    * Specialization for N2 > 0: computes w_pm = F2(u) and f2_norm_plus =
    * ||F2(u)||.
    */
-  template <std::size_t _N2 = N2,
-            typename std::enable_if<(_N2 > 0), int>::type = 0>
+  template <std::size_t N2_ = N2,
+            typename std::enable_if<(N2_ > 0), int>::type = 0>
   inline void _compute_pm_infeasibility(const U_Horizon_Type &u) {
     if (this->_problem.mapping_f2) {
       this->_cache.w_pm = this->_problem.mapping_f2(u);
@@ -1714,10 +1714,10 @@ protected:
    *
    * @return true if all criteria are satisfied.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ == 0), int>::type = 0>
   inline bool _is_exit_criterion_satisfied(void) const {
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 3: current inner tolerance <= target epsilon */
     return (this->_cache.panoc_cache.tolerance <=
@@ -1732,13 +1732,13 @@ protected:
    *
    * @return true if all criteria are satisfied.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ == 0), int>::type = 0>
   inline bool _is_exit_criterion_satisfied(void) const {
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 1: ||delta y|| <= c * delta */
-    _T c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.access(0, 0);
     bool criterion_1 = (this->_cache.iteration > 0) &&
                        (this->_cache.delta_y_norm_plus <=
                         c * this->_delta_tolerance + small_eps);
@@ -1758,10 +1758,10 @@ protected:
    *
    * @return true if all criteria are satisfied.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ > 0), int>::type = 0>
   inline bool _is_exit_criterion_satisfied(void) const {
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 2: ||F2(u)|| <= delta */
     bool criterion_2 =
@@ -1783,13 +1783,13 @@ protected:
    *
    * @return true if all criteria are satisfied.
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ > 0), int>::type = 0>
   inline bool _is_exit_criterion_satisfied(void) const {
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 1: ||delta y|| <= c * delta */
-    _T c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.access(0, 0);
     bool criterion_1 = (this->_cache.iteration > 0) &&
                        (this->_cache.delta_y_norm_plus <=
                         c * this->_delta_tolerance + small_eps);
@@ -1811,8 +1811,8 @@ protected:
    *
    * @return false (no stall; penalty update proceeds).
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ == 0), int>::type = 0>
   inline bool _is_penalty_stall_criterion(void) const {
     return false;
   }
@@ -1824,14 +1824,14 @@ protected:
    * @return true if sufficient decrease in ||delta y|| (no penalty update
    * needed).
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ == 0), int>::type = 0>
   inline bool _is_penalty_stall_criterion(void) const {
     if (this->_cache.iteration == 0) {
       return true;
     }
 
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
     return (this->_cache.delta_y_norm_plus <=
             this->_sufficient_decrease_coefficient * this->_cache.delta_y_norm +
                 small_eps);
@@ -1844,14 +1844,14 @@ protected:
    * @return true if sufficient decrease in ||F2(u)|| (no penalty update
    * needed).
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 == 0 && _N2 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ == 0 && N2_ > 0), int>::type = 0>
   inline bool _is_penalty_stall_criterion(void) const {
     if (this->_cache.iteration == 0) {
       return true;
     }
 
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
     return (this->_cache.f2_norm_plus <=
             this->_sufficient_decrease_coefficient * this->_cache.f2_norm +
                 small_eps);
@@ -1864,14 +1864,14 @@ protected:
    * @return true if sufficient decrease in both ||delta y|| and ||F2(u)||
    * (no penalty update needed).
    */
-  template <std::size_t _N1 = N1, std::size_t _N2 = N2,
-            typename std::enable_if<(_N1 > 0 && _N2 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1, std::size_t N2_ = N2,
+            typename std::enable_if<(N1_ > 0 && N2_ > 0), int>::type = 0>
   inline bool _is_penalty_stall_criterion(void) const {
     if (this->_cache.iteration == 0) {
       return true;
     }
 
-    const _T small_eps = static_cast<_T>(ALM_Constants::SMALL_EPSILON);
+    const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
     bool criterion_alm =
         (this->_cache.delta_y_norm_plus <=
          this->_sufficient_decrease_coefficient * this->_cache.delta_y_norm +
@@ -1897,8 +1897,8 @@ protected:
    *        epsilon <- max(epsilon, beta * epsilon).
    */
   inline void _update_inner_tolerance(void) {
-    _T current = this->_cache.panoc_cache.tolerance;
-    _T candidate = current * this->_epsilon_update_factor;
+    T_ current = this->_cache.panoc_cache.tolerance;
+    T_ candidate = current * this->_epsilon_update_factor;
     this->_cache.panoc_cache.tolerance = (candidate > this->_epsilon_tolerance)
                                              ? candidate
                                              : this->_epsilon_tolerance;
@@ -1909,8 +1909,8 @@ protected:
    * infeasibility measures, and reset PANOC cache.
    * Specialization for N1 == 0: no y^+ -> y copy needed.
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 == 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ == 0), int>::type = 0>
   inline void _final_cache_update(void) {
     this->_cache.iteration += 1;
     this->_cache.delta_y_norm = this->_cache.delta_y_norm_plus;
@@ -1925,8 +1925,8 @@ protected:
    * infeasibility measures, copy y^+ -> y, and reset PANOC cache.
    * Specialization for N1 > 0: copies y^+ into xi.
    */
-  template <std::size_t _N1 = N1,
-            typename std::enable_if<(_N1 > 0), int>::type = 0>
+  template <std::size_t N1_ = N1,
+            typename std::enable_if<(N1_ > 0), int>::type = 0>
   inline void _final_cache_update(void) {
     this->_cache.iteration += 1;
     this->_cache.delta_y_norm = this->_cache.delta_y_norm_plus;
@@ -1951,30 +1951,30 @@ protected:
    * @param u Decision variable at solution.
    * @return Original cost value f(u).
    */
-  inline auto _compute_cost_at_solution(const U_Horizon_Type &u) -> _T {
-    _T saved_c = this->_cache.xi.access(0, 0);
-    this->_cache.xi.access(0, 0) = static_cast<_T>(0);
-    _T cost = this->_problem.parametric_cost(u, this->_cache.xi);
+  inline auto _compute_cost_at_solution(const U_Horizon_Type &u) -> T_ {
+    T_ saved_c = this->_cache.xi.access(0, 0);
+    this->_cache.xi.access(0, 0) = static_cast<T_>(0);
+    T_ cost = this->_problem.parametric_cost(u, this->_cache.xi);
     this->_cache.xi.access(0, 0) = saved_c;
     return cost;
   }
 
 protected:
   /* Variables */
-  _Cache_Type _cache;
-  _Problem_Type _problem;
-  _PANOC_Type _panoc;
+  Cache_Type_ _cache;
+  Problem_Type_ _problem;
+  PANOC_Type_ _panoc;
 
   std::size_t _max_outer_iterations;
   std::size_t _max_inner_iterations;
-  _T _epsilon_tolerance;
-  _T _delta_tolerance;
-  _T _penalty_update_factor;
-  _T _epsilon_update_factor;
-  _T _sufficient_decrease_coefficient;
-  _T _initial_inner_tolerance;
+  T_ _epsilon_tolerance;
+  T_ _delta_tolerance;
+  T_ _penalty_update_factor;
+  T_ _epsilon_update_factor;
+  T_ _sufficient_decrease_coefficient;
+  T_ _initial_inner_tolerance;
 
-  _SolverStatus_Type _solver_status;
+  SolverStatus_Type_ _solver_status;
 };
 
 // ============================================================================
