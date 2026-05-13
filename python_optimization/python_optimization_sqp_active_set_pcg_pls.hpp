@@ -101,40 +101,40 @@ public:
 
 protected:
   /* Type */
-  using _CostMatrices_Type = CostMatrices_Type_In;
+  using CostMatrices_Type_ = CostMatrices_Type_In;
 
-  using _T = Value_Type;
+  using T_ = Value_Type;
 
-  using _Mask_Type = U_Horizon_Type;
-  using _Gradient_Type = U_Horizon_Type;
-  using _V_Horizon_Type = U_Horizon_Type;
-  using _HVP_Type = U_Horizon_Type;
-  using _RHS_Type = U_Horizon_Type;
-  using _R_Full_Type = U_Horizon_Type;
-  using _M_Inv_Type = U_Horizon_Type;
+  using Mask_Type_ = U_Horizon_Type;
+  using Gradient_Type_ = U_Horizon_Type;
+  using V_Horizon_Type_ = U_Horizon_Type;
+  using HVP_Type_ = U_Horizon_Type;
+  using RHS_Type_ = U_Horizon_Type;
+  using R_Full_Type_ = U_Horizon_Type;
+  using M_Inv_Type_ = U_Horizon_Type;
 
-  using _ActiveSet_Type = ActiveSet2D_Type<INPUT_SIZE, NP>;
+  using ActiveSet_Type_ = ActiveSet2D_Type<INPUT_SIZE, NP>;
 
-  using _Cost_Function_Object_Type =
+  using Cost_Function_Object_Type_ =
       CostFunction_Object<X_Type, U_Horizon_Type>;
 
-  using _Cost_And_Gradient_Function_Object_Type =
-      CostAndGradientFunction_Object<X_Type, U_Horizon_Type, _Gradient_Type>;
+  using Cost_And_Gradient_Function_Object_Type_ =
+      CostAndGradientFunction_Object<X_Type, U_Horizon_Type, Gradient_Type_>;
 
-  using _HVP_Function_Object_Type =
-      HVP_Function_Object<X_Type, U_Horizon_Type, _V_Horizon_Type, _HVP_Type>;
+  using HVP_Function_Object_Type_ =
+      HVP_Function_Object<X_Type, U_Horizon_Type, V_Horizon_Type_, HVP_Type_>;
 
-  using _U_min_Type = typename _CostMatrices_Type::U_Min_Type;
-  using _U_max_Type = typename _CostMatrices_Type::U_Max_Type;
-  using _Y_min_Type = typename _CostMatrices_Type::Y_Min_Type;
-  using _Y_max_Type = typename _CostMatrices_Type::Y_Max_Type;
+  using U_min_Type_ = typename CostMatrices_Type_::U_Min_Type;
+  using U_max_Type_ = typename CostMatrices_Type_::U_Max_Type;
+  using Y_min_Type_ = typename CostMatrices_Type_::Y_Min_Type;
+  using Y_max_Type_ = typename CostMatrices_Type_::Y_Max_Type;
 
-  using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_min_Type>;
-  using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_max_Type>;
-  using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), _Y_min_Type>;
-  using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), _Y_max_Type>;
+  using U_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_min_Type_>;
+  using U_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_max_Type_>;
+  using Y_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_min_Type_>;
+  using Y_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_max_Type_>;
 
-  using _At_Lower_Upper_Type =
+  using At_Lower_Upper_Type_ =
       PythonNumpy::DenseMatrix_Type<bool, INPUT_SIZE, NP>;
 
 public:
@@ -142,19 +142,19 @@ public:
   SQP_ActiveSet_PCG_PLS()
       : X_initial(), hvp_function(nullptr),
         _gradient_norm_zero_limit(
-            static_cast<_T>(GRADIENT_NORM_ZERO_LIMIT_DEFAULT)),
-        _alpha_small_limit(static_cast<_T>(ALPHA_SMALL_LIMIT_DEFAULT)),
-        _alpha_decay_rate(static_cast<_T>(ALPHA_DECAY_RATE_DEFAULT)),
-        _pcg_php_minus_limit(static_cast<_T>(PCG_PHP_MINUS_LIMIT_DEFAULT)),
+            static_cast<T_>(GRADIENT_NORM_ZERO_LIMIT_DEFAULT)),
+        _alpha_small_limit(static_cast<T_>(ALPHA_SMALL_LIMIT_DEFAULT)),
+        _alpha_decay_rate(static_cast<T_>(ALPHA_DECAY_RATE_DEFAULT)),
+        _pcg_php_minus_limit(static_cast<T_>(PCG_PHP_MINUS_LIMIT_DEFAULT)),
         _solver_max_iteration(SOLVER_MAX_ITERATION_DEFAULT),
         _pcg_max_iteration(PCG_MAX_ITERATION_DEFAULT),
         _line_search_max_iteration(LINE_SEARCH_MAX_ITERATION_DEFAULT),
-        _pcg_tol(static_cast<_T>(PCG_TOL_DEFAULT)),
-        _lambda_factor(static_cast<_T>(LAMBDA_FACTOR_DEFAULT)),
-        _step_norm_zero_limit(static_cast<_T>(STEP_NORM_ZERO_LIMIT_DEFAULT)),
-        _diag_R_full(_R_Full_Type::ones()), _mask(), _active_set(),
+        _pcg_tol(static_cast<T_>(PCG_TOL_DEFAULT)),
+        _lambda_factor(static_cast<T_>(LAMBDA_FACTOR_DEFAULT)),
+        _step_norm_zero_limit(static_cast<T_>(STEP_NORM_ZERO_LIMIT_DEFAULT)),
+        _diag_R_full(R_Full_Type_::ones()), _mask(), _active_set(),
         _solver_step_iterated_number(0), _pcg_step_iterated_number(0),
-        _line_search_step_iterated_number(0), _J_optimal(static_cast<_T>(0)) {}
+        _line_search_step_iterated_number(0), J_optimal_(static_cast<T_>(0)) {}
 
   /* Copy constructor */
   SQP_ActiveSet_PCG_PLS(const SQP_ActiveSet_PCG_PLS &input)
@@ -174,7 +174,7 @@ public:
         _pcg_step_iterated_number(input._pcg_step_iterated_number),
         _line_search_step_iterated_number(
             input._line_search_step_iterated_number),
-        _J_optimal(input._J_optimal) {}
+        J_optimal_(input.J_optimal_) {}
 
   /* Copy assignment */
   SQP_ActiveSet_PCG_PLS &operator=(const SQP_ActiveSet_PCG_PLS &input) {
@@ -205,7 +205,7 @@ public:
       this->_line_search_step_iterated_number =
           input._line_search_step_iterated_number;
 
-      this->_J_optimal = input._J_optimal;
+      this->J_optimal_ = input.J_optimal_;
     }
     return *this;
   }
@@ -230,7 +230,7 @@ public:
         _pcg_step_iterated_number(input._pcg_step_iterated_number),
         _line_search_step_iterated_number(
             input._line_search_step_iterated_number),
-        _J_optimal(input._J_optimal) {}
+        J_optimal_(input.J_optimal_) {}
 
   /* Move assignment */
   SQP_ActiveSet_PCG_PLS &operator=(SQP_ActiveSet_PCG_PLS &&input) noexcept {
@@ -261,26 +261,26 @@ public:
       this->_line_search_step_iterated_number =
           input._line_search_step_iterated_number;
 
-      this->_J_optimal = input._J_optimal;
+      this->J_optimal_ = input.J_optimal_;
     }
     return *this;
   }
 
 public:
   /* Setter */
-  inline void set_gradient_norm_zero_limit(const _T &limit) {
+  inline void set_gradient_norm_zero_limit(const T_ &limit) {
     this->_gradient_norm_zero_limit = limit;
   }
 
-  inline void set_alpha_small_limit(const _T &limit) {
+  inline void set_alpha_small_limit(const T_ &limit) {
     this->_alpha_small_limit = limit;
   }
 
-  inline void set_alpha_decay_rate(const _T &rate) {
+  inline void set_alpha_decay_rate(const T_ &rate) {
     this->_alpha_decay_rate = rate;
   }
 
-  inline void set_pcg_php_minus_limit(const _T &limit) {
+  inline void set_pcg_php_minus_limit(const T_ &limit) {
     this->_pcg_php_minus_limit = limit;
   }
 
@@ -296,17 +296,17 @@ public:
     this->_line_search_max_iteration = max_iteration;
   }
 
-  inline void set_pcg_tol(const _T &tol) { this->_pcg_tol = tol; }
+  inline void set_pcg_tol(const T_ &tol) { this->_pcg_tol = tol; }
 
-  inline void set_lambda_factor(const _T &factor) {
+  inline void set_lambda_factor(const T_ &factor) {
     this->_lambda_factor = factor;
   }
 
-  inline void set_step_norm_zero_limit(const _T &limit) {
+  inline void set_step_norm_zero_limit(const T_ &limit) {
     this->_step_norm_zero_limit = limit;
   }
 
-  inline void set_diag_R_full(const _R_Full_Type &diag_R_full) {
+  inline void set_diag_R_full(const R_Full_Type_ &diag_R_full) {
     this->_diag_R_full = diag_R_full;
   }
 
@@ -338,8 +338,8 @@ public:
    * the active set.
    *
    * @tparam U_Horizon_Type Type of the input horizon variable.
-   * @tparam _RHS_Type Type of the right-hand side vector.
-   * @tparam _M_Inv_Type Type of the preconditioner matrix/vector.
+   * @tparam RHS_Type_ Type of the right-hand side vector.
+   * @tparam M_Inv_Type_ Type of the preconditioner matrix/vector.
    *
    * @param U_horizon_in Input horizon variable for the Hessian-vector product.
    * @param rhs Right-hand side vector of the linear system.
@@ -349,21 +349,21 @@ public:
    */
   inline auto
   preconditioned_conjugate_gradient(const U_Horizon_Type U_horizon_in,
-                                    const _RHS_Type &rhs,
-                                    const _M_Inv_Type &M_inv) -> _RHS_Type {
-    _RHS_Type d;
+                                    const RHS_Type_ &rhs,
+                                    const M_Inv_Type_ &M_inv) -> RHS_Type_ {
+    RHS_Type_ d;
 
     auto rhs_norm = ActiveSet2D_MatrixOperator::norm(rhs, this->_active_set);
     if (rhs_norm < RHS_NORM_ZERO_LIMIT_DEFAULT) {
       /* Do Nothing. */
     } else {
-      _RHS_Type r = rhs;
+      RHS_Type_ r = rhs;
 
       /* Preconditioning */
       auto z = ActiveSet2D_MatrixOperator::element_wise_product<
-          _T, INPUT_SIZE, NP, INPUT_SIZE, NP>(r, M_inv, this->_active_set);
+          T_, INPUT_SIZE, NP, INPUT_SIZE, NP>(r, M_inv, this->_active_set);
 
-      _RHS_Type p = z;
+      RHS_Type_ p = z;
 
       auto rz = ActiveSet2D_MatrixOperator::vdot(r, z, this->_active_set);
 
@@ -373,7 +373,7 @@ public:
         auto Hp = this->hvp_function(this->X_initial, U_horizon_in, p);
         Hp = Hp + this->_lambda_factor * p;
 
-        _T denominator =
+        T_ denominator =
             ActiveSet2D_MatrixOperator::vdot(p, Hp, this->_active_set);
 
         /* Simple handling of negative curvature and semi-definiteness */
@@ -382,7 +382,7 @@ public:
           break;
         }
 
-        _T alpha = rz / denominator;
+        T_ alpha = rz / denominator;
 
         d = d + ActiveSet2D_MatrixOperator::matrix_multiply_scalar(
                     p, alpha, this->_active_set);
@@ -398,9 +398,9 @@ public:
         z = ActiveSet2D_MatrixOperator::element_wise_product(r, M_inv,
                                                              this->_active_set);
 
-        _T rz_new = ActiveSet2D_MatrixOperator::vdot(r, z, this->_active_set);
+        T_ rz_new = ActiveSet2D_MatrixOperator::vdot(r, z, this->_active_set);
 
-        _T beta = rz_new / rz;
+        T_ beta = rz_new / rz;
 
         p = z + ActiveSet2D_MatrixOperator::matrix_multiply_scalar(
                     p, beta, this->_active_set);
@@ -421,11 +421,11 @@ public:
    * set with indices of variables at their bounds.
    *
    * @tparam U_Horizon_Type Type of the optimization horizon variable.
-   * @tparam _Gradient_Type Type of the gradient vector.
-   * @tparam _U_Min_Matrix_Type Type of the minimum bound matrix.
-   * @tparam _U_Max_Matrix_Type Type of the maximum bound matrix.
-   * @tparam _T Scalar type for tolerance values.
-   * @tparam _Mask_Type Type of the mask returned.
+   * @tparam Gradient_Type_ Type of the gradient vector.
+   * @tparam U_Min_Matrix_Type_ Type of the minimum bound matrix.
+   * @tparam U_Max_Matrix_Type_ Type of the maximum bound matrix.
+   * @tparam T_ Scalar type for tolerance values.
+   * @tparam Mask_Type_ Type of the mask returned.
    *
    * @param U_horizon_in Input optimization horizon variable.
    * @param gradient Gradient vector.
@@ -433,23 +433,23 @@ public:
    * @param U_max_matrix Maximum bound matrix.
    * @param atol Absolute tolerance for bound checking.
    * @param gtol Gradient tolerance for active set determination.
-   * @return _Mask_Type Mask indicating free variables (typically 1 for free, 0
+   * @return Mask_Type_ Mask indicating free variables (typically 1 for free, 0
    * for active).
    */
-  inline auto free_mask(U_Horizon_Type &U_horizon_in, _Gradient_Type &gradient,
-                        const _U_Min_Matrix_Type &U_min_matrix,
-                        const _U_Max_Matrix_Type &U_max_matrix, const _T &atol,
-                        const _T &gtol) -> _Mask_Type {
-    auto m = _Mask_Type::ones();
+  inline auto free_mask(U_Horizon_Type &U_horizon_in, Gradient_Type_ &gradient,
+                        const U_Min_Matrix_Type_ &U_min_matrix,
+                        const U_Max_Matrix_Type_ &U_max_matrix, const T_ &atol,
+                        const T_ &gtol) -> Mask_Type_ {
+    auto m = Mask_Type_::ones();
 
     this->_active_set.clear();
 
-    _At_Lower_Upper_Type at_lower;
-    _At_Lower_Upper_Type at_upper;
+    At_Lower_Upper_Type_ at_lower;
+    At_Lower_Upper_Type_ at_upper;
 
     std::tie(at_lower, at_upper) =
-        MatrixOperation::free_mask_at_check<_At_Lower_Upper_Type,
-                                            _At_Lower_Upper_Type>(
+        MatrixOperation::free_mask_at_check<At_Lower_Upper_Type_,
+                                            At_Lower_Upper_Type_>(
             U_horizon_in, U_min_matrix, U_max_matrix, atol);
 
     MatrixOperation::free_mask_push_active(m, gradient, at_lower, at_upper,
@@ -470,15 +470,15 @@ public:
    * The process continues until convergence or maximum iterations are reached.
    *
    * @tparam U_Horizon_Type Type representing the control horizon vector.
-   * @tparam _Cost_And_Gradient_Function_Object_Type Type of the cost and
+   * @tparam Cost_And_Gradient_Function_Object_Type_ Type of the cost and
    * gradient function object.
-   * @tparam _Cost_Function_Object_Type Type of the cost function object.
-   * @tparam _HVP_Function_Object_Type Type of the Hessian-vector product
+   * @tparam Cost_Function_Object_Type_ Type of the cost function object.
+   * @tparam HVP_Function_Object_Type_ Type of the Hessian-vector product
    * function object.
    * @tparam X_Type Type representing the initial state vector.
-   * @tparam _U_Min_Matrix_Type Type representing the minimum constraint matrix
+   * @tparam U_Min_Matrix_Type_ Type representing the minimum constraint matrix
    * for control horizon.
-   * @tparam _U_Max_Matrix_Type Type representing the maximum constraint matrix
+   * @tparam U_Max_Matrix_Type_ Type representing the maximum constraint matrix
    * for control horizon.
    *
    * @param U_horizon_initial Initial control horizon vector.
@@ -493,20 +493,20 @@ public:
    */
   inline auto solve(
       const U_Horizon_Type &U_horizon_initial,
-      const _Cost_And_Gradient_Function_Object_Type &cost_and_gradient_function,
-      const _Cost_Function_Object_Type &cost_function,
-      const _HVP_Function_Object_Type &hvp_function_in,
-      const X_Type &X_initial_in, const _U_Min_Matrix_Type &U_min_matrix,
-      const _U_Max_Matrix_Type &U_max_matrix) -> U_Horizon_Type {
+      const Cost_And_Gradient_Function_Object_Type_ &cost_and_gradient_function,
+      const Cost_Function_Object_Type_ &cost_function,
+      const HVP_Function_Object_Type_ &hvp_function_in,
+      const X_Type &X_initial_in, const U_Min_Matrix_Type_ &U_min_matrix,
+      const U_Max_Matrix_Type_ &U_max_matrix) -> U_Horizon_Type {
     this->X_initial = X_initial_in;
     U_Horizon_Type U_horizon_store = U_horizon_initial;
 
-    _T J = static_cast<_T>(0);
+    T_ J = static_cast<T_>(0);
 
     for (std::size_t solver_iteration = 0;
          solver_iteration < this->_solver_max_iteration; ++solver_iteration) {
       /* Calculate cost and gradient */
-      _Gradient_Type gradient;
+      Gradient_Type_ gradient;
       std::tie(J, gradient) =
           cost_and_gradient_function(X_initial, U_horizon_store);
 
@@ -517,19 +517,19 @@ public:
 
       this->_mask =
           this->free_mask(U_horizon_store, gradient, U_min_matrix, U_max_matrix,
-                          static_cast<_T>(U_NEAR_LIMIT_DEFAULT),
-                          static_cast<_T>(GRADIENT_ZERO_LIMIT_DEFAULT));
+                          static_cast<T_>(U_NEAR_LIMIT_DEFAULT),
+                          static_cast<T_>(GRADIENT_ZERO_LIMIT_DEFAULT));
 
-      _RHS_Type rhs = -gradient;
+      RHS_Type_ rhs = -gradient;
 
       auto diag_R_full_lambda_factor = MatrixOperation::add_scalar_to_matrix(
           this->_diag_R_full, this->_lambda_factor);
 
-      _M_Inv_Type M_inv;
+      M_Inv_Type_ M_inv;
 
       MatrixOperation::solver_calculate_M_inv(
           M_inv, diag_R_full_lambda_factor,
-          static_cast<_T>(AVOID_ZERO_DIVIDE_LIMIT));
+          static_cast<T_>(AVOID_ZERO_DIVIDE_LIMIT));
 
       this->hvp_function = hvp_function_in;
 
@@ -546,7 +546,7 @@ public:
        * (No distinction between fixed/free is needed here,
        *  project the whole)
        */
-      _T alpha = static_cast<_T>(1);
+      T_ alpha = static_cast<T_>(1);
       U_Horizon_Type U_horizon_new = U_horizon_store;
 
       bool U_updated_flag = false;
@@ -578,7 +578,7 @@ public:
       }
     }
 
-    this->_J_optimal = J;
+    this->J_optimal_ = J;
 
     return U_horizon_store;
   }
@@ -586,33 +586,33 @@ public:
 public:
   /* Variable */
   X_Type X_initial;
-  _HVP_Function_Object_Type hvp_function;
+  HVP_Function_Object_Type_ hvp_function;
 
 protected:
   /* Variable */
-  _T _gradient_norm_zero_limit;
-  _T _alpha_small_limit;
-  _T _alpha_decay_rate;
-  _T _pcg_php_minus_limit;
+  T_ _gradient_norm_zero_limit;
+  T_ _alpha_small_limit;
+  T_ _alpha_decay_rate;
+  T_ _pcg_php_minus_limit;
 
   std::size_t _solver_max_iteration;
   std::size_t _pcg_max_iteration;
   std::size_t _line_search_max_iteration;
 
-  _T _pcg_tol;
-  _T _lambda_factor;
-  _T _step_norm_zero_limit;
+  T_ _pcg_tol;
+  T_ _lambda_factor;
+  T_ _step_norm_zero_limit;
 
-  _R_Full_Type _diag_R_full;
+  R_Full_Type_ _diag_R_full;
 
-  _Mask_Type _mask;
-  _ActiveSet_Type _active_set;
+  Mask_Type_ _mask;
+  ActiveSet_Type_ _active_set;
 
   std::size_t _solver_step_iterated_number;
   std::size_t _pcg_step_iterated_number;
   std::size_t _line_search_step_iterated_number;
 
-  _T _J_optimal;
+  T_ J_optimal_;
 };
 
 /* make SQP_ActiveSetPCG_PLS */

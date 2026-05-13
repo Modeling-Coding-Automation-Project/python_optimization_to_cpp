@@ -210,9 +210,9 @@ struct Column<Matrix_Type, M, N, 0> {
  * @code
  *   for (std::size_t i = 0; i < COLS; ++i) {
  *     for (std::size_t j = 0; j < ROWS; ++j) {
- *       _T abs_ui = u(i, j);
+ *       T_ abs_ui = u(i, j);
  *       if (abs_ui < 0) abs_ui = -abs_ui;
- *       _T val = epsilon * abs_ui;
+ *       T_ val = epsilon * abs_ui;
  *       h(i, j) = (delta > val) ? delta : val;
  *     }
  *   }

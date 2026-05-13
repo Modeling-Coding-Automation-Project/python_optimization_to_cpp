@@ -270,7 +270,7 @@ public:
 
 protected:
   /* Type */
-  using _MatrixRingBuffer_Type = MatrixRingBuffer<Vector_Type, MemorySize>;
+  using MatrixRingBuffer_Type_ = MatrixRingBuffer<Vector_Type, MemorySize>;
 
 public:
   /* Constructor */
@@ -376,8 +376,8 @@ public:
     /* Update H0 scaling: gamma = (s^T y) / (y^T y) */
     Vector_Type s0 = this->_s.get(0);
     Vector_Type y0 = this->_y.get(0);
-    T ys = _MatrixRingBuffer_Type::inner_product(s0, y0);
-    T yy = _MatrixRingBuffer_Type::inner_product(y0, y0);
+    T ys = MatrixRingBuffer_Type_::inner_product(s0, y0);
+    T yy = MatrixRingBuffer_Type_::inner_product(y0, y0);
 
     this->_gamma =
         ys / Base::Utility::avoid_zero_divide(
@@ -408,7 +408,7 @@ public:
       Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.get(i);
 
-      alpha[i] = rho_i * _MatrixRingBuffer_Type::inner_product(si, q);
+      alpha[i] = rho_i * MatrixRingBuffer_Type_::inner_product(si, q);
       q = q - alpha[i] * yi;
     }
 
@@ -422,7 +422,7 @@ public:
       Vector_Type yi = this->_y.get(i);
       T rho_i = this->_rho.get(i);
 
-      T beta = rho_i * _MatrixRingBuffer_Type::inner_product(yi, q);
+      T beta = rho_i * MatrixRingBuffer_Type_::inner_product(yi, q);
       q = q + (alpha[i] - beta) * si;
     }
   }
@@ -444,8 +444,8 @@ private:
    */
   inline bool _compute_rho_if_valid(const Vector_Type &g, const Vector_Type &s,
                                     const Vector_Type &y, T &rho_out) const {
-    T ys = _MatrixRingBuffer_Type::inner_product(s, y);
-    T norm_s_sq = _MatrixRingBuffer_Type::inner_product(s, s);
+    T ys = MatrixRingBuffer_Type_::inner_product(s, y);
+    T norm_s_sq = MatrixRingBuffer_Type_::inner_product(s, s);
 
     if (norm_s_sq <= static_cast<T>(PANOC_Constants::NORM_SMALL_LIMIT)) {
       return false;
@@ -682,38 +682,38 @@ public:
   using Y_Horizon_Type = typename CostMatrices_Type_In::Y_Horizon_Type;
 
 protected:
-  using _CostMatrices_Type = CostMatrices_Type_In;
-  using _T = Value_Type;
+  using CostMatrices_Type_ = CostMatrices_Type_In;
+  using T_ = Value_Type;
 
-  using _Gradient_Type = U_Horizon_Type;
+  using Gradient_Type_ = U_Horizon_Type;
 
-  using _U_min_Type = typename _CostMatrices_Type::U_Min_Type;
-  using _U_max_Type = typename _CostMatrices_Type::U_Max_Type;
+  using U_min_Type_ = typename CostMatrices_Type_::U_Min_Type;
+  using U_max_Type_ = typename CostMatrices_Type_::U_Max_Type;
 
-  using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_min_Type>;
-  using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, _U_max_Type>;
+  using U_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_min_Type_>;
+  using U_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_max_Type_>;
 
-  using _Cache_Type = PANOC_Cache<U_Horizon_Type, LBFGSMemory>;
+  using Cache_Type_ = PANOC_Cache<U_Horizon_Type, LBFGSMemory>;
 
-  using _MatrixRingBuffer_InnerProduct_Type =
+  using MatrixRingBuffer_InnerProduct_Type_ =
       MatrixRingBuffer<U_Horizon_Type, 1>;
 
-  using _SolverStatus_Type = PANOC_SolverStatus<_T>;
+  using SolverStatus_Type_ = PANOC_SolverStatus<T_>;
 
   /**
    * @brief Cost function object type: f(U_horizon) -> T.
    *
    * The function takes U_Horizon_Type and returns a scalar cost.
    */
-  using _Cost_Function_Type = std::function<_T(const U_Horizon_Type &)>;
+  using Cost_Function_Type_ = std::function<T_(const U_Horizon_Type &)>;
 
   /**
    * @brief Gradient function object type: grad_f(U_horizon) -> Gradient_Type.
    *
    * The function takes U_Horizon_Type and returns the gradient.
    */
-  using _Gradient_Function_Type =
-      std::function<_Gradient_Type(const U_Horizon_Type &)>;
+  using Gradient_Function_Type_ =
+      std::function<Gradient_Type_(const U_Horizon_Type &)>;
 
 public:
   /* Constructor */
@@ -781,7 +781,7 @@ public:
    * @brief Set the cost function object.
    * @param cost_func Cost function: f(U_horizon) -> T.
    */
-  inline void set_cost_function(const _Cost_Function_Type &cost_func) {
+  inline void set_cost_function(const Cost_Function_Type_ &cost_func) {
     this->_cost_func = cost_func;
   }
 
@@ -790,7 +790,7 @@ public:
    * @param gradient_func Gradient function: grad_f(U_horizon) -> Gradient.
    */
   inline void
-  set_gradient_function(const _Gradient_Function_Type &gradient_func) {
+  set_gradient_function(const Gradient_Function_Type_ &gradient_func) {
     this->_gradient_func = gradient_func;
   }
 
@@ -798,7 +798,7 @@ public:
    * @brief Set the convergence tolerance.
    * @param tolerance Positive convergence tolerance on ||gamma * FPR||.
    */
-  inline void set_tolerance(const _T &tolerance) {
+  inline void set_tolerance(const T_ &tolerance) {
     this->_cache.tolerance = tolerance;
   }
 
@@ -822,7 +822,7 @@ public:
    * @brief Set the element-wise lower bounds for box constraints.
    * @param u_min_matrix Lower bound matrix (INPUT_SIZE x NP tiled).
    */
-  inline void set_u_min_matrix(const _U_Min_Matrix_Type &u_min_matrix) {
+  inline void set_u_min_matrix(const U_Min_Matrix_Type_ &u_min_matrix) {
     this->_u_min_matrix = u_min_matrix;
   }
 
@@ -830,7 +830,7 @@ public:
    * @brief Set the element-wise upper bounds for box constraints.
    * @param u_max_matrix Upper bound matrix (INPUT_SIZE x NP tiled).
    */
-  inline void set_u_max_matrix(const _U_Max_Matrix_Type &u_max_matrix) {
+  inline void set_u_max_matrix(const U_Max_Matrix_Type_ &u_max_matrix) {
     this->_u_max_matrix = u_max_matrix;
   }
 
@@ -840,7 +840,7 @@ public:
    * @brief Get the solver status from the last solve call.
    * @return Reference to the solver status.
    */
-  inline auto get_solver_status(void) const -> const _SolverStatus_Type & {
+  inline auto get_solver_status(void) const -> const SolverStatus_Type_ & {
     return this->_solver_status;
   }
 
@@ -848,8 +848,8 @@ public:
    * @brief Get a reference to the internal cache.
    * @return Reference to the PANOC cache.
    */
-  inline auto get_cache(void) -> _Cache_Type & { return this->_cache; }
-  inline auto get_cache(void) const -> const _Cache_Type & {
+  inline auto get_cache(void) -> Cache_Type_ & { return this->_cache; }
+  inline auto get_cache(void) const -> const Cache_Type_ & {
     return this->_cache;
   }
 
@@ -870,14 +870,14 @@ public:
     this->_cache.cost_value = this->_cost_func(u);
     this->_estimate_local_lipschitz(u);
     this->_cache.gamma =
-        static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
+        static_cast<T_>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
         this->_max_val(
             this->_cache.lipschitz_constant,
-            static_cast<_T>(PANOC_Constants::MIN_L_ESTIMATE_DEFAULT));
+            static_cast<T_>(PANOC_Constants::MIN_L_ESTIMATE_DEFAULT));
     this->_cache.sigma =
-        (static_cast<_T>(1) -
-         static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
-        (static_cast<_T>(4) * this->_cache.gamma);
+        (static_cast<T_>(1) -
+         static_cast<T_>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
+        (static_cast<T_>(4) * this->_cache.gamma);
     this->_gradient_step(u);
     this->_half_step();
 
@@ -941,9 +941,9 @@ protected:
   inline void _project(U_Horizon_Type &x) const {
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        _T val = x(i, k);
-        _T lo = this->_u_min_matrix(i, k);
-        _T hi = this->_u_max_matrix(i, k);
+        T_ val = x(i, k);
+        T_ lo = this->_u_min_matrix(i, k);
+        T_ hi = this->_u_max_matrix(i, k);
         if (val < lo) {
           val = lo;
         }
@@ -964,9 +964,9 @@ protected:
    */
   inline void _estimate_local_lipschitz(U_Horizon_Type &u) {
 
-    const _T delta = static_cast<_T>(PANOC_Constants::DELTA_LIPSCHITZ_DEFAULT);
-    const _T epsilon =
-        static_cast<_T>(PANOC_Constants::EPSILON_LIPSCHITZ_DEFAULT);
+    const T_ delta = static_cast<T_>(PANOC_Constants::DELTA_LIPSCHITZ_DEFAULT);
+    const T_ epsilon =
+        static_cast<T_>(PANOC_Constants::EPSILON_LIPSCHITZ_DEFAULT);
 
     /* Evaluate gradient at u */
     this->_cache.gradient_u = this->_gradient_func(u);
@@ -975,7 +975,7 @@ protected:
     U_Horizon_Type h;
     MatrixOperation::AbsoluteMaxScalarToMatrix::compute(u, delta, epsilon, h);
 
-    _T norm_h = PythonNumpy::norm(h);
+    T_ norm_h = PythonNumpy::norm(h);
 
     /* Evaluate gradient at u + h */
     U_Horizon_Type u_plus_h = u + h;
@@ -1035,21 +1035,21 @@ protected:
    * rhs = f(u) + eps*|f(u)| - <grad, gamma_fpr> +
    *       (L_coeff / (2*gamma)) * ||gamma_fpr||^2
    */
-  inline auto _lipschitz_check_rhs(void) const -> _T {
+  inline auto _lipschitz_check_rhs(void) const -> T_ {
 
-    _T inner = _MatrixRingBuffer_InnerProduct_Type::inner_product(
+    T_ inner = MatrixRingBuffer_InnerProduct_Type_::inner_product(
         this->_cache.gradient_u, this->_cache.gamma_fpr);
-    _T abs_cost = this->_cache.cost_value;
-    if (abs_cost < static_cast<_T>(0)) {
+    T_ abs_cost = this->_cache.cost_value;
+    if (abs_cost < static_cast<T_>(0)) {
       abs_cost = -abs_cost;
     }
 
     return this->_cache.cost_value +
-           static_cast<_T>(PANOC_Constants::LIPSCHITZ_UPDATE_EPSILON_DEFAULT) *
+           static_cast<T_>(PANOC_Constants::LIPSCHITZ_UPDATE_EPSILON_DEFAULT) *
                abs_cost -
            inner +
-           (static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
-            (static_cast<_T>(2) * this->_cache.gamma)) *
+           (static_cast<T_>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT) /
+            (static_cast<T_>(2) * this->_cache.gamma)) *
                this->_cache.norm_gamma_fpr * this->_cache.norm_gamma_fpr;
   }
 
@@ -1057,21 +1057,21 @@ protected:
    * @brief Update the Lipschitz constant estimate (and gamma, sigma).
    */
   inline void _update_lipschitz_constant(U_Horizon_Type &u) {
-    _T cost_half = this->_cost_func(this->_cache.u_half_step);
+    T_ cost_half = this->_cost_func(this->_cache.u_half_step);
     this->_cache.cost_value = this->_cost_func(u);
 
     for (std::size_t lip_iter = 0;
          lip_iter < this->_max_lipschitz_update_iteration; ++lip_iter) {
       if (cost_half <= this->_lipschitz_check_rhs() ||
           this->_cache.lipschitz_constant >=
-              static_cast<_T>(
+              static_cast<T_>(
                   PANOC_Constants::MAX_LIPSCHITZ_CONSTANT_DEFAULT)) {
         break;
       }
 
       this->_cache.lbfgs.reset();
-      this->_cache.lipschitz_constant *= static_cast<_T>(2);
-      this->_cache.gamma *= static_cast<_T>(0.5);
+      this->_cache.lipschitz_constant *= static_cast<T_>(2);
+      this->_cache.gamma *= static_cast<T_>(0.5);
 
       this->_gradient_step(u);
       this->_half_step();
@@ -1080,9 +1080,9 @@ protected:
     }
 
     this->_cache.sigma =
-        (static_cast<_T>(1) -
-         static_cast<_T>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
-        (static_cast<_T>(4) * this->_cache.gamma);
+        (static_cast<T_>(1) -
+         static_cast<T_>(PANOC_Constants::GAMMA_L_COEFFICIENT_DEFAULT)) /
+        (static_cast<T_>(4) * this->_cache.gamma);
   }
 
   /**
@@ -1090,7 +1090,7 @@ protected:
    */
   inline void _compute_u_plus(const U_Horizon_Type &u) {
 
-    _T one_minus_tau = static_cast<_T>(1) - this->_cache.tau;
+    T_ one_minus_tau = static_cast<T_>(1) - this->_cache.tau;
     this->_cache.u_plus = u - one_minus_tau * this->_cache.gamma_fpr -
                           this->_cache.tau * this->_cache.direction_lbfgs;
   }
@@ -1102,12 +1102,12 @@ protected:
   inline void _compute_rhs_ls(void) {
 
     U_Horizon_Type diff = this->_cache.gradient_step - this->_cache.u_half_step;
-    _T dist_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(diff, diff);
-    _T grad_norm_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(
+    T_ dist_sq = MatrixRingBuffer_InnerProduct_Type_::inner_product(diff, diff);
+    T_ grad_norm_sq = MatrixRingBuffer_InnerProduct_Type_::inner_product(
         this->_cache.gradient_u, this->_cache.gradient_u);
-    _T fbe = this->_cache.cost_value -
-             static_cast<_T>(0.5) * this->_cache.gamma * grad_norm_sq +
-             static_cast<_T>(0.5) * dist_sq / this->_cache.gamma;
+    T_ fbe = this->_cache.cost_value -
+             static_cast<T_>(0.5) * this->_cache.gamma * grad_norm_sq +
+             static_cast<T_>(0.5) * dist_sq / this->_cache.gamma;
     this->_cache.rhs_ls = fbe - this->_cache.sigma *
                                     this->_cache.norm_gamma_fpr *
                                     this->_cache.norm_gamma_fpr;
@@ -1134,13 +1134,13 @@ protected:
 
     /* LHS of line-search condition (FBE at u_plus) */
     U_Horizon_Type diff = this->_cache.gradient_step - this->_cache.u_half_step;
-    _T dist_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(diff, diff);
-    _T grad_norm_sq = _MatrixRingBuffer_InnerProduct_Type::inner_product(
+    T_ dist_sq = MatrixRingBuffer_InnerProduct_Type_::inner_product(diff, diff);
+    T_ grad_norm_sq = MatrixRingBuffer_InnerProduct_Type_::inner_product(
         this->_cache.gradient_u, this->_cache.gradient_u);
     this->_cache.lhs_ls =
         this->_cache.cost_value -
-        static_cast<_T>(0.5) * this->_cache.gamma * grad_norm_sq +
-        static_cast<_T>(0.5) * dist_sq / this->_cache.gamma;
+        static_cast<T_>(0.5) * this->_cache.gamma * grad_norm_sq +
+        static_cast<T_>(0.5) * dist_sq / this->_cache.gamma;
 
     return this->_cache.lhs_ls > this->_cache.rhs_ls;
   }
@@ -1163,18 +1163,18 @@ protected:
   inline void _linesearch(U_Horizon_Type &u) {
 
     this->_compute_rhs_ls();
-    this->_cache.tau = static_cast<_T>(1);
+    this->_cache.tau = static_cast<T_>(1);
     std::size_t num_ls = 0;
 
     while (this->_line_search_condition(u) &&
            num_ls < PANOC_Constants::MAX_LINESEARCH_ITERATIONS_DEFAULT) {
-      this->_cache.tau *= static_cast<_T>(0.5);
+      this->_cache.tau *= static_cast<T_>(0.5);
       num_ls += 1;
     }
 
     if (num_ls >= PANOC_Constants::MAX_LINESEARCH_ITERATIONS_DEFAULT) {
       /* Fall back to projected gradient step */
-      this->_cache.tau = static_cast<_T>(0);
+      this->_cache.tau = static_cast<T_>(0);
       u = this->_cache.u_half_step;
     }
     /* Accept the candidate */
@@ -1198,23 +1198,23 @@ protected:
   /**
    * @brief Return the maximum of two values.
    */
-  static inline auto _max_val(const _T &a, const _T &b) -> _T {
+  static inline auto _max_val(const T_ &a, const T_ &b) -> T_ {
     return (a > b) ? a : b;
   }
 
 protected:
   /* Variables */
-  _Cost_Function_Type _cost_func;
-  _Gradient_Function_Type _gradient_func;
-  _Cache_Type _cache;
+  Cost_Function_Type_ _cost_func;
+  Gradient_Function_Type_ _gradient_func;
+  Cache_Type_ _cache;
 
-  _U_Min_Matrix_Type _u_min_matrix;
-  _U_Max_Matrix_Type _u_max_matrix;
+  U_Min_Matrix_Type_ _u_min_matrix;
+  U_Max_Matrix_Type_ _u_max_matrix;
 
   std::size_t _max_iteration;
   std::size_t _max_lipschitz_update_iteration;
 
-  _SolverStatus_Type _solver_status;
+  SolverStatus_Type_ _solver_status;
 };
 
 /**

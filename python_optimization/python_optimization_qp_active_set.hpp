@@ -379,13 +379,13 @@ public:
 
 protected:
   /* Type */
-  using _T = T;
+  using T_ = T;
 
-  using _E_Empty_Type =
+  using E_Empty_Type_ =
       PythonNumpy::SparseMatrixEmpty_Type<T, Number_Of_Variables,
                                           Number_Of_Variables>;
 
-  using _L_Empty_Type =
+  using L_Empty_Type_ =
       PythonNumpy::SparseMatrixEmpty_Type<T, Number_Of_Variables, 1>;
 
 public:
@@ -398,28 +398,28 @@ public:
   QP_ActiveSetSolver()
       : X(), active_set(make_ActiveSet<Number_Of_Constraints>()),
         max_iteration(PythonOptimization::MAX_ITERATION_DEFAULT),
-        tol(static_cast<T>(PythonOptimization::TOL_DEFAULT)), _KKT(), _RHS(),
+        tol(static_cast<T>(PythonOptimization::TOL_DEFAULT)), KKT_(), RHS_(),
         _kkt_inv_solver(), _iteration_count(static_cast<std::size_t>(0)) {}
 
   QP_ActiveSetSolver(const X_Type &X_in)
       : X(X_in), active_set(make_ActiveSet<Number_Of_Constraints>()),
         max_iteration(PythonOptimization::MAX_ITERATION_DEFAULT),
-        tol(static_cast<T>(PythonOptimization::TOL_DEFAULT)), _KKT(), _RHS(),
+        tol(static_cast<T>(PythonOptimization::TOL_DEFAULT)), KKT_(), RHS_(),
         _kkt_inv_solver(), _iteration_count(static_cast<std::size_t>(0)) {}
 
   QP_ActiveSetSolver(const X_Type &X_in,
                      const ActiveSet_Type<Number_Of_Constraints> &active_set_in)
       : X(X_in), active_set(active_set_in),
         max_iteration(PythonOptimization::MAX_ITERATION_DEFAULT),
-        tol(static_cast<T>(PythonOptimization::TOL_DEFAULT)), _KKT(), _RHS(),
+        tol(static_cast<T>(PythonOptimization::TOL_DEFAULT)), KKT_(), RHS_(),
         _kkt_inv_solver(), _iteration_count(static_cast<std::size_t>(0)) {}
 
   /* Copy Constructor */
   QP_ActiveSetSolver(const QP_ActiveSetSolver<T, Number_Of_Variables,
                                               Number_Of_Constraints> &input)
       : X(input.X), active_set(input.active_set),
-        max_iteration(input.max_iteration), tol(input.tol), _KKT(input._KKT),
-        _RHS(input._RHS), _kkt_inv_solver(input._kkt_inv_solver),
+        max_iteration(input.max_iteration), tol(input.tol), KKT_(input.KKT_),
+        RHS_(input.RHS_), _kkt_inv_solver(input._kkt_inv_solver),
         _iteration_count(input._iteration_count) {}
 
   QP_ActiveSetSolver<T, Number_Of_Variables, Number_Of_Constraints> &operator=(
@@ -430,8 +430,8 @@ public:
       this->active_set = input.active_set;
       this->max_iteration = input.max_iteration;
       this->tol = input.tol;
-      this->_KKT = input._KKT;
-      this->_RHS = input._RHS;
+      this->KKT_ = input.KKT_;
+      this->RHS_ = input.RHS_;
       this->_kkt_inv_solver = input._kkt_inv_solver;
       this->_iteration_count = input._iteration_count;
     }
@@ -443,7 +443,7 @@ public:
                                         Number_Of_Constraints> &&input) noexcept
       : X(std::move(input.X)), active_set(std::move(input.active_set)),
         max_iteration(input.max_iteration), tol(input.tol),
-        _KKT(std::move(input._KKT)), _RHS(std::move(input._RHS)),
+        KKT_(std::move(input.KKT_)), RHS_(std::move(input.RHS_)),
         _kkt_inv_solver(std::move(input._kkt_inv_solver)),
         _iteration_count(input._iteration_count) {}
 
@@ -455,8 +455,8 @@ public:
       this->active_set = std::move(input.active_set);
       this->max_iteration = input.max_iteration;
       this->tol = input.tol;
-      this->_KKT = std::move(input._KKT);
-      this->_RHS = std::move(input._RHS);
+      this->KKT_ = std::move(input.KKT_);
+      this->RHS_ = std::move(input.RHS_);
       this->_kkt_inv_solver = std::move(input._kkt_inv_solver);
       this->_iteration_count = input._iteration_count;
     }
@@ -477,9 +477,9 @@ public:
    */
   template <typename E_Type>
   inline
-      typename std::enable_if<!std::is_same<E_Type, _E_Empty_Type>::value>::type
+      typename std::enable_if<!std::is_same<E_Type, E_Empty_Type_>::value>::type
       update_E(const E_Type &E) {
-    PythonNumpy::substitute_part_matrix<0, 0>(this->_KKT, E);
+    PythonNumpy::substitute_part_matrix<0, 0>(this->KKT_, E);
   }
 
   /**
@@ -491,7 +491,7 @@ public:
    */
   template <typename E_Type>
   inline
-      typename std::enable_if<std::is_same<E_Type, _E_Empty_Type>::value>::type
+      typename std::enable_if<std::is_same<E_Type, E_Empty_Type_>::value>::type
       update_E(const E_Type &E) {
 
     // Do Nothing.
@@ -508,9 +508,9 @@ public:
    */
   template <typename L_Type>
   inline
-      typename std::enable_if<!std::is_same<L_Type, _L_Empty_Type>::value>::type
+      typename std::enable_if<!std::is_same<L_Type, L_Empty_Type_>::value>::type
       update_L(const L_Type &L) {
-    PythonNumpy::substitute_part_matrix<0, 0>(this->_RHS, L);
+    PythonNumpy::substitute_part_matrix<0, 0>(this->RHS_, L);
   }
 
   /**
@@ -522,7 +522,7 @@ public:
    */
   template <typename L_Type>
   inline
-      typename std::enable_if<std::is_same<L_Type, _L_Empty_Type>::value>::type
+      typename std::enable_if<std::is_same<L_Type, L_Empty_Type_>::value>::type
       update_L(const L_Type &L) {
 
     // Do Nothing.
@@ -547,7 +547,7 @@ public:
     this->update_E(E);
     this->update_L(L);
 
-    auto sol = this->_kkt_inv_solver.solve(this->_KKT, this->_RHS,
+    auto sol = this->_kkt_inv_solver.solve(this->KKT_, this->RHS_,
                                            NUMBER_OF_VARIABLES);
     QP_ActiveSetSolverOperation::X_From_Sol<(NUMBER_OF_VARIABLES - 1)>::apply(
         X_out, sol);
@@ -652,12 +652,12 @@ public:
       // (1) Check constraint violations for the candidate solution
       std::size_t violation_index = 0;
       bool is_violated = false;
-      _T max_violation = static_cast<_T>(0);
+      T_ max_violation = static_cast<T_>(0);
 
       auto M_X = M * X_candidate;
 
       QP_ActiveSetSolverOperation::CheckGammaViolation<
-          _T, (NUMBER_OF_CONSTRAINTS - 1)>::check(gamma, M_X, violation_index,
+          T_, (NUMBER_OF_CONSTRAINTS - 1)>::check(gamma, M_X, violation_index,
                                                   is_violated, max_violation,
                                                   this->tol);
 
@@ -674,11 +674,11 @@ public:
         // Find negative lambda among the active constraints
         std::size_t min_lambda_index = 0;
         bool negative_lambda_found = false;
-        _T min_lambda_value = static_cast<_T>(0);
+        T_ min_lambda_value = static_cast<T_>(0);
 
         if (lambda_candidate_exists) {
           QP_ActiveSetSolverOperation::CheckNegativeLambda<
-              _T, (NUMBER_OF_CONSTRAINTS - 1)>::check(Lambda_candidate,
+              T_, (NUMBER_OF_CONSTRAINTS - 1)>::check(Lambda_candidate,
                                                       this->tol,
                                                       min_lambda_index,
                                                       negative_lambda_found,
@@ -815,7 +815,7 @@ protected:
     for (std::size_t i = 0; i < this->active_set.get_number_of_active(); ++i) {
 
       QP_ActiveSetSolverOperation::SetKKTColumn<
-          NUMBER_OF_VARIABLES, (NUMBER_OF_VARIABLES - 1)>::set(this->_KKT,
+          NUMBER_OF_VARIABLES, (NUMBER_OF_VARIABLES - 1)>::set(this->KKT_,
                                                                this->active_set,
                                                                M, i);
     }
@@ -838,7 +838,7 @@ protected:
     this->update_L(L);
 
     for (std::size_t i = 0; i < this->active_set.get_number_of_active(); ++i) {
-      this->_RHS.access(NUMBER_OF_VARIABLES + i, 0) =
+      this->RHS_.access(NUMBER_OF_VARIABLES + i, 0) =
           gamma.access(this->active_set.get_active(i), 0);
     }
   }
@@ -855,7 +855,7 @@ protected:
    */
   inline auto _solve_KKT_inv(const std::size_t &k) -> Sol_Type {
 
-    return this->_kkt_inv_solver.cold_solve(this->_KKT, this->_RHS,
+    return this->_kkt_inv_solver.cold_solve(this->KKT_, this->RHS_,
                                             NUMBER_OF_VARIABLES + k);
   }
 
@@ -869,8 +869,8 @@ public:
 
 protected:
   /* variables */
-  KKT_Type _KKT;
-  RHS_Type _RHS;
+  KKT_Type KKT_;
+  RHS_Type RHS_;
   KKT_Inv_Solver_Type _kkt_inv_solver;
   std::size_t _iteration_count;
 };

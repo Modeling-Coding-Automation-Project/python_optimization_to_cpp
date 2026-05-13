@@ -43,8 +43,8 @@ namespace PythonOptimization {
 template <std::size_t NumberOfConstraints> class ActiveSet {
 protected:
   /* Type */
-  using _Active_Flags_Type = std::array<bool, NumberOfConstraints>;
-  using _Active_Indices_Type = std::array<std::size_t, NumberOfConstraints>;
+  using Active_Flags_Type_ = std::array<bool, NumberOfConstraints>;
+  using Active_Indices_Type_ = std::array<std::size_t, NumberOfConstraints>;
 
 public:
   /* Constructor */
@@ -160,7 +160,7 @@ public:
    *
    * @return A reference to the array of active indices.
    */
-  inline auto get_active_indices() const -> _Active_Indices_Type & {
+  inline auto get_active_indices() const -> Active_Indices_Type_ & {
     return this->_active_indices;
   }
 
@@ -194,8 +194,8 @@ public:
 
 protected:
   /* variables */
-  _Active_Flags_Type _active_flags;
-  _Active_Indices_Type _active_indices;
+  Active_Flags_Type_ _active_flags;
+  Active_Indices_Type_ _active_indices;
   std::size_t _number_of_active;
 };
 
@@ -322,10 +322,10 @@ public:
 
 protected:
   /* Type */
-  using _Active_Flags_Type =
+  using Active_Flags_Type_ =
       std::array<std::array<bool, NUMBER_OF_ROWS>, NUMBER_OF_COLUMNS>;
-  using _Index_Pair_Type = std::array<std::size_t, 2>;
-  using _Active_Pairs_Type = std::array<_Index_Pair_Type, NUMBER_OF_ELEMENTS>;
+  using Index_Pair_Type_ = std::array<std::size_t, 2>;
+  using Active_Pairs_Type_ = std::array<Index_Pair_Type_, NUMBER_OF_ELEMENTS>;
 
 public:
   /* Constructor */
@@ -441,9 +441,9 @@ public:
    * resulting index.
    *
    * @param index The index of the active pair to retrieve.
-   * @return _Index_Pair_Type The active pair at the clamped index.
+   * @return Index_Pair_Type_ The active pair at the clamped index.
    */
-  inline auto get_active(const std::size_t &index) const -> _Index_Pair_Type {
+  inline auto get_active(const std::size_t &index) const -> Index_Pair_Type_ {
 
     std::size_t index_clamped = index;
 
@@ -464,10 +464,10 @@ public:
    * which are typically used to represent constraints or relationships that are
    * currently active in the optimization process.
    *
-   * @return A constant reference to the internal _Active_Pairs_Type container
+   * @return A constant reference to the internal Active_Pairs_Type_ container
    *         holding the active pairs.
    */
-  inline auto get_active_pairs(void) const -> const _Active_Pairs_Type & {
+  inline auto get_active_pairs(void) const -> const Active_Pairs_Type_ & {
     return this->_active_pairs;
   }
 
@@ -558,8 +558,8 @@ protected:
 
 protected:
   /* variables */
-  _Active_Flags_Type _active_flags;
-  _Active_Pairs_Type _active_pairs;
+  Active_Flags_Type_ _active_flags;
+  Active_Pairs_Type_ _active_pairs;
   std::size_t _number_of_active;
 };
 

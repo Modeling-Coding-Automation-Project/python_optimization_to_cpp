@@ -161,70 +161,70 @@ public:
 
 protected:
   /* Type */
-  using _T = T;
-  using _Parameter_Type = Parameter_Type_In;
+  using T_ = T;
+  using Parameter_Type_ = Parameter_Type_In;
 
-  using _Qx_Type = PythonNumpy::DiagMatrix_Type<_T, STATE_SIZE>;
-  using _R_Type = PythonNumpy::DiagMatrix_Type<_T, INPUT_SIZE>;
-  using _Qy_Type = PythonNumpy::DiagMatrix_Type<_T, OUTPUT_SIZE>;
+  using Qx_Type_ = PythonNumpy::DiagMatrix_Type<T_, STATE_SIZE>;
+  using R_Type_ = PythonNumpy::DiagMatrix_Type<T_, INPUT_SIZE>;
+  using Qy_Type_ = PythonNumpy::DiagMatrix_Type<T_, OUTPUT_SIZE>;
 
-  using _U_Min_Type = U_Min_Type_In;
-  using _U_Max_Type = U_Max_Type_In;
-  using _Y_Min_Type = Y_Min_Type_In;
-  using _Y_Max_Type = Y_Max_Type_In;
+  using U_Min_Type_ = U_Min_Type_In;
+  using U_Max_Type_ = U_Max_Type_In;
+  using Y_Min_Type_ = Y_Min_Type_In;
+  using Y_Max_Type_ = Y_Max_Type_In;
 
-  using _U_Min_Matrix_Type = PythonNumpy::Tile_Type<1, NP, U_Min_Type_In>;
-  using _U_Max_Matrix_Type = PythonNumpy::Tile_Type<1, NP, U_Max_Type_In>;
-  using _Y_Min_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type_In>;
-  using _Y_Max_Matrix_Type = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type_In>;
+  using U_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_Min_Type_In>;
+  using U_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, NP, U_Max_Type_In>;
+  using Y_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type_In>;
+  using Y_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type_In>;
 
-  using _StateFunction_Out_Type = X_Type;
-  using _MeasurementFunction_Out_Type = Y_Type;
+  using StateFunction_Out_Type_ = X_Type;
+  using MeasurementFunction_Out_Type_ = Y_Type;
 
-  using _StateFunctionJacobian_X_Out_Type = State_Jacobian_X_Matrix_Type_In;
-  using _StateFunctionJacobian_U_Out_Type = State_Jacobian_U_Matrix_Type_In;
-  using _MeasurementFunctionJacobian_X_Out_Type =
+  using StateFunctionJacobian_X_Out_Type_ = State_Jacobian_X_Matrix_Type_In;
+  using StateFunctionJacobian_U_Out_Type_ = State_Jacobian_U_Matrix_Type_In;
+  using MeasurementFunctionJacobian_X_Out_Type_ =
       Measurement_Jacobian_X_Matrix_Type_In;
 
-  using _StateFunction_Object =
-      StateFunction_Object<X_Type, U_Type, _Parameter_Type>;
-  using _MeasurementFunction_Object =
-      MeasurementFunction_Object<Y_Type, X_Type, U_Type, _Parameter_Type>;
+  using StateFunction_Object_ =
+      StateFunction_Object<X_Type, U_Type, Parameter_Type_>;
+  using MeasurementFunction_Object_ =
+      MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type_>;
 
-  using _StateFunctionJacobian_X_Object =
-      StateFunctionJacobian_X_Object<_StateFunctionJacobian_X_Out_Type, X_Type,
-                                     U_Type, _Parameter_Type>;
-  using _StateFunctionJacobian_U_Object =
-      StateFunctionJacobian_U_Object<_StateFunctionJacobian_U_Out_Type, X_Type,
-                                     U_Type, _Parameter_Type>;
-  using _MeasurementFunctionJacobian_X_Object =
+  using StateFunctionJacobian_X_Object_ =
+      StateFunctionJacobian_X_Object<StateFunctionJacobian_X_Out_Type_, X_Type,
+                                     U_Type, Parameter_Type_>;
+  using StateFunctionJacobian_U_Object_ =
+      StateFunctionJacobian_U_Object<StateFunctionJacobian_U_Out_Type_, X_Type,
+                                     U_Type, Parameter_Type_>;
+  using MeasurementFunctionJacobian_X_Object_ =
       MeasurementFunctionJacobian_X_Object<
-          _MeasurementFunctionJacobian_X_Out_Type, X_Type, U_Type,
-          _Parameter_Type>;
+          MeasurementFunctionJacobian_X_Out_Type_, X_Type, U_Type,
+          Parameter_Type_>;
 
-  using _Reference_Trajectory_Type = Y_Horizon_Type;
+  using Reference_Trajectory_Type_ = Y_Horizon_Type;
 
-  using _Gradient_Type = U_Horizon_Type;
+  using Gradient_Type_ = U_Horizon_Type;
 
   /* Output mapping types for ALM */
-  using _Output_Mapping_Type = Y_Horizon_Type;
-  using _Dual_Type = Y_Horizon_Type;
+  using Output_Mapping_Type_ = Y_Horizon_Type;
+  using Dual_Type_ = Y_Horizon_Type;
 
 public:
   /* Constructor */
   OptimizationEngine_CostMatrices()
-      : _Y_offset(), _Qx(), _R(), _Qy(), _Px(), _Py(), _U_min_matrix(),
-        _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(), _state_function(),
+      : Y_offset_(), Qx_(), R_(), Qy_(), Px_(), Py_(), U_min_matrix_(),
+        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_function(),
         _measurement_function(), _state_function_jacobian_x(),
         _state_function_jacobian_u(), _measurement_function_jacobian_x() {}
 
-  OptimizationEngine_CostMatrices(const _Qx_Type &Qx, const _R_Type &R,
-                                  const _Qy_Type &Qy, const U_Min_Type &U_min,
+  OptimizationEngine_CostMatrices(const Qx_Type_ &Qx, const R_Type_ &R,
+                                  const Qy_Type_ &Qy, const U_Min_Type &U_min,
                                   const U_Max_Type &U_max,
                                   const Y_Min_Type &Y_min,
                                   const Y_Max_Type &Y_max)
-      : _Y_offset(), _Qx(Qx), _R(R), _Qy(Qy), _Px(Qx), _Py(Qy), _U_min_matrix(),
-        _U_max_matrix(), _Y_min_matrix(), _Y_max_matrix(), _state_function(),
+      : Y_offset_(), Qx_(Qx), R_(R), Qy_(Qy), Px_(Qx), Py_(Qy), U_min_matrix_(),
+        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_function(),
         _measurement_function(), _state_function_jacobian_x(),
         _state_function_jacobian_u(), _measurement_function_jacobian_x() {
 
@@ -239,10 +239,10 @@ public:
       : X_initial(input.X_initial),
         state_space_parameters(input.state_space_parameters),
         reference_trajectory(input.reference_trajectory),
-        _Y_offset(input._Y_offset), _Qx(input._Qx), _R(input._R),
-        _Qy(input._Qy), _Px(input._Px), _Py(input._Py),
-        _U_min_matrix(input._U_min_matrix), _U_max_matrix(input._U_max_matrix),
-        _Y_min_matrix(input._Y_min_matrix), _Y_max_matrix(input._Y_max_matrix),
+        Y_offset_(input.Y_offset_), Qx_(input.Qx_), R_(input.R_),
+        Qy_(input.Qy_), Px_(input.Px_), Py_(input.Py_),
+        U_min_matrix_(input.U_min_matrix_), U_max_matrix_(input.U_max_matrix_),
+        Y_min_matrix_(input.Y_min_matrix_), Y_max_matrix_(input.Y_max_matrix_),
         _state_function(input._state_function),
         _measurement_function(input._measurement_function),
         _state_function_jacobian_x(input._state_function_jacobian_x),
@@ -256,18 +256,18 @@ public:
       this->X_initial = input.X_initial;
       this->state_space_parameters = input.state_space_parameters;
       this->reference_trajectory = input.reference_trajectory;
-      this->_Y_offset = input._Y_offset;
+      this->Y_offset_ = input.Y_offset_;
 
-      this->_Qx = input._Qx;
-      this->_R = input._R;
-      this->_Qy = input._Qy;
-      this->_Px = input._Px;
-      this->_Py = input._Py;
+      this->Qx_ = input.Qx_;
+      this->R_ = input.R_;
+      this->Qy_ = input.Qy_;
+      this->Px_ = input.Px_;
+      this->Py_ = input.Py_;
 
-      this->_U_min_matrix = input._U_min_matrix;
-      this->_U_max_matrix = input._U_max_matrix;
-      this->_Y_min_matrix = input._Y_min_matrix;
-      this->_Y_max_matrix = input._Y_max_matrix;
+      this->U_min_matrix_ = input.U_min_matrix_;
+      this->U_max_matrix_ = input.U_max_matrix_;
+      this->Y_min_matrix_ = input.Y_min_matrix_;
+      this->Y_max_matrix_ = input.Y_max_matrix_;
 
       this->_state_function = input._state_function;
       this->_measurement_function = input._measurement_function;
@@ -286,13 +286,13 @@ public:
       : X_initial(std::move(input.X_initial)),
         state_space_parameters(std::move(input.state_space_parameters)),
         reference_trajectory(std::move(input.reference_trajectory)),
-        _Y_offset(std::move(input._Y_offset)), _Qx(std::move(input._Qx)),
-        _R(std::move(input._R)), _Qy(std::move(input._Qy)),
-        _Px(std::move(input._Px)), _Py(std::move(input._Py)),
-        _U_min_matrix(std::move(input._U_min_matrix)),
-        _U_max_matrix(std::move(input._U_max_matrix)),
-        _Y_min_matrix(std::move(input._Y_min_matrix)),
-        _Y_max_matrix(std::move(input._Y_max_matrix)),
+        Y_offset_(std::move(input.Y_offset_)), Qx_(std::move(input.Qx_)),
+        R_(std::move(input.R_)), Qy_(std::move(input.Qy_)),
+        Px_(std::move(input.Px_)), Py_(std::move(input.Py_)),
+        U_min_matrix_(std::move(input.U_min_matrix_)),
+        U_max_matrix_(std::move(input.U_max_matrix_)),
+        Y_min_matrix_(std::move(input.Y_min_matrix_)),
+        Y_max_matrix_(std::move(input.Y_max_matrix_)),
         _state_function(std::move(input._state_function)),
         _measurement_function(std::move(input._measurement_function)),
         _state_function_jacobian_x(std::move(input._state_function_jacobian_x)),
@@ -306,18 +306,18 @@ public:
       this->X_initial = std::move(input.X_initial);
       this->state_space_parameters = std::move(input.state_space_parameters);
       this->reference_trajectory = std::move(input.reference_trajectory);
-      this->_Y_offset = std::move(input._Y_offset);
+      this->Y_offset_ = std::move(input.Y_offset_);
 
-      this->_Qx = std::move(input._Qx);
-      this->_R = std::move(input._R);
-      this->_Qy = std::move(input._Qy);
-      this->_Px = std::move(input._Px);
-      this->_Py = std::move(input._Py);
+      this->Qx_ = std::move(input.Qx_);
+      this->R_ = std::move(input.R_);
+      this->Qy_ = std::move(input.Qy_);
+      this->Px_ = std::move(input.Px_);
+      this->Py_ = std::move(input.Py_);
 
-      this->_U_min_matrix = std::move(input._U_min_matrix);
-      this->_U_max_matrix = std::move(input._U_max_matrix);
-      this->_Y_min_matrix = std::move(input._Y_min_matrix);
-      this->_Y_max_matrix = std::move(input._Y_max_matrix);
+      this->U_min_matrix_ = std::move(input.U_min_matrix_);
+      this->U_max_matrix_ = std::move(input.U_max_matrix_);
+      this->Y_min_matrix_ = std::move(input.Y_min_matrix_);
+      this->Y_max_matrix_ = std::move(input.Y_max_matrix_);
 
       this->_state_function = std::move(input._state_function);
       this->_measurement_function = std::move(input._measurement_function);
@@ -352,11 +352,11 @@ public:
    * with respect to state variables.
    */
   inline void set_function_objects(
-      const _StateFunction_Object &state_function,
-      const _MeasurementFunction_Object &measurement_function,
-      const _StateFunctionJacobian_X_Object &state_function_jacobian_x,
-      const _StateFunctionJacobian_U_Object &state_function_jacobian_u,
-      const _MeasurementFunctionJacobian_X_Object
+      const StateFunction_Object_ &state_function,
+      const MeasurementFunction_Object_ &measurement_function,
+      const StateFunctionJacobian_X_Object_ &state_function_jacobian_x,
+      const StateFunctionJacobian_U_Object_ &state_function_jacobian_u,
+      const MeasurementFunctionJacobian_X_Object_
           &measurement_function_jacobian_x) {
 
     this->_state_function = state_function;
@@ -367,62 +367,62 @@ public:
     this->_measurement_function_jacobian_x = measurement_function_jacobian_x;
   }
 
-  inline void set_U_min(const _U_Min_Type &U_min) {
-    PythonNumpy::update_tile_concatenated_matrix<1, NP, _U_Min_Type>(
-        this->_U_min_matrix, U_min);
+  inline void set_U_min(const U_Min_Type_ &U_min) {
+    PythonNumpy::update_tile_concatenated_matrix<1, NP, U_Min_Type_>(
+        this->U_min_matrix_, U_min);
   }
 
-  inline void set_U_max(const _U_Max_Type &U_max) {
-    PythonNumpy::update_tile_concatenated_matrix<1, NP, _U_Max_Type>(
-        this->_U_max_matrix, U_max);
+  inline void set_U_max(const U_Max_Type_ &U_max) {
+    PythonNumpy::update_tile_concatenated_matrix<1, NP, U_Max_Type_>(
+        this->U_max_matrix_, U_max);
   }
 
-  inline void set_Y_min(const _Y_Min_Type &Y_min) {
-    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), _Y_Min_Type>(
-        this->_Y_min_matrix, Y_min);
+  inline void set_Y_min(const Y_Min_Type_ &Y_min) {
+    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Min_Type_>(
+        this->Y_min_matrix_, Y_min);
   }
 
-  inline void set_Y_max(const _Y_Max_Type &Y_max) {
-    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), _Y_Max_Type>(
-        this->_Y_max_matrix, Y_max);
+  inline void set_Y_max(const Y_Max_Type_ &Y_max) {
+    PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Max_Type_>(
+        this->Y_max_matrix_, Y_max);
   }
 
-  inline void set_Y_offset(Y_Type Y_offset) { this->_Y_offset = Y_offset; }
+  inline void set_Y_offset(Y_Type Y_offset) { this->Y_offset_ = Y_offset; }
 
-  inline void set_Qx(const _Qx_Type &Qx) {
-    this->_Qx = Qx;
-    this->_Px = Qx;
+  inline void set_Qx(const Qx_Type_ &Qx) {
+    this->Qx_ = Qx;
+    this->Px_ = Qx;
   }
 
-  inline void set_R(const _R_Type &R) { this->_R = R; }
+  inline void set_R(const R_Type_ &R) { this->R_ = R; }
 
-  inline void set_Qy(const _Qy_Type &Qy) {
-    this->_Qy = Qy;
-    this->_Py = Qy;
+  inline void set_Qy(const Qy_Type_ &Qy) {
+    this->Qy_ = Qy;
+    this->Py_ = Qy;
   }
 
   /* Getters */
-  inline _U_Min_Matrix_Type get_U_min_matrix(void) const {
-    return this->_U_min_matrix;
+  inline U_Min_Matrix_Type_ get_U_min_matrix(void) const {
+    return this->U_min_matrix_;
   }
 
-  inline _U_Max_Matrix_Type get_U_max_matrix(void) const {
-    return this->_U_max_matrix;
+  inline U_Max_Matrix_Type_ get_U_max_matrix(void) const {
+    return this->U_max_matrix_;
   }
 
-  inline _Y_Min_Matrix_Type get_Y_min_matrix(void) const {
-    return this->_Y_min_matrix;
+  inline Y_Min_Matrix_Type_ get_Y_min_matrix(void) const {
+    return this->Y_min_matrix_;
   }
 
-  inline _Y_Max_Matrix_Type get_Y_max_matrix(void) const {
-    return this->_Y_max_matrix;
+  inline Y_Max_Matrix_Type_ get_Y_max_matrix(void) const {
+    return this->Y_max_matrix_;
   }
 
-  inline _Qx_Type get_Qx(void) const { return this->_Qx; }
+  inline Qx_Type_ get_Qx(void) const { return this->Qx_; }
 
-  inline _R_Type get_R(void) const { return this->_R; }
+  inline R_Type_ get_R(void) const { return this->R_; }
 
-  inline _Qy_Type get_Qy(void) const { return this->_Qy; }
+  inline Qy_Type_ get_Qy(void) const { return this->Qy_; }
 
   /* Function */
 
@@ -436,12 +436,12 @@ public:
    * @param X The current state vector.
    * @param U The control input vector.
    * @param parameter The set of parameters required for the state function.
-   * @return _StateFunction_Out_Type The result of the state function
+   * @return StateFunction_Out_Type_ The result of the state function
    * evaluation.
    */
   inline auto calculate_state_function(const X_Type &X, const U_Type &U,
-                                       const _Parameter_Type &parameter)
-      -> _StateFunction_Out_Type {
+                                       const Parameter_Type_ &parameter)
+      -> StateFunction_Out_Type_ {
 
     return this->_state_function(X, U, parameter);
   }
@@ -459,8 +459,8 @@ public:
    * @return The output of the measurement function.
    */
   inline auto calculate_measurement_function(const X_Type &X, const U_Type &U,
-                                             const _Parameter_Type &parameter)
-      -> _MeasurementFunction_Out_Type {
+                                             const Parameter_Type_ &parameter)
+      -> MeasurementFunction_Out_Type_ {
 
     return this->_measurement_function(X, U, parameter);
   }
@@ -475,8 +475,8 @@ public:
    * @return The Jacobian matrix of the state function with respect to X.
    */
   inline auto calculate_state_jacobian_x(const X_Type &X, const U_Type &U,
-                                         const _Parameter_Type &parameter)
-      -> _StateFunctionJacobian_X_Out_Type {
+                                         const Parameter_Type_ &parameter)
+      -> StateFunctionJacobian_X_Out_Type_ {
 
     return this->_state_function_jacobian_x(X, U, parameter);
   }
@@ -493,8 +493,8 @@ public:
    * control input.
    */
   inline auto calculate_state_jacobian_u(const X_Type &X, const U_Type &U,
-                                         const _Parameter_Type &parameter)
-      -> _StateFunctionJacobian_U_Out_Type {
+                                         const Parameter_Type_ &parameter)
+      -> StateFunctionJacobian_U_Out_Type_ {
 
     return this->_state_function_jacobian_u(X, U, parameter);
   }
@@ -510,8 +510,8 @@ public:
    * @return The Jacobian matrix of the measurement function with respect to X.
    */
   inline auto calculate_measurement_jacobian_x(const X_Type &X, const U_Type &U,
-                                               const _Parameter_Type &parameter)
-      -> _MeasurementFunctionJacobian_X_Out_Type {
+                                               const Parameter_Type_ &parameter)
+      -> MeasurementFunctionJacobian_X_Out_Type_ {
 
     return this->_measurement_function_jacobian_x(X, U, parameter);
   }
@@ -536,7 +536,7 @@ public:
    */
   inline auto simulate_trajectory(const X_Type &X_initial_in,
                                   const U_Horizon_Type &U_horizon,
-                                  const _Parameter_Type &parameter)
+                                  const Parameter_Type_ &parameter)
       -> X_Horizon_Type {
 
     X_Horizon_Type X_horizon;
@@ -569,16 +569,16 @@ public:
    * before calling this method).
    *
    * @param U_horizon Control input sequence over the prediction horizon.
-   * @return _T Cost function value.
+   * @return T_ Cost function value.
    */
-  inline auto compute_cost(const U_Horizon_Type &U_horizon) -> _T {
+  inline auto compute_cost(const U_Horizon_Type &U_horizon) -> T_ {
 
     auto X_horizon = this->simulate_trajectory(this->X_initial, U_horizon,
                                                this->state_space_parameters);
 
     Y_Horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
-        Y_horizon, this->_Y_offset);
+        Y_horizon, this->Y_offset_);
     U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
@@ -589,18 +589,18 @@ public:
       MatrixOperation::set_row(Y_horizon, Y_k, k);
     }
 
-    _T J = static_cast<_T>(0);
+    T_ J = static_cast<T_>(0);
     for (std::size_t k = 0; k < NP; k++) {
       auto e_y_r = MatrixOperation::get_row(Y_horizon, k) -
                    MatrixOperation::get_row(this->reference_trajectory, k);
 
       auto X_T_Qx_X = MatrixOperation::calculate_quadratic_form(
-          MatrixOperation::get_row(X_horizon, k), this->_Qx);
+          MatrixOperation::get_row(X_horizon, k), this->Qx_);
       auto e_y_r_T_Qy_e_y_r =
-          MatrixOperation::calculate_quadratic_form(e_y_r, this->_Qy);
+          MatrixOperation::calculate_quadratic_form(e_y_r, this->Qy_);
 
       auto U_T_R_U = MatrixOperation::calculate_quadratic_form(
-          MatrixOperation::get_row(U_horizon, k), this->_R);
+          MatrixOperation::get_row(U_horizon, k), this->R_);
 
       J += X_T_Qx_X + e_y_r_T_Qy_e_y_r + U_T_R_U;
     }
@@ -609,9 +609,9 @@ public:
                   MatrixOperation::get_row(this->reference_trajectory, NP);
 
     auto XN_T_Px_XN = MatrixOperation::calculate_quadratic_form(
-        MatrixOperation::get_row(X_horizon, NP), this->_Px);
+        MatrixOperation::get_row(X_horizon, NP), this->Px_);
     auto eN_y_r_T_Py_eN_y_r =
-        MatrixOperation::calculate_quadratic_form(eN_y_r, this->_Py);
+        MatrixOperation::calculate_quadratic_form(eN_y_r, this->Py_);
 
     J += XN_T_Px_XN + eN_y_r_T_Py_eN_y_r;
 
@@ -629,17 +629,17 @@ public:
    * before calling this method).
    *
    * @param U_horizon Control input sequence over the prediction horizon.
-   * @return _Gradient_Type Gradient of the cost with respect to control inputs.
+   * @return Gradient_Type_ Gradient of the cost with respect to control inputs.
    */
   inline auto compute_gradient(const U_Horizon_Type &U_horizon)
-      -> _Gradient_Type {
+      -> Gradient_Type_ {
 
     auto X_horizon = this->simulate_trajectory(this->X_initial, U_horizon,
                                                this->state_space_parameters);
 
     Y_Horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
-        Y_horizon, this->_Y_offset);
+        Y_horizon, this->Y_offset_);
     U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
@@ -658,13 +658,13 @@ public:
     auto eN_y_r = MatrixOperation::get_row(Y_horizon, NP) -
                   MatrixOperation::get_row(this->reference_trajectory, NP);
 
-    auto Px_XN = this->_Px * MatrixOperation::get_row(X_horizon, NP);
-    auto Py_eN_y_r = this->_Py * eN_y_r;
+    auto Px_XN = this->Px_ * MatrixOperation::get_row(X_horizon, NP);
+    auto Py_eN_y_r = this->Py_ * eN_y_r;
 
-    auto lam_next = static_cast<_T>(2) *
+    auto lam_next = static_cast<T_>(2) *
                     (Px_XN + PythonNumpy::ATranspose_mul_B(C_N, Py_eN_y_r));
 
-    _Gradient_Type gradient;
+    Gradient_Type_ gradient;
 
     for (std::size_t k = NP; k-- > 0;) {
 
@@ -683,18 +683,18 @@ public:
           MatrixOperation::get_row(X_horizon, k),
           MatrixOperation::get_row(U_horizon, k), this->state_space_parameters);
 
-      auto _2_R_U = static_cast<_T>(2) * this->_R *
+      auto _2_R_U = static_cast<T_>(2) * this->R_ *
                     MatrixOperation::get_row(U_horizon, k);
       auto B_k_T_lam_next = PythonNumpy::ATranspose_mul_B(B_k, lam_next);
 
       MatrixOperation::set_row(gradient, _2_R_U + B_k_T_lam_next, k);
 
-      auto Qx_X = this->_Qx * MatrixOperation::get_row(X_horizon, k);
-      auto Qy_ek_y = this->_Qy * ek_y;
+      auto Qx_X = this->Qx_ * MatrixOperation::get_row(X_horizon, k);
+      auto Qy_ek_y = this->Qy_ * ek_y;
 
       auto A_k_T_lam_next = PythonNumpy::ATranspose_mul_B(A_k, lam_next);
 
-      lam_next = static_cast<_T>(2) *
+      lam_next = static_cast<T_>(2) *
                      (Qx_X + PythonNumpy::ATranspose_mul_B(Cx_k, Qy_ek_y)) +
                  A_k_T_lam_next;
     }
@@ -725,7 +725,7 @@ public:
 
     Y_Horizon_Type Y_horizon;
     PythonNumpy::update_tile_concatenated_matrix<1, (NP + 1), Y_Type>(
-        Y_horizon, this->_Y_offset);
+        Y_horizon, this->Y_offset_);
     U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
@@ -755,11 +755,11 @@ public:
    *
    * @param U_horizon Control input sequence over the prediction horizon.
    * @param D Dual vector reshaped as (ny, Np+1) tile matrix.
-   * @return _Gradient_Type JF1(u)^T @ d result.
+   * @return Gradient_Type_ JF1(u)^T @ d result.
    */
   inline auto compute_output_jacobian_trans(const U_Horizon_Type &U_horizon,
-                                            const _Dual_Type &D)
-      -> _Gradient_Type {
+                                            const Dual_Type_ &D)
+      -> Gradient_Type_ {
 
     auto X_horizon = this->simulate_trajectory(this->X_initial, U_horizon,
                                                this->state_space_parameters);
@@ -774,7 +774,7 @@ public:
     auto mu =
         PythonNumpy::ATranspose_mul_B(C_N, MatrixOperation::get_row(D, NP));
 
-    _Gradient_Type result;
+    Gradient_Type_ result;
     for (std::size_t k = NP; k-- > 0;) {
       auto A_k = this->calculate_state_jacobian_x(
           MatrixOperation::get_row(X_horizon, k),
@@ -800,31 +800,31 @@ public:
 public:
   /* Variable */
   X_Type X_initial;
-  _Parameter_Type state_space_parameters;
-  _Reference_Trajectory_Type reference_trajectory;
+  Parameter_Type_ state_space_parameters;
+  Reference_Trajectory_Type_ reference_trajectory;
 
 protected:
   /* Variable */
-  Y_Type _Y_offset;
+  Y_Type Y_offset_;
 
-  _Qx_Type _Qx;
-  _R_Type _R;
-  _Qy_Type _Qy;
+  Qx_Type_ Qx_;
+  R_Type_ R_;
+  Qy_Type_ Qy_;
 
-  _Qx_Type _Px;
-  _Qy_Type _Py;
+  Qx_Type_ Px_;
+  Qy_Type_ Py_;
 
-  _U_Min_Matrix_Type _U_min_matrix;
-  _U_Max_Matrix_Type _U_max_matrix;
-  _Y_Min_Matrix_Type _Y_min_matrix;
-  _Y_Max_Matrix_Type _Y_max_matrix;
+  U_Min_Matrix_Type_ U_min_matrix_;
+  U_Max_Matrix_Type_ U_max_matrix_;
+  Y_Min_Matrix_Type_ Y_min_matrix_;
+  Y_Max_Matrix_Type_ Y_max_matrix_;
 
-  _StateFunction_Object _state_function;
-  _MeasurementFunction_Object _measurement_function;
+  StateFunction_Object_ _state_function;
+  MeasurementFunction_Object_ _measurement_function;
 
-  _StateFunctionJacobian_X_Object _state_function_jacobian_x;
-  _StateFunctionJacobian_U_Object _state_function_jacobian_u;
-  _MeasurementFunctionJacobian_X_Object _measurement_function_jacobian_x;
+  StateFunctionJacobian_X_Object_ _state_function_jacobian_x;
+  StateFunctionJacobian_U_Object_ _state_function_jacobian_u;
+  MeasurementFunctionJacobian_X_Object_ _measurement_function_jacobian_x;
 };
 
 /* make OptimizationEngine_CostMatrices */
