@@ -39,7 +39,7 @@ jobs:
 
         /opt/venv_py_sim_manager/bin/pip install --upgrade setuptools
 
-        /opt/venv_py_sim_manager/bin/pip install numpy sympy scipy astor
+        /opt/venv_py_sim_manager/bin/pip install numpy sympy scipy astor control
 
         '
     - name: Run samples
