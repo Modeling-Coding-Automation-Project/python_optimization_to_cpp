@@ -362,35 +362,35 @@ void test_SQP_CostMatrices_NMPC() {
     using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
     using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
 
-    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
-        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
-        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+    PythonOptimization::StateEquation_Object<X_Type, U_Type, Parameter_Type> state_equation =
+        sqp_2_mass_spring_damper_demo_sqp_state_equation::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementEquation_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_equation =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_equation::Function<
         T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
 
-    PythonOptimization::StateFunctionJacobian_X_Object<
+    PythonOptimization::StateEquationJacobian_X_Object<
         State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionJacobian_U_Object<
+    PythonOptimization::StateEquationJacobian_U_Object<
         State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+    PythonOptimization::MeasurementEquationJacobian_X_Object<
         Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
-    PythonOptimization::StateFunctionHessian_XX_Object<
+    PythonOptimization::StateEquationHessian_XX_Object<
         State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xx_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionHessian_XU_Object<
+    PythonOptimization::StateEquationHessian_XU_Object<
         State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xu_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionHessian_UX_Object<
+    PythonOptimization::StateEquationHessian_UX_Object<
         State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_ux_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionHessian_UU_Object<
+    PythonOptimization::StateEquationHessian_UU_Object<
         State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_uu_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunctionHessian_XX_Object<
+    PythonOptimization::MeasurementEquationHessian_XX_Object<
         Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_hessian_xx_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
@@ -466,8 +466,8 @@ void test_SQP_CostMatrices_NMPC() {
         "check u_min value.");
 
     cost_matrices.set_function_objects(
-        state_function,
-        measurement_function,
+        state_equation,
+        measurement_equation,
         state_jacobian_x_function,
         state_jacobian_u_function,
         measurement_jacobian_x_function,
@@ -575,35 +575,35 @@ void test_sqp_active_set_pcg_pls() {
     using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
     using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
 
-    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
-        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
-        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+    PythonOptimization::StateEquation_Object<X_Type, U_Type, Parameter_Type> state_equation =
+        sqp_2_mass_spring_damper_demo_sqp_state_equation::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementEquation_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_equation =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_equation::Function<
         T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
 
-    PythonOptimization::StateFunctionJacobian_X_Object<
+    PythonOptimization::StateEquationJacobian_X_Object<
         State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionJacobian_U_Object<
+    PythonOptimization::StateEquationJacobian_U_Object<
         State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+    PythonOptimization::MeasurementEquationJacobian_X_Object<
         Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
-    PythonOptimization::StateFunctionHessian_XX_Object<
+    PythonOptimization::StateEquationHessian_XX_Object<
         State_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xx_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionHessian_XU_Object<
+    PythonOptimization::StateEquationHessian_XU_Object<
         State_Hessian_XU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_xu_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_xu::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionHessian_UX_Object<
+    PythonOptimization::StateEquationHessian_UX_Object<
         State_Hessian_UX_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_ux_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_ux::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionHessian_UU_Object<
+    PythonOptimization::StateEquationHessian_UU_Object<
         State_Hessian_UU_Matrix_Type, X_Type, U_Type, Parameter_Type> state_hessian_uu_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_f_uu::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunctionHessian_XX_Object<
+    PythonOptimization::MeasurementEquationHessian_XX_Object<
         Measurement_Hessian_XX_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_hessian_xx_function =
         sqp_2_mass_spring_damper_demo_sqp_hessian_h_xx::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
@@ -668,8 +668,8 @@ void test_sqp_active_set_pcg_pls() {
             Qx, R, Qy, u_min, u_max, y_min, y_max);
 
     cost_matrices.set_function_objects(
-        state_function,
-        measurement_function,
+        state_equation,
+        measurement_equation,
         state_jacobian_x_function,
         state_jacobian_u_function,
         measurement_jacobian_x_function,
@@ -792,19 +792,19 @@ void test_OptimizationEngine_CostMatrices() {
     using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
     using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
 
-    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
-        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
-        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+    PythonOptimization::StateEquation_Object<X_Type, U_Type, Parameter_Type> state_equation =
+        sqp_2_mass_spring_damper_demo_sqp_state_equation::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementEquation_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_equation =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_equation::Function<
         T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
 
-    PythonOptimization::StateFunctionJacobian_X_Object<
+    PythonOptimization::StateEquationJacobian_X_Object<
         State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionJacobian_U_Object<
+    PythonOptimization::StateEquationJacobian_U_Object<
         State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+    PythonOptimization::MeasurementEquationJacobian_X_Object<
         Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
@@ -870,8 +870,8 @@ void test_OptimizationEngine_CostMatrices() {
         "check u_min value.");
 
     cost_matrices.set_function_objects(
-        state_function,
-        measurement_function,
+        state_equation,
+        measurement_equation,
         state_jacobian_x_function,
         state_jacobian_u_function,
         measurement_jacobian_x_function
@@ -1001,19 +1001,19 @@ void test_alm_pm_optimizer() {
     using U_Type = StateSpaceInput_Type<T, INPUT_SIZE>;
     using Y_Type = StateSpaceOutput_Type<T, OUTPUT_SIZE>;
 
-    PythonOptimization::StateFunction_Object<X_Type, U_Type, Parameter_Type> state_function =
-        sqp_2_mass_spring_damper_demo_sqp_state_function::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_function =
-        sqp_2_mass_spring_damper_demo_sqp_measurement_function::Function<
+    PythonOptimization::StateEquation_Object<X_Type, U_Type, Parameter_Type> state_equation =
+        sqp_2_mass_spring_damper_demo_sqp_state_equation::Function<T, X_Type, U_Type, Parameter_Type>::function;
+    PythonOptimization::MeasurementEquation_Object<Y_Type, X_Type, U_Type, Parameter_Type> measurement_equation =
+        sqp_2_mass_spring_damper_demo_sqp_measurement_equation::Function<
         T, X_Type, U_Type, Parameter_Type, Y_Type>::function;
 
-    PythonOptimization::StateFunctionJacobian_X_Object<
+    PythonOptimization::StateEquationJacobian_X_Object<
         State_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::StateFunctionJacobian_U_Object<
+    PythonOptimization::StateEquationJacobian_U_Object<
         State_Jacobian_U_Matrix_Type, X_Type, U_Type, Parameter_Type> state_jacobian_u_function =
         sqp_2_mass_spring_damper_demo_sqp_state_jacobian_u::Function<T, X_Type, U_Type, Parameter_Type>::function;
-    PythonOptimization::MeasurementFunctionJacobian_X_Object<
+    PythonOptimization::MeasurementEquationJacobian_X_Object<
         Measurement_Jacobian_X_Matrix_Type, X_Type, U_Type, Parameter_Type> measurement_jacobian_x_function =
         sqp_2_mass_spring_damper_demo_sqp_measurement_jacobian_x::Function<T, X_Type, U_Type, Parameter_Type>::function;
 
@@ -1068,8 +1068,8 @@ void test_alm_pm_optimizer() {
             Qx, R, Qy, u_min, u_max, y_min, y_max);
 
     cost_matrices.set_function_objects(
-        state_function,
-        measurement_function,
+        state_equation,
+        measurement_equation,
         state_jacobian_x_function,
         state_jacobian_u_function,
         measurement_jacobian_x_function

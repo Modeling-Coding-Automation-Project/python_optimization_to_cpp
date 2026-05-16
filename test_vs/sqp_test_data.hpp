@@ -25,7 +25,7 @@ public:
 
 } // namespace sqp_2_mass_spring_damper_demo_parameter
 
-namespace sqp_2_mass_spring_damper_demo_sqp_state_function {
+namespace sqp_2_mass_spring_damper_demo_sqp_state_equation {
 
 using namespace PythonMath;
 
@@ -85,9 +85,9 @@ public:
 
 };
 
-} // namespace sqp_2_mass_spring_damper_demo_sqp_state_function
+} // namespace sqp_2_mass_spring_damper_demo_sqp_state_equation
 
-namespace sqp_2_mass_spring_damper_demo_sqp_measurement_function {
+namespace sqp_2_mass_spring_damper_demo_sqp_measurement_equation {
 
 using namespace PythonMath;
 
@@ -117,7 +117,7 @@ public:
 
 };
 
-} // namespace sqp_2_mass_spring_damper_demo_sqp_measurement_function
+} // namespace sqp_2_mass_spring_damper_demo_sqp_measurement_equation
 
 
 namespace sqp_2_mass_spring_damper_demo_sqp_state_jacobian_x {

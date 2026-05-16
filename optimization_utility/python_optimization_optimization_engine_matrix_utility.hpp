@@ -36,7 +36,7 @@ namespace PythonOptimization {
  *
  * This class encapsulates the cost matrices and related operations for
  * PANOC/ALM-based NMPC problems. It provides interfaces for setting up cost
- * weights, constraints, system and measurement functions, and their Jacobians.
+ * weights, constraints, system and measurement equations, and their Jacobians.
  * The class supports simulation of system trajectories, cost and gradient
  * computation (via adjoint method), and output constraint mapping with its
  * Jacobian transpose for ALM.
@@ -178,28 +178,28 @@ protected:
   using Y_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type_In>;
   using Y_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type_In>;
 
-  using StateFunction_Out_Type_ = X_Type;
-  using MeasurementFunction_Out_Type_ = Y_Type;
+  using StateEquation_Out_Type_ = X_Type;
+  using MeasurementEquation_Out_Type_ = Y_Type;
 
-  using StateFunctionJacobian_X_Out_Type_ = State_Jacobian_X_Matrix_Type_In;
-  using StateFunctionJacobian_U_Out_Type_ = State_Jacobian_U_Matrix_Type_In;
-  using MeasurementFunctionJacobian_X_Out_Type_ =
+  using StateEquationJacobian_X_Out_Type_ = State_Jacobian_X_Matrix_Type_In;
+  using StateEquationJacobian_U_Out_Type_ = State_Jacobian_U_Matrix_Type_In;
+  using MeasurementEquationJacobian_X_Out_Type_ =
       Measurement_Jacobian_X_Matrix_Type_In;
 
-  using StateFunction_Object_ =
-      StateFunction_Object<X_Type, U_Type, Parameter_Type_>;
-  using MeasurementFunction_Object_ =
-      MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type_>;
+  using StateEquation_Object_ =
+      StateEquation_Object<X_Type, U_Type, Parameter_Type_>;
+  using MeasurementEquation_Object_ =
+      MeasurementEquation_Object<Y_Type, X_Type, U_Type, Parameter_Type_>;
 
-  using StateFunctionJacobian_X_Object_ =
-      StateFunctionJacobian_X_Object<StateFunctionJacobian_X_Out_Type_, X_Type,
+  using StateEquationJacobian_X_Object_ =
+      StateEquationJacobian_X_Object<StateEquationJacobian_X_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using StateFunctionJacobian_U_Object_ =
-      StateFunctionJacobian_U_Object<StateFunctionJacobian_U_Out_Type_, X_Type,
+  using StateEquationJacobian_U_Object_ =
+      StateEquationJacobian_U_Object<StateEquationJacobian_U_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using MeasurementFunctionJacobian_X_Object_ =
-      MeasurementFunctionJacobian_X_Object<
-          MeasurementFunctionJacobian_X_Out_Type_, X_Type, U_Type,
+  using MeasurementEquationJacobian_X_Object_ =
+      MeasurementEquationJacobian_X_Object<
+          MeasurementEquationJacobian_X_Out_Type_, X_Type, U_Type,
           Parameter_Type_>;
 
   using Reference_Trajectory_Type_ = Y_Horizon_Type;
@@ -214,9 +214,9 @@ public:
   /* Constructor */
   OptimizationEngine_CostMatrices()
       : Y_offset_(), Qx_(), R_(), Qy_(), Px_(), Py_(), U_min_matrix_(),
-        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_function(),
-        _measurement_function(), _state_function_jacobian_x(),
-        _state_function_jacobian_u(), _measurement_function_jacobian_x() {}
+        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_equation(),
+        _measurement_equation(), _state_equation_jacobian_x(),
+        _state_equation_jacobian_u(), _measurement_equation_jacobian_x() {}
 
   OptimizationEngine_CostMatrices(const Qx_Type_ &Qx, const R_Type_ &R,
                                   const Qy_Type_ &Qy, const U_Min_Type &U_min,
@@ -224,9 +224,9 @@ public:
                                   const Y_Min_Type &Y_min,
                                   const Y_Max_Type &Y_max)
       : Y_offset_(), Qx_(Qx), R_(R), Qy_(Qy), Px_(Qx), Py_(Qy), U_min_matrix_(),
-        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_function(),
-        _measurement_function(), _state_function_jacobian_x(),
-        _state_function_jacobian_u(), _measurement_function_jacobian_x() {
+        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_equation(),
+        _measurement_equation(), _state_equation_jacobian_x(),
+        _state_equation_jacobian_u(), _measurement_equation_jacobian_x() {
 
     this->set_U_min(U_min);
     this->set_U_max(U_max);
@@ -243,12 +243,12 @@ public:
         Qy_(input.Qy_), Px_(input.Px_), Py_(input.Py_),
         U_min_matrix_(input.U_min_matrix_), U_max_matrix_(input.U_max_matrix_),
         Y_min_matrix_(input.Y_min_matrix_), Y_max_matrix_(input.Y_max_matrix_),
-        _state_function(input._state_function),
-        _measurement_function(input._measurement_function),
-        _state_function_jacobian_x(input._state_function_jacobian_x),
-        _state_function_jacobian_u(input._state_function_jacobian_u),
-        _measurement_function_jacobian_x(
-            input._measurement_function_jacobian_x) {}
+        _state_equation(input._state_equation),
+        _measurement_equation(input._measurement_equation),
+        _state_equation_jacobian_x(input._state_equation_jacobian_x),
+        _state_equation_jacobian_u(input._state_equation_jacobian_u),
+        _measurement_equation_jacobian_x(
+            input._measurement_equation_jacobian_x) {}
 
   OptimizationEngine_CostMatrices &
   operator=(const OptimizationEngine_CostMatrices &input) {
@@ -269,13 +269,13 @@ public:
       this->Y_min_matrix_ = input.Y_min_matrix_;
       this->Y_max_matrix_ = input.Y_max_matrix_;
 
-      this->_state_function = input._state_function;
-      this->_measurement_function = input._measurement_function;
+      this->_state_equation = input._state_equation;
+      this->_measurement_equation = input._measurement_equation;
 
-      this->_state_function_jacobian_x = input._state_function_jacobian_x;
-      this->_state_function_jacobian_u = input._state_function_jacobian_u;
-      this->_measurement_function_jacobian_x =
-          input._measurement_function_jacobian_x;
+      this->_state_equation_jacobian_x = input._state_equation_jacobian_x;
+      this->_state_equation_jacobian_u = input._state_equation_jacobian_u;
+      this->_measurement_equation_jacobian_x =
+          input._measurement_equation_jacobian_x;
     }
     return *this;
   }
@@ -293,12 +293,12 @@ public:
         U_max_matrix_(std::move(input.U_max_matrix_)),
         Y_min_matrix_(std::move(input.Y_min_matrix_)),
         Y_max_matrix_(std::move(input.Y_max_matrix_)),
-        _state_function(std::move(input._state_function)),
-        _measurement_function(std::move(input._measurement_function)),
-        _state_function_jacobian_x(std::move(input._state_function_jacobian_x)),
-        _state_function_jacobian_u(std::move(input._state_function_jacobian_u)),
-        _measurement_function_jacobian_x(
-            std::move(input._measurement_function_jacobian_x)) {}
+        _state_equation(std::move(input._state_equation)),
+        _measurement_equation(std::move(input._measurement_equation)),
+        _state_equation_jacobian_x(std::move(input._state_equation_jacobian_x)),
+        _state_equation_jacobian_u(std::move(input._state_equation_jacobian_u)),
+        _measurement_equation_jacobian_x(
+            std::move(input._measurement_equation_jacobian_x)) {}
 
   OptimizationEngine_CostMatrices &
   operator=(OptimizationEngine_CostMatrices &&input) noexcept {
@@ -319,15 +319,15 @@ public:
       this->Y_min_matrix_ = std::move(input.Y_min_matrix_);
       this->Y_max_matrix_ = std::move(input.Y_max_matrix_);
 
-      this->_state_function = std::move(input._state_function);
-      this->_measurement_function = std::move(input._measurement_function);
+      this->_state_equation = std::move(input._state_equation);
+      this->_measurement_equation = std::move(input._measurement_equation);
 
-      this->_state_function_jacobian_x =
-          std::move(input._state_function_jacobian_x);
-      this->_state_function_jacobian_u =
-          std::move(input._state_function_jacobian_u);
-      this->_measurement_function_jacobian_x =
-          std::move(input._measurement_function_jacobian_x);
+      this->_state_equation_jacobian_x =
+          std::move(input._state_equation_jacobian_x);
+      this->_state_equation_jacobian_u =
+          std::move(input._state_equation_jacobian_u);
+      this->_measurement_equation_jacobian_x =
+          std::move(input._measurement_equation_jacobian_x);
     }
     return *this;
   }
@@ -337,34 +337,34 @@ public:
   /**
    * @brief Sets the function objects required for optimization computations.
    *
-   * This method assigns the provided state and measurement function objects,
+   * This method assigns the provided state and measurement equation objects,
    * along with their respective Jacobians, to the internal members of the
    * class. These function objects are used in PANOC/ALM optimization routines.
    * No Hessian function objects are needed.
    *
-   * @param state_function The state transition function object.
-   * @param measurement_function The measurement function object.
-   * @param state_function_jacobian_x Jacobian of the state function with
+   * @param state_equation The state transition function object.
+   * @param measurement_equation The measurement equation object.
+   * @param state_equation_jacobian_x Jacobian of the state equation with
    * respect to state variables.
-   * @param state_function_jacobian_u Jacobian of the state function with
+   * @param state_equation_jacobian_u Jacobian of the state equation with
    * respect to control variables.
-   * @param measurement_function_jacobian_x Jacobian of the measurement function
+   * @param measurement_equation_jacobian_x Jacobian of the measurement equation
    * with respect to state variables.
    */
   inline void set_function_objects(
-      const StateFunction_Object_ &state_function,
-      const MeasurementFunction_Object_ &measurement_function,
-      const StateFunctionJacobian_X_Object_ &state_function_jacobian_x,
-      const StateFunctionJacobian_U_Object_ &state_function_jacobian_u,
-      const MeasurementFunctionJacobian_X_Object_
-          &measurement_function_jacobian_x) {
+      const StateEquation_Object_ &state_equation,
+      const MeasurementEquation_Object_ &measurement_equation,
+      const StateEquationJacobian_X_Object_ &state_equation_jacobian_x,
+      const StateEquationJacobian_U_Object_ &state_equation_jacobian_u,
+      const MeasurementEquationJacobian_X_Object_
+          &measurement_equation_jacobian_x) {
 
-    this->_state_function = state_function;
-    this->_measurement_function = measurement_function;
+    this->_state_equation = state_equation;
+    this->_measurement_equation = measurement_equation;
 
-    this->_state_function_jacobian_x = state_function_jacobian_x;
-    this->_state_function_jacobian_u = state_function_jacobian_u;
-    this->_measurement_function_jacobian_x = measurement_function_jacobian_x;
+    this->_state_equation_jacobian_x = state_equation_jacobian_x;
+    this->_state_equation_jacobian_u = state_equation_jacobian_u;
+    this->_measurement_equation_jacobian_x = measurement_equation_jacobian_x;
   }
 
   inline void set_U_min(const U_Min_Type_ &U_min) {
@@ -427,93 +427,93 @@ public:
   /* Function */
 
   /**
-   * @brief Calculates the state function using the provided inputs.
+   * @brief Calculates the state equation using the provided inputs.
    *
-   * This function evaluates the internal state function with the given state
+   * This function evaluates the internal state equation with the given state
    * vector `X`, control vector `U`, and parameter set `parameter`, returning
    * the computed next state.
    *
    * @param X The current state vector.
    * @param U The control input vector.
-   * @param parameter The set of parameters required for the state function.
-   * @return StateFunction_Out_Type_ The result of the state function
+   * @param parameter The set of parameters required for the state equation.
+   * @return StateEquation_Out_Type_ The result of the state equation
    * evaluation.
    */
-  inline auto calculate_state_function(const X_Type &X, const U_Type &U,
+  inline auto calculate_state_equation(const X_Type &X, const U_Type &U,
                                        const Parameter_Type_ &parameter)
-      -> StateFunction_Out_Type_ {
+      -> StateEquation_Out_Type_ {
 
-    return this->_state_function(X, U, parameter);
+    return this->_state_equation(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the measurement function using the provided state, input,
+   * @brief Calculates the measurement equation using the provided state, input,
    * and parameters.
    *
-   * This function invokes the internal measurement function with the given
+   * This function invokes the internal measurement equation with the given
    * arguments to compute the output of the measurement model.
    *
    * @param X The current state vector.
    * @param U The current input/control vector.
-   * @param parameter The parameter set required for the measurement function.
-   * @return The output of the measurement function.
+   * @param parameter The parameter set required for the measurement equation.
+   * @return The output of the measurement equation.
    */
-  inline auto calculate_measurement_function(const X_Type &X, const U_Type &U,
+  inline auto calculate_measurement_equation(const X_Type &X, const U_Type &U,
                                              const Parameter_Type_ &parameter)
-      -> MeasurementFunction_Out_Type_ {
+      -> MeasurementEquation_Out_Type_ {
 
-    return this->_measurement_function(X, U, parameter);
+    return this->_measurement_equation(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the Jacobian of the state function with respect to the
+   * @brief Calculates the Jacobian of the state equation with respect to the
    * state vector X.
    *
    * @param X The current state vector.
    * @param U The current control input vector.
    * @param parameter The system parameters required for the computation.
-   * @return The Jacobian matrix of the state function with respect to X.
+   * @return The Jacobian matrix of the state equation with respect to X.
    */
   inline auto calculate_state_jacobian_x(const X_Type &X, const U_Type &U,
                                          const Parameter_Type_ &parameter)
-      -> StateFunctionJacobian_X_Out_Type_ {
+      -> StateEquationJacobian_X_Out_Type_ {
 
-    return this->_state_function_jacobian_x(X, U, parameter);
+    return this->_state_equation_jacobian_x(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the Jacobian of the state function with respect to the
+   * @brief Calculates the Jacobian of the state equation with respect to the
    * control input U.
    *
    * @param X The current state vector.
    * @param U The current control input vector.
    * @param parameter The system parameters required for the Jacobian
    * calculation.
-   * @return The Jacobian matrix of the state function with respect to the
+   * @return The Jacobian matrix of the state equation with respect to the
    * control input.
    */
   inline auto calculate_state_jacobian_u(const X_Type &X, const U_Type &U,
                                          const Parameter_Type_ &parameter)
-      -> StateFunctionJacobian_U_Out_Type_ {
+      -> StateEquationJacobian_U_Out_Type_ {
 
-    return this->_state_function_jacobian_u(X, U, parameter);
+    return this->_state_equation_jacobian_u(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the Jacobian of the measurement function with respect to
+   * @brief Calculates the Jacobian of the measurement equation with respect to
    * the state vector X.
    *
    * @param X The current state vector.
    * @param U The current input/control vector.
    * @param parameter The model parameters required for the Jacobian
    * calculation.
-   * @return The Jacobian matrix of the measurement function with respect to X.
+   * @return The Jacobian matrix of the measurement equation with respect to X.
    */
   inline auto calculate_measurement_jacobian_x(const X_Type &X, const U_Type &U,
                                                const Parameter_Type_ &parameter)
-      -> MeasurementFunctionJacobian_X_Out_Type_ {
+      -> MeasurementEquationJacobian_X_Out_Type_ {
 
-    return this->_measurement_function_jacobian_x(X, U, parameter);
+    return this->_measurement_equation_jacobian_x(X, U, parameter);
   }
 
   /**
@@ -523,7 +523,7 @@ public:
    * This function computes the evolution of the system state starting from an
    * initial state (`X_initial_in`) and applying a sequence of control inputs
    * (`U_horizon`) over a fixed number of steps (`NP`). At each step, the state
-   * is updated using the `calculate_state_function`, which models the system
+   * is updated using the `calculate_state_equation`, which models the system
    * dynamics. The resulting trajectory of states is stored in `X_horizon`.
    *
    * @param X_initial_in The initial state vector.
@@ -546,7 +546,7 @@ public:
 
     for (std::size_t k = 0; k < NP; k++) {
       auto U = MatrixOperation::get_row(U_horizon, k);
-      X = this->calculate_state_function(X, U, parameter);
+      X = this->calculate_state_equation(X, U, parameter);
 
       MatrixOperation::set_row(X_horizon, X, k + 1);
     }
@@ -582,7 +582,7 @@ public:
     U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k = this->calculate_measurement_function(
+      auto Y_k = this->calculate_measurement_equation(
           MatrixOperation::get_row(X_horizon, k), U_dummy,
           this->state_space_parameters);
 
@@ -643,7 +643,7 @@ public:
     U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k = this->calculate_measurement_function(
+      auto Y_k = this->calculate_measurement_equation(
           MatrixOperation::get_row(X_horizon, k), U_dummy,
           this->state_space_parameters);
 
@@ -729,7 +729,7 @@ public:
     U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k = this->calculate_measurement_function(
+      auto Y_k = this->calculate_measurement_equation(
           MatrixOperation::get_row(X_horizon, k), U_dummy,
           this->state_space_parameters);
 
@@ -819,12 +819,12 @@ protected:
   Y_Min_Matrix_Type_ Y_min_matrix_;
   Y_Max_Matrix_Type_ Y_max_matrix_;
 
-  StateFunction_Object_ _state_function;
-  MeasurementFunction_Object_ _measurement_function;
+  StateEquation_Object_ _state_equation;
+  MeasurementEquation_Object_ _measurement_equation;
 
-  StateFunctionJacobian_X_Object_ _state_function_jacobian_x;
-  StateFunctionJacobian_U_Object_ _state_function_jacobian_u;
-  MeasurementFunctionJacobian_X_Object_ _measurement_function_jacobian_x;
+  StateEquationJacobian_X_Object_ _state_equation_jacobian_x;
+  StateEquationJacobian_U_Object_ _state_equation_jacobian_u;
+  MeasurementEquationJacobian_X_Object_ _measurement_equation_jacobian_x;
 };
 
 /* make OptimizationEngine_CostMatrices */

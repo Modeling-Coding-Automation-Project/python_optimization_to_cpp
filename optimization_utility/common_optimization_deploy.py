@@ -336,9 +336,9 @@ def create_and_write_parameter_class_code(
     return saved_file_name
 
 
-def create_and_write_state_function_code(function_name: str):
+def create_and_write_state_equation_code(function_name: str):
     """
-    Generates and writes C++ header code for a state function based on extracted Python functions.
+    Generates and writes C++ header code for a state equation based on extracted Python functions.
 
     This function locates a Python file corresponding to the given function name, extracts its functions,
     converts them to C++ code using a visitor pattern, and writes the resulting code to a C++ header file.
@@ -357,12 +357,12 @@ def create_and_write_state_function_code(function_name: str):
 
     extractor = FunctionExtractor(file_path)
     functions = extractor.extract()
-    state_function_code = []
+    state_equation_code = []
 
     for _, code in functions.items():
         converter = FunctionToCppVisitor("X_Type")
 
-        state_function_code.append(converter.convert(code))
+        state_equation_code.append(converter.convert(code))
 
     # generate code text
     code_text = ""
@@ -383,12 +383,12 @@ def create_and_write_state_function_code(function_name: str):
 
     # sympy_function
     code_text += f"static "
-    code_text += state_function_code[0]
+    code_text += state_equation_code[0]
     code_text += "\n"
 
     # function
     code_text += f"static "
-    code_text += state_function_code[1]
+    code_text += state_equation_code[1]
     code_text += "\n"
 
     code_text += "};\n\n"
@@ -403,17 +403,17 @@ def create_and_write_state_function_code(function_name: str):
     return saved_file_name
 
 
-def create_and_write_measurement_function_code(function_name: str):
+def create_and_write_measurement_equation_code(function_name: str):
     """
-    Generates C++ header code for measurement functions based on Python source code and writes it to a file.
+    Generates C++ header code for measurement equations based on Python source code and writes it to a file.
 
     This function locates the Python file corresponding to the given function name, extracts its functions,
     converts them to C++ code using a visitor pattern, and generates a C++ header file with appropriate
     macros, includes, namespace, and class structure. The generated header file contains static methods
-    for the measurement functions and is saved to disk.
+    for the measurement equations and is saved to disk.
 
     Args:
-        function_name (str): The name of the measurement function (used to locate the Python file and
+        function_name (str): The name of the measurement equation (used to locate the Python file and
                              as the namespace and header file name).
 
     Returns:
@@ -424,12 +424,12 @@ def create_and_write_measurement_function_code(function_name: str):
 
     extractor = FunctionExtractor(file_path)
     functions = extractor.extract()
-    state_function_code = []
+    state_equation_code = []
 
     for _, code in functions.items():
         converter = FunctionToCppVisitor("Y_Type")
 
-        state_function_code.append(converter.convert(code))
+        state_equation_code.append(converter.convert(code))
 
     # generate code text
     code_text = ""
@@ -451,12 +451,12 @@ def create_and_write_measurement_function_code(function_name: str):
 
     # sympy_function
     code_text += f"static "
-    code_text += state_function_code[0]
+    code_text += state_equation_code[0]
     code_text += "\n"
 
     # function
     code_text += f"static "
-    code_text += state_function_code[1]
+    code_text += state_equation_code[1]
     code_text += "\n"
 
     code_text += "};\n\n"
@@ -499,13 +499,13 @@ def create_and_write_state_measurement_jacobian_code(
 
     extractor = FunctionExtractor(file_path)
     functions = extractor.extract()
-    state_function_code = []
+    state_equation_code = []
     SparseAvailable_list = []
 
     for _, code in functions.items():
         converter = FunctionToCppVisitor(output_type)
 
-        state_function_code.append(converter.convert(code))
+        state_equation_code.append(converter.convert(code))
         SparseAvailable_list.append(converter.SparseAvailable)
 
     SparseAvailable_list = [
@@ -535,12 +535,12 @@ def create_and_write_state_measurement_jacobian_code(
 
     # sympy_function
     code_text += f"static "
-    code_text += state_function_code[0]
+    code_text += state_equation_code[0]
     code_text += "\n"
 
     # function
     code_text += f"static "
-    code_text += state_function_code[1]
+    code_text += state_equation_code[1]
     code_text += "\n"
 
     code_text += "};\n\n"

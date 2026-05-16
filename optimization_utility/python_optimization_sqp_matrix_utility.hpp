@@ -34,7 +34,7 @@ static constexpr double Y_MIN_MAX_RHO_FACTOR_DEFAULT = 1.0e2;
  *
  * This class encapsulates the cost matrices and related operations for
  * SQP-based NMPC problems. It provides interfaces for setting up cost weights,
- * constraints, system and measurement functions, and their derivatives
+ * constraints, system and measurement equations, and their derivatives
  * (Jacobian and Hessian). The class supports simulation of system trajectories,
  * cost and gradient computation, and analytic Hessian-vector product (HVP)
  * calculations.
@@ -255,52 +255,52 @@ protected:
   using Y_Min_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_Min_Type_In>;
   using Y_Max_Matrix_Type_ = PythonNumpy::Tile_Type<1, (NP + 1), Y_Max_Type_In>;
 
-  using StateFunction_Out_Type_ = X_Type;
-  using MeasurementFunction_Out_Type_ = Y_Type;
+  using StateEquation_Out_Type_ = X_Type;
+  using MeasurementEquation_Out_Type_ = Y_Type;
 
-  using StateFunctionJacobian_X_Out_Type_ = State_Jacobian_X_Matrix_Type_In;
-  using StateFunctionJacobian_U_Out_Type_ = State_Jacobian_U_Matrix_Type_In;
-  using MeasurementFunctionJacobian_X_Out_Type_ =
+  using StateEquationJacobian_X_Out_Type_ = State_Jacobian_X_Matrix_Type_In;
+  using StateEquationJacobian_U_Out_Type_ = State_Jacobian_U_Matrix_Type_In;
+  using MeasurementEquationJacobian_X_Out_Type_ =
       Measurement_Jacobian_X_Matrix_Type_In;
 
-  using StateFunctionHessian_XX_Out_Type_ = State_Hessian_XX_Matrix_Type_In;
-  using StateFunctionHessian_XU_Out_Type_ = State_Hessian_XU_Matrix_Type_In;
-  using StateFunctionHessian_UX_Out_Type_ = State_Hessian_UX_Matrix_Type_In;
-  using StateFunctionHessian_UU_Out_Type_ = State_Hessian_UU_Matrix_Type_In;
-  using MeasurementFunctionHessian_XX_Out_Type_ =
+  using StateEquationHessian_XX_Out_Type_ = State_Hessian_XX_Matrix_Type_In;
+  using StateEquationHessian_XU_Out_Type_ = State_Hessian_XU_Matrix_Type_In;
+  using StateEquationHessian_UX_Out_Type_ = State_Hessian_UX_Matrix_Type_In;
+  using StateEquationHessian_UU_Out_Type_ = State_Hessian_UU_Matrix_Type_In;
+  using MeasurementEquationHessian_XX_Out_Type_ =
       Measurement_Hessian_XX_Matrix_Type_In;
 
-  using StateFunction_Object_ =
-      StateFunction_Object<X_Type, U_Type, Parameter_Type_>;
-  using MeasurementFunction_Object_ =
-      MeasurementFunction_Object<Y_Type, X_Type, U_Type, Parameter_Type_>;
+  using StateEquation_Object_ =
+      StateEquation_Object<X_Type, U_Type, Parameter_Type_>;
+  using MeasurementEquation_Object_ =
+      MeasurementEquation_Object<Y_Type, X_Type, U_Type, Parameter_Type_>;
 
-  using StateFunctionJacobian_X_Object_ =
-      StateFunctionJacobian_X_Object<StateFunctionJacobian_X_Out_Type_, X_Type,
+  using StateEquationJacobian_X_Object_ =
+      StateEquationJacobian_X_Object<StateEquationJacobian_X_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using StateFunctionJacobian_U_Object_ =
-      StateFunctionJacobian_U_Object<StateFunctionJacobian_U_Out_Type_, X_Type,
+  using StateEquationJacobian_U_Object_ =
+      StateEquationJacobian_U_Object<StateEquationJacobian_U_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using MeasurementFunctionJacobian_X_Object_ =
-      MeasurementFunctionJacobian_X_Object<
-          MeasurementFunctionJacobian_X_Out_Type_, X_Type, U_Type,
+  using MeasurementEquationJacobian_X_Object_ =
+      MeasurementEquationJacobian_X_Object<
+          MeasurementEquationJacobian_X_Out_Type_, X_Type, U_Type,
           Parameter_Type_>;
 
-  using StateFunctionHessian_XX_Object_ =
-      StateFunctionHessian_XX_Object<StateFunctionHessian_XX_Out_Type_, X_Type,
+  using StateEquationHessian_XX_Object_ =
+      StateEquationHessian_XX_Object<StateEquationHessian_XX_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using StateFunctionHessian_XU_Object_ =
-      StateFunctionHessian_XU_Object<StateFunctionHessian_XU_Out_Type_, X_Type,
+  using StateEquationHessian_XU_Object_ =
+      StateEquationHessian_XU_Object<StateEquationHessian_XU_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using StateFunctionHessian_UX_Object_ =
-      StateFunctionHessian_UX_Object<StateFunctionHessian_UX_Out_Type_, X_Type,
+  using StateEquationHessian_UX_Object_ =
+      StateEquationHessian_UX_Object<StateEquationHessian_UX_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using StateFunctionHessian_UU_Object_ =
-      StateFunctionHessian_UU_Object<StateFunctionHessian_UU_Out_Type_, X_Type,
+  using StateEquationHessian_UU_Object_ =
+      StateEquationHessian_UU_Object<StateEquationHessian_UU_Out_Type_, X_Type,
                                      U_Type, Parameter_Type_>;
-  using MeasurementFunctionHessian_XX_Object_ =
-      MeasurementFunctionHessian_XX_Object<
-          MeasurementFunctionHessian_XX_Out_Type_, X_Type, U_Type,
+  using MeasurementEquationHessian_XX_Object_ =
+      MeasurementEquationHessian_XX_Object<
+          MeasurementEquationHessian_XX_Out_Type_, X_Type, U_Type,
           Parameter_Type_>;
 
   using Reference_Trajectory_Type_ = Y_Horizon_Type;
@@ -314,11 +314,11 @@ public:
   SQP_CostMatrices_NMPC()
       : Y_min_max_rho_(), Y_offset_(), Qx_(), R_(), Qy_(), Px_(), Py_(),
         U_min_matrix_(), U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(),
-        _state_function(), _measurement_function(),
-        _state_function_jacobian_x(), _state_function_jacobian_u(),
-        _measurement_function_jacobian_x(), _state_function_hessian_xx(),
-        _state_function_hessian_xu(), _state_function_hessian_ux(),
-        _state_function_hessian_uu(), _measurement_function_hessian_xx() {}
+        _state_equation(), _measurement_equation(),
+        _state_equation_jacobian_x(), _state_equation_jacobian_u(),
+        _measurement_equation_jacobian_x(), _state_equation_hessian_xx(),
+        _state_equation_hessian_xu(), _state_equation_hessian_ux(),
+        _state_equation_hessian_uu(), _measurement_equation_hessian_xx() {}
 
   SQP_CostMatrices_NMPC(const Qx_Type_ &Qx, const R_Type_ &R,
                         const Qy_Type_ &Qy, const U_Min_Type &U_min,
@@ -326,12 +326,12 @@ public:
                         const Y_Max_Type &Y_max)
       : Y_min_max_rho_(static_cast<T_>(Y_MIN_MAX_RHO_FACTOR_DEFAULT)),
         Y_offset_(), Qx_(Qx), R_(R), Qy_(Qy), Px_(Qx), Py_(Qy), U_min_matrix_(),
-        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_function(),
-        _measurement_function(), _state_function_jacobian_x(),
-        _state_function_jacobian_u(), _measurement_function_jacobian_x(),
-        _state_function_hessian_xx(), _state_function_hessian_xu(),
-        _state_function_hessian_ux(), _state_function_hessian_uu(),
-        _measurement_function_hessian_xx() {
+        U_max_matrix_(), Y_min_matrix_(), Y_max_matrix_(), _state_equation(),
+        _measurement_equation(), _state_equation_jacobian_x(),
+        _state_equation_jacobian_u(), _measurement_equation_jacobian_x(),
+        _state_equation_hessian_xx(), _state_equation_hessian_xu(),
+        _state_equation_hessian_ux(), _state_equation_hessian_uu(),
+        _measurement_equation_hessian_xx() {
 
     this->set_U_min(U_min);
     this->set_U_max(U_max);
@@ -348,18 +348,18 @@ public:
         Py_(input.Py_), U_min_matrix_(input.U_min_matrix_),
         U_max_matrix_(input.U_max_matrix_), Y_min_matrix_(input.Y_min_matrix_),
         Y_max_matrix_(input.Y_max_matrix_),
-        _state_function(input._state_function),
-        _measurement_function(input._measurement_function),
-        _state_function_jacobian_x(input._state_function_jacobian_x),
-        _state_function_jacobian_u(input._state_function_jacobian_u),
-        _measurement_function_jacobian_x(
-            input._measurement_function_jacobian_x),
-        _state_function_hessian_xx(input._state_function_hessian_xx),
-        _state_function_hessian_xu(input._state_function_hessian_xu),
-        _state_function_hessian_ux(input._state_function_hessian_ux),
-        _state_function_hessian_uu(input._state_function_hessian_uu),
-        _measurement_function_hessian_xx(
-            input._measurement_function_hessian_xx) {}
+        _state_equation(input._state_equation),
+        _measurement_equation(input._measurement_equation),
+        _state_equation_jacobian_x(input._state_equation_jacobian_x),
+        _state_equation_jacobian_u(input._state_equation_jacobian_u),
+        _measurement_equation_jacobian_x(
+            input._measurement_equation_jacobian_x),
+        _state_equation_hessian_xx(input._state_equation_hessian_xx),
+        _state_equation_hessian_xu(input._state_equation_hessian_xu),
+        _state_equation_hessian_ux(input._state_equation_hessian_ux),
+        _state_equation_hessian_uu(input._state_equation_hessian_uu),
+        _measurement_equation_hessian_xx(
+            input._measurement_equation_hessian_xx) {}
 
   SQP_CostMatrices_NMPC &operator=(const SQP_CostMatrices_NMPC &input) {
     if (this != &input) {
@@ -379,20 +379,20 @@ public:
       this->Y_min_matrix_ = input.Y_min_matrix_;
       this->Y_max_matrix_ = input.Y_max_matrix_;
 
-      this->_state_function = input._state_function;
-      this->_measurement_function = input._measurement_function;
+      this->_state_equation = input._state_equation;
+      this->_measurement_equation = input._measurement_equation;
 
-      this->_state_function_jacobian_x = input._state_function_jacobian_x;
-      this->_state_function_jacobian_u = input._state_function_jacobian_u;
-      this->_measurement_function_jacobian_x =
-          input._measurement_function_jacobian_x;
+      this->_state_equation_jacobian_x = input._state_equation_jacobian_x;
+      this->_state_equation_jacobian_u = input._state_equation_jacobian_u;
+      this->_measurement_equation_jacobian_x =
+          input._measurement_equation_jacobian_x;
 
-      this->_state_function_hessian_xx = input._state_function_hessian_xx;
-      this->_state_function_hessian_xu = input._state_function_hessian_xu;
-      this->_state_function_hessian_ux = input._state_function_hessian_ux;
-      this->_state_function_hessian_uu = input._state_function_hessian_uu;
-      this->_measurement_function_hessian_xx =
-          input._measurement_function_hessian_xx;
+      this->_state_equation_hessian_xx = input._state_equation_hessian_xx;
+      this->_state_equation_hessian_xu = input._state_equation_hessian_xu;
+      this->_state_equation_hessian_ux = input._state_equation_hessian_ux;
+      this->_state_equation_hessian_uu = input._state_equation_hessian_uu;
+      this->_measurement_equation_hessian_xx =
+          input._measurement_equation_hessian_xx;
     }
     return *this;
   }
@@ -409,18 +409,18 @@ public:
         U_max_matrix_(std::move(input.U_max_matrix_)),
         Y_min_matrix_(std::move(input.Y_min_matrix_)),
         Y_max_matrix_(std::move(input.Y_max_matrix_)),
-        _state_function(std::move(input._state_function)),
-        _measurement_function(std::move(input._measurement_function)),
-        _state_function_jacobian_x(std::move(input._state_function_jacobian_x)),
-        _state_function_jacobian_u(std::move(input._state_function_jacobian_u)),
-        _measurement_function_jacobian_x(
-            std::move(input._measurement_function_jacobian_x)),
-        _state_function_hessian_xx(std::move(input._state_function_hessian_xx)),
-        _state_function_hessian_xu(std::move(input._state_function_hessian_xu)),
-        _state_function_hessian_ux(std::move(input._state_function_hessian_ux)),
-        _state_function_hessian_uu(std::move(input._state_function_hessian_uu)),
-        _measurement_function_hessian_xx(
-            std::move(input._measurement_function_hessian_xx)) {}
+        _state_equation(std::move(input._state_equation)),
+        _measurement_equation(std::move(input._measurement_equation)),
+        _state_equation_jacobian_x(std::move(input._state_equation_jacobian_x)),
+        _state_equation_jacobian_u(std::move(input._state_equation_jacobian_u)),
+        _measurement_equation_jacobian_x(
+            std::move(input._measurement_equation_jacobian_x)),
+        _state_equation_hessian_xx(std::move(input._state_equation_hessian_xx)),
+        _state_equation_hessian_xu(std::move(input._state_equation_hessian_xu)),
+        _state_equation_hessian_ux(std::move(input._state_equation_hessian_ux)),
+        _state_equation_hessian_uu(std::move(input._state_equation_hessian_uu)),
+        _measurement_equation_hessian_xx(
+            std::move(input._measurement_equation_hessian_xx)) {}
 
   SQP_CostMatrices_NMPC &operator=(SQP_CostMatrices_NMPC &&input) noexcept {
     if (this != &input) {
@@ -440,26 +440,26 @@ public:
       this->Y_min_matrix_ = std::move(input.Y_min_matrix_);
       this->Y_max_matrix_ = std::move(input.Y_max_matrix_);
 
-      this->_state_function = std::move(input._state_function);
-      this->_measurement_function = std::move(input._measurement_function);
+      this->_state_equation = std::move(input._state_equation);
+      this->_measurement_equation = std::move(input._measurement_equation);
 
-      this->_state_function_jacobian_x =
-          std::move(input._state_function_jacobian_x);
-      this->_state_function_jacobian_u =
-          std::move(input._state_function_jacobian_u);
-      this->_measurement_function_jacobian_x =
-          std::move(input._measurement_function_jacobian_x);
+      this->_state_equation_jacobian_x =
+          std::move(input._state_equation_jacobian_x);
+      this->_state_equation_jacobian_u =
+          std::move(input._state_equation_jacobian_u);
+      this->_measurement_equation_jacobian_x =
+          std::move(input._measurement_equation_jacobian_x);
 
-      this->_state_function_hessian_xx =
-          std::move(input._state_function_hessian_xx);
-      this->_state_function_hessian_xu =
-          std::move(input._state_function_hessian_xu);
-      this->_state_function_hessian_ux =
-          std::move(input._state_function_hessian_ux);
-      this->_state_function_hessian_uu =
-          std::move(input._state_function_hessian_uu);
-      this->_measurement_function_hessian_xx =
-          std::move(input._measurement_function_hessian_xx);
+      this->_state_equation_hessian_xx =
+          std::move(input._state_equation_hessian_xx);
+      this->_state_equation_hessian_xu =
+          std::move(input._state_equation_hessian_xu);
+      this->_state_equation_hessian_ux =
+          std::move(input._state_equation_hessian_ux);
+      this->_state_equation_hessian_uu =
+          std::move(input._state_equation_hessian_uu);
+      this->_measurement_equation_hessian_xx =
+          std::move(input._measurement_equation_hessian_xx);
     }
     return *this;
   }
@@ -469,56 +469,56 @@ public:
   /**
    * @brief Sets the function objects required for optimization computations.
    *
-   * This method assigns the provided state and measurement function objects,
+   * This method assigns the provided state and measurement equation objects,
    * along with their respective Jacobians and Hessians, to the internal members
    * of the class. These function objects are used in various optimization
    * routines, such as SQP (Sequential Quadratic Programming).
    *
-   * @param state_function The state transition function object.
-   * @param measurement_function The measurement function object.
-   * @param state_function_jacobian_x Jacobian of the state function with
+   * @param state_equation The state transition function object.
+   * @param measurement_equation The measurement equation object.
+   * @param state_equation_jacobian_x Jacobian of the state equation with
    * respect to state variables.
-   * @param state_function_jacobian_u Jacobian of the state function with
+   * @param state_equation_jacobian_u Jacobian of the state equation with
    * respect to control variables.
-   * @param measurement_function_jacobian_x Jacobian of the measurement function
+   * @param measurement_equation_jacobian_x Jacobian of the measurement equation
    * with respect to state variables.
-   * @param state_function_hessian_xx Hessian of the state function with respect
+   * @param state_equation_hessian_xx Hessian of the state equation with respect
    * to state variables (XX).
-   * @param state_function_hessian_xu Hessian of the state function with respect
+   * @param state_equation_hessian_xu Hessian of the state equation with respect
    * to state and control variables (XU).
-   * @param state_function_hessian_ux Hessian of the state function with respect
+   * @param state_equation_hessian_ux Hessian of the state equation with respect
    * to control and state variables (UX).
-   * @param state_function_hessian_uu Hessian of the state function with respect
+   * @param state_equation_hessian_uu Hessian of the state equation with respect
    * to control variables (UU).
-   * @param measurement_function_hessian_xx Hessian of the measurement function
+   * @param measurement_equation_hessian_xx Hessian of the measurement equation
    * with respect to state variables (XX).
    */
   inline void set_function_objects(
-      const StateFunction_Object_ &state_function,
-      const MeasurementFunction_Object_ &measurement_function,
-      const StateFunctionJacobian_X_Object_ &state_function_jacobian_x,
-      const StateFunctionJacobian_U_Object_ &state_function_jacobian_u,
-      const MeasurementFunctionJacobian_X_Object_
-          &measurement_function_jacobian_x,
-      const StateFunctionHessian_XX_Object_ &state_function_hessian_xx,
-      const StateFunctionHessian_XU_Object_ &state_function_hessian_xu,
-      const StateFunctionHessian_UX_Object_ &state_function_hessian_ux,
-      const StateFunctionHessian_UU_Object_ &state_function_hessian_uu,
-      const MeasurementFunctionHessian_XX_Object_
-          &measurement_function_hessian_xx) {
+      const StateEquation_Object_ &state_equation,
+      const MeasurementEquation_Object_ &measurement_equation,
+      const StateEquationJacobian_X_Object_ &state_equation_jacobian_x,
+      const StateEquationJacobian_U_Object_ &state_equation_jacobian_u,
+      const MeasurementEquationJacobian_X_Object_
+          &measurement_equation_jacobian_x,
+      const StateEquationHessian_XX_Object_ &state_equation_hessian_xx,
+      const StateEquationHessian_XU_Object_ &state_equation_hessian_xu,
+      const StateEquationHessian_UX_Object_ &state_equation_hessian_ux,
+      const StateEquationHessian_UU_Object_ &state_equation_hessian_uu,
+      const MeasurementEquationHessian_XX_Object_
+          &measurement_equation_hessian_xx) {
 
-    this->_state_function = state_function;
-    this->_measurement_function = measurement_function;
+    this->_state_equation = state_equation;
+    this->_measurement_equation = measurement_equation;
 
-    this->_state_function_jacobian_x = state_function_jacobian_x;
-    this->_state_function_jacobian_u = state_function_jacobian_u;
-    this->_measurement_function_jacobian_x = measurement_function_jacobian_x;
+    this->_state_equation_jacobian_x = state_equation_jacobian_x;
+    this->_state_equation_jacobian_u = state_equation_jacobian_u;
+    this->_measurement_equation_jacobian_x = measurement_equation_jacobian_x;
 
-    this->_state_function_hessian_xx = state_function_hessian_xx;
-    this->_state_function_hessian_xu = state_function_hessian_xu;
-    this->_state_function_hessian_ux = state_function_hessian_ux;
-    this->_state_function_hessian_uu = state_function_hessian_uu;
-    this->_measurement_function_hessian_xx = measurement_function_hessian_xx;
+    this->_state_equation_hessian_xx = state_equation_hessian_xx;
+    this->_state_equation_hessian_xu = state_equation_hessian_xu;
+    this->_state_equation_hessian_ux = state_equation_hessian_ux;
+    this->_state_equation_hessian_uu = state_equation_hessian_uu;
+    this->_measurement_equation_hessian_xx = measurement_equation_hessian_xx;
   }
 
   inline void set_U_min(const U_Min_Type_ &U_min) {
@@ -679,69 +679,69 @@ public:
   }
 
   /**
-   * @brief Calculates the state function using the provided inputs.
+   * @brief Calculates the state equation using the provided inputs.
    *
-   * This function evaluates the internal state function with the given state
+   * This function evaluates the internal state equation with the given state
    * vector `X`, control vector `U`, and parameter set `parameter`, returning
    * the computed state.
    *
    * @param X The current state vector.
    * @param U The control input vector.
-   * @param parameter The set of parameters required for the state function.
-   * @return StateFunction_Out_Type_ The result of the state function
+   * @param parameter The set of parameters required for the state equation.
+   * @return StateEquation_Out_Type_ The result of the state equation
    * evaluation.
    */
-  inline auto calculate_state_function(const X_Type &X, const U_Type &U,
+  inline auto calculate_state_equation(const X_Type &X, const U_Type &U,
                                        const Parameter_Type_ &parameter)
-      -> StateFunction_Out_Type_ {
+      -> StateEquation_Out_Type_ {
 
-    return this->_state_function(X, U, parameter);
+    return this->_state_equation(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the measurement function using the provided state, input,
+   * @brief Calculates the measurement equation using the provided state, input,
    * and parameters.
    *
-   * This function invokes the internal measurement function with the given
+   * This function invokes the internal measurement equation with the given
    * arguments to compute the output of the measurement model.
    *
    * @param X The current state vector.
    * @param U The current input/control vector.
-   * @param parameter The parameter set required for the measurement function.
-   * @return The output of the measurement function.
+   * @param parameter The parameter set required for the measurement equation.
+   * @return The output of the measurement equation.
    */
-  inline auto calculate_measurement_function(const X_Type &X, const U_Type &U,
+  inline auto calculate_measurement_equation(const X_Type &X, const U_Type &U,
                                              const Parameter_Type_ &parameter)
-      -> MeasurementFunction_Out_Type_ {
+      -> MeasurementEquation_Out_Type_ {
 
-    return this->_measurement_function(X, U, parameter);
+    return this->_measurement_equation(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the Jacobian of the state function with respect to the
+   * @brief Calculates the Jacobian of the state equation with respect to the
    * state vector X.
    *
-   * This function computes the partial derivatives of the state function with
+   * This function computes the partial derivatives of the state equation with
    * respect to the state variables, given the current state vector X, control
    * input vector U, and system parameters.
    *
    * @param X The current state vector.
    * @param U The current control input vector.
    * @param parameter The system parameters required for the computation.
-   * @return The Jacobian matrix of the state function with respect to X.
+   * @return The Jacobian matrix of the state equation with respect to X.
    */
   inline auto calculate_state_jacobian_x(const X_Type &X, const U_Type &U,
                                          const Parameter_Type_ &parameter)
-      -> StateFunctionJacobian_X_Out_Type_ {
+      -> StateEquationJacobian_X_Out_Type_ {
 
-    return this->_state_function_jacobian_x(X, U, parameter);
+    return this->_state_equation_jacobian_x(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the Jacobian of the state function with respect to the
+   * @brief Calculates the Jacobian of the state equation with respect to the
    * control input.
    *
-   * This function computes the partial derivatives of the state function with
+   * This function computes the partial derivatives of the state equation with
    * respect to the control input `U`, given the current state `X`, control
    * input `U`, and system parameters `parameter`.
    *
@@ -749,46 +749,46 @@ public:
    * @param U The current control input vector.
    * @param parameter The system parameters required for the Jacobian
    * calculation.
-   * @return The Jacobian matrix of the state function with respect to the
+   * @return The Jacobian matrix of the state equation with respect to the
    * control input.
    */
   inline auto calculate_state_jacobian_u(const X_Type &X, const U_Type &U,
                                          const Parameter_Type_ &parameter)
-      -> StateFunctionJacobian_U_Out_Type_ {
+      -> StateEquationJacobian_U_Out_Type_ {
 
-    return this->_state_function_jacobian_u(X, U, parameter);
+    return this->_state_equation_jacobian_u(X, U, parameter);
   }
 
   /**
-   * @brief Calculates the Jacobian of the measurement function with respect to
+   * @brief Calculates the Jacobian of the measurement equation with respect to
    * the state vector X.
    *
-   * This function computes the partial derivatives of the measurement function
+   * This function computes the partial derivatives of the measurement equation
    * with respect to the state variables, given the current state X, input U,
    * and model parameters. It delegates the actual computation to the
-   * _measurement_function_jacobian_x member function.
+   * _measurement_equation_jacobian_x member function.
    *
    * @param X The current state vector.
    * @param U The current input/control vector.
    * @param parameter The model parameters required for the Jacobian
    * calculation.
-   * @return The Jacobian matrix of the measurement function with respect to X.
+   * @return The Jacobian matrix of the measurement equation with respect to X.
    */
   inline auto calculate_measurement_jacobian_x(const X_Type &X, const U_Type &U,
                                                const Parameter_Type_ &parameter)
-      -> MeasurementFunctionJacobian_X_Out_Type_ {
+      -> MeasurementEquationJacobian_X_Out_Type_ {
 
-    return this->_measurement_function_jacobian_x(X, U, parameter);
+    return this->_measurement_equation_jacobian_x(X, U, parameter);
   }
 
   /**
-   * @brief Contracts the Hessian of the state function with the given direction
+   * @brief Contracts the Hessian of the state equation with the given direction
    * and lambda vector.
    *
-   * This function computes the contraction of the Hessian of the state function
+   * This function computes the contraction of the Hessian of the state equation
    * with respect to the state variables (X), using the provided direction
    * vector (dX) and the lambda vector (lam_next). The contraction is performed
-   * by first obtaining the Hessian matrix via `_state_function_hessian_xx`, and
+   * by first obtaining the Hessian matrix via `_state_equation_hessian_xx`, and
    * then applying the contraction operation using
    * `MatrixOperation::compute_fxx_lambda_contract`.
    *
@@ -796,7 +796,7 @@ public:
    * with STATE_SIZE rows.
    * @param X Current state vector.
    * @param U Current control vector.
-   * @param parameter Additional parameters required for the state function.
+   * @param parameter Additional parameters required for the state equation.
    * @param lam_next Lambda vector for the next time step (row vector of size
    * STATE_SIZE).
    * @param dX Direction vector for contraction.
@@ -815,7 +815,7 @@ public:
     static_assert(Lambda_Vector_Type::COLS == 1,
                   "Lambda_Vector_Type::COLS != 1");
 
-    auto Hf_xx = this->_state_function_hessian_xx(X, U, parameter);
+    auto Hf_xx = this->_state_equation_hessian_xx(X, U, parameter);
 
     X_Type out;
 
@@ -825,10 +825,10 @@ public:
   }
 
   /**
-   * @brief Contracts the Hessian of the state function with the input direction
+   * @brief Contracts the Hessian of the state equation with the input direction
    * and lambda vector.
    *
-   * This function computes the contraction of the Hessian of the state function
+   * This function computes the contraction of the Hessian of the state equation
    * with respect to state and input variables (`Hf_xu`), the input direction
    * (`dU`), and the lambda vector (`lam_next`). The result is stored in an
    * output state vector and returned.
@@ -856,7 +856,7 @@ public:
     static_assert(Lambda_Vector_Type::COLS == 1,
                   "Lambda_Vector_Type::COLS != 1");
 
-    auto Hf_xu = this->_state_function_hessian_xu(X, U, parameter);
+    auto Hf_xu = this->_state_equation_hessian_xu(X, U, parameter);
 
     X_Type out;
 
@@ -866,10 +866,10 @@ public:
   }
 
   /**
-   * @brief Contracts the Hessian of the state function with the provided
+   * @brief Contracts the Hessian of the state equation with the provided
    * direction and lambda vector.
    *
-   * This function computes the contraction of the Hessian of the state function
+   * This function computes the contraction of the Hessian of the state equation
    * with respect to state and control variables (`Hf_ux`), the direction vector
    * `dX`, and the next lambda vector `lam_next`. The result is stored in an
    * output variable of type `U_Type`.
@@ -900,7 +900,7 @@ public:
     static_assert(Lambda_Vector_Type::COLS == 1,
                   "Lambda_Vector_Type::COLS != 1");
 
-    auto Hf_ux = this->_state_function_hessian_ux(X, U, parameter);
+    auto Hf_ux = this->_state_equation_hessian_ux(X, U, parameter);
 
     U_Type out;
 
@@ -910,10 +910,10 @@ public:
   }
 
   /**
-   * @brief Contracts the Hessian of the state function with the input direction
+   * @brief Contracts the Hessian of the state equation with the input direction
    * and lambda vector.
    *
-   * This function computes the contraction of the Hessian of the state function
+   * This function computes the contraction of the Hessian of the state equation
    * with respect to the input variables (`U`) using the provided state (`X`),
    * input (`U`), parameters (`parameter`), next-step lambda vector
    * (`lam_next`), and input direction (`dU`). The contraction is performed by
@@ -924,7 +924,7 @@ public:
    * with `STATE_SIZE` rows.
    * @param X The current state vector.
    * @param U The current input vector.
-   * @param parameter The parameter set for the state function.
+   * @param parameter The parameter set for the state equation.
    * @param lam_next The lambda vector for the next time step (row vector of
    * size `STATE_SIZE`).
    * @param dU The direction vector for the input.
@@ -944,7 +944,7 @@ public:
     static_assert(Lambda_Vector_Type::COLS == 1,
                   "Lambda_Vector_Type::COLS != 1");
 
-    auto Hf_uu = this->_state_function_hessian_uu(X, U, parameter);
+    auto Hf_uu = this->_state_equation_hessian_uu(X, U, parameter);
 
     U_Type out;
 
@@ -954,7 +954,7 @@ public:
   }
 
   /**
-   * @brief Contracts the Hessian of the measurement function with a direction
+   * @brief Contracts the Hessian of the measurement equation with a direction
    * vector and a weight vector.
    *
    * This function computes the contraction of the Hessian of the measurement
@@ -983,7 +983,7 @@ public:
                   "Weight_Vector_Type::COLS != 1");
 
     U_Type U;
-    auto Hh_xx = this->_measurement_function_hessian_xx(X, U, parameter);
+    auto Hh_xx = this->_measurement_equation_hessian_xx(X, U, parameter);
 
     X_Type out;
 
@@ -999,7 +999,7 @@ public:
    * This function computes the evolution of the system state starting from an
    * initial state (`X_initial`) and applying a sequence of control inputs
    * (`U_horizon`) over a fixed number of steps (`NP`). At each step, the state
-   * is updated using the `calculate_state_function`, which models the system
+   * is updated using the `calculate_state_equation`, which models the system
    * dynamics. The resulting trajectory of states is stored in `X_horizon`.
    *
    * @param X_initial The initial state vector.
@@ -1022,7 +1022,7 @@ public:
 
     for (std::size_t k = 0; k < NP; k++) {
       auto U = MatrixOperation::get_row(U_horizon, k);
-      X = this->calculate_state_function(X, U, parameter);
+      X = this->calculate_state_equation(X, U, parameter);
 
       MatrixOperation::set_row(X_horizon, X, k + 1);
     }
@@ -1106,7 +1106,7 @@ public:
     U_Type U_dummy;
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k = this->calculate_measurement_function(
+      auto Y_k = this->calculate_measurement_equation(
           MatrixOperation::get_row(X_horizon, k), U_dummy,
           this->state_space_parameters);
 
@@ -1198,7 +1198,7 @@ public:
         Y_horizon, this->Y_offset_);
 
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k = this->calculate_measurement_function(
+      auto Y_k = this->calculate_measurement_equation(
           MatrixOperation::get_row(X_horizon, k), U_dummy,
           this->state_space_parameters);
 
@@ -1338,14 +1338,14 @@ public:
 
     Y_Horizon_Type Y_horizon;
     for (std::size_t k = 0; k < (NP + 1); k++) {
-      auto Y_k = this->calculate_measurement_function(
+      auto Y_k = this->calculate_measurement_equation(
           MatrixOperation::get_row(X_horizon, k), U_dummy,
           this->state_space_parameters);
 
       MatrixOperation::set_row(Y_horizon, Y_k, k);
     }
 
-    auto yN = this->calculate_measurement_function(
+    auto yN = this->calculate_measurement_equation(
         MatrixOperation::get_row(X_horizon, NP), U_dummy,
         this->state_space_parameters);
 
@@ -1589,18 +1589,18 @@ protected:
   Y_Min_Matrix_Type_ Y_min_matrix_;
   Y_Max_Matrix_Type_ Y_max_matrix_;
 
-  StateFunction_Object_ _state_function;
-  MeasurementFunction_Object_ _measurement_function;
+  StateEquation_Object_ _state_equation;
+  MeasurementEquation_Object_ _measurement_equation;
 
-  StateFunctionJacobian_X_Object_ _state_function_jacobian_x;
-  StateFunctionJacobian_U_Object_ _state_function_jacobian_u;
-  MeasurementFunctionJacobian_X_Object_ _measurement_function_jacobian_x;
+  StateEquationJacobian_X_Object_ _state_equation_jacobian_x;
+  StateEquationJacobian_U_Object_ _state_equation_jacobian_u;
+  MeasurementEquationJacobian_X_Object_ _measurement_equation_jacobian_x;
 
-  StateFunctionHessian_XX_Object_ _state_function_hessian_xx;
-  StateFunctionHessian_XU_Object_ _state_function_hessian_xu;
-  StateFunctionHessian_UX_Object_ _state_function_hessian_ux;
-  StateFunctionHessian_UU_Object_ _state_function_hessian_uu;
-  MeasurementFunctionHessian_XX_Object_ _measurement_function_hessian_xx;
+  StateEquationHessian_XX_Object_ _state_equation_hessian_xx;
+  StateEquationHessian_XU_Object_ _state_equation_hessian_xu;
+  StateEquationHessian_UX_Object_ _state_equation_hessian_ux;
+  StateEquationHessian_UU_Object_ _state_equation_hessian_uu;
+  MeasurementEquationHessian_XX_Object_ _measurement_equation_hessian_xx;
 };
 
 /* make SQP_CostMatrices_NMPC */
