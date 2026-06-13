@@ -42,7 +42,7 @@ int main(void) {
   /* Output Result */
   std::cout << "Optimal Solution:" << std::endl;
   for (std::size_t i = 0; i < NUMBER_OF_VARIABLES; ++i) {
-    std::cout << "x[" << i << "] = " << x_opt(i, 0) << std::endl;
+    std::cout << "x[" << i << "] = " << x_opt(i) << std::endl;
   }
 
   return 0;
