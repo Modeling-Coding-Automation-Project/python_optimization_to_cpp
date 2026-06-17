@@ -44,7 +44,8 @@ struct Column {
                              const Matrix_In_Type &in_matrix,
                              const std::size_t &row_index) {
 
-    out_matrix.access(I_idx, row_index) = in_matrix.template get<I_idx, 0>();
+    out_matrix.unsafe_access(I_idx, row_index) =
+        in_matrix.template get<I_idx, 0>();
 
     Column<Matrix_Out_Type, Matrix_In_Type, I_idx - 1>::compute(
         out_matrix, in_matrix, row_index);
@@ -61,7 +62,7 @@ struct Column<Matrix_Out_Type, Matrix_In_Type, 0> {
                              const Matrix_In_Type &in_matrix,
                              const std::size_t &row_index) {
 
-    out_matrix.access(0, row_index) = in_matrix.template get<0, 0>();
+    out_matrix.unsafe_access(0, row_index) = in_matrix.template get<0, 0>();
   }
 };
 
@@ -122,10 +123,10 @@ struct Row {
   static inline void compute(const Matrix_In_Type &in_matrix,
                              const std::size_t &row_index, Out_Type &out) {
 
-    out.template set<I_idx, 0>(in_matrix.access(I_idx, row_index));
+    out.template set<I_idx, 0>(in_matrix.unsafe_access(I_idx, row_index));
 
     Row<Matrix_In_Type, Out_Type, I_idx - 1>::compute(in_matrix, row_index,
-                                                         out);
+                                                      out);
   }
 };
 
@@ -138,7 +139,7 @@ struct Row<Matrix_In_Type, Out_Type, 0> {
   static inline void compute(const Matrix_In_Type &in_matrix,
                              const std::size_t &row_index, Out_Type &out) {
 
-    out.template set<0, 0>(in_matrix.access(0, row_index));
+    out.template set<0, 0>(in_matrix.unsafe_access(0, row_index));
   }
 };
 
@@ -151,8 +152,8 @@ inline void compute(const Matrix_In_Type &in_matrix,
   static_assert(Out_Type::ROWS == Matrix_In_Type::ROWS,
                 "Output ROWS must equal input ROWS");
 
-  Row<Matrix_In_Type, Out_Type, (Out_Type::ROWS - 1)>::compute(
-      in_matrix, row_index, out);
+  Row<Matrix_In_Type, Out_Type, (Out_Type::ROWS - 1)>::compute(in_matrix,
+                                                               row_index, out);
 }
 
 } // namespace GetRow
@@ -486,8 +487,8 @@ struct Row {
         compute(Y_horizon, Y_max_matrix, Y_limit_penalty);
 
     Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, I,
-           (J_idx - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
-                                 Y_limit_penalty);
+        (J_idx - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
+                              Y_limit_penalty);
   }
 };
 
@@ -521,8 +522,8 @@ struct Row {
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N, std::size_t I>
-struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
-              I, 0> {
+struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, I,
+           0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
@@ -575,12 +576,12 @@ struct Column {
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Type &Y_limit_penalty) {
-    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
-           I_idx, (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
-                                    Y_limit_penalty);
+    Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, I_idx,
+        (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
+                          Y_limit_penalty);
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
-        (I_idx - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
-                              Y_limit_penalty);
+           (I_idx - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
+                                 Y_limit_penalty);
   }
 };
 
@@ -590,9 +591,9 @@ struct Column {
  * @brief Specialization of the Row struct for the base case when I_idx is 0.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first column (I_idx == 0) of the input matrices.
- * It serves as the termination case for the recursive processing of cols in the
- * optimization utility.
+ * column-wise processing for the first column (I_idx == 0) of the input
+ * matrices. It serves as the termination case for the recursive processing of
+ * cols in the optimization utility.
  *
  * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
@@ -613,14 +614,14 @@ template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Type, std::size_t M,
           std::size_t N>
 struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N,
-           0> {
+              0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Type &Y_limit_penalty) {
     Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Type, M, N, 0,
-           (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
-                             Y_limit_penalty);
+        (N - 1)>::compute(Y_horizon, Y_min_matrix, Y_max_matrix,
+                          Y_limit_penalty);
   }
 };
 
@@ -662,10 +663,11 @@ inline void calculate_Y_limit_penalty(const Y_Mat_Type &Y_horizon,
   constexpr std::size_t N = Out_Type::COLS;
   static_assert(M > 0 && N > 0, "Matrix dimensions must be positive");
 
-  CalculateY_LimitPenalty::Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
-                               Out_Type, M, N,
-                               (M - 1)>::compute(Y_horizon, Y_min_matrix,
-                                                 Y_max_matrix, Y_limit_penalty);
+  CalculateY_LimitPenalty::Column<Y_Mat_Type, Y_Min_Matrix_Type,
+                                  Y_Max_Matrix_Type, Out_Type, M, N,
+                                  (M - 1)>::compute(Y_horizon, Y_min_matrix,
+                                                    Y_max_matrix,
+                                                    Y_limit_penalty);
 }
 
 /* calculate Y_limit penalty and active */
@@ -962,10 +964,10 @@ struct Row {
         compute(Y_horizon, Y_max_matrix, Y_limit_penalty, Y_limit_active);
 
     Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
-           Active_Type, M, N, I, (J_idx - 1)>::compute(Y_horizon, Y_min_matrix,
-                                                       Y_max_matrix,
-                                                       Y_limit_penalty,
-                                                       Y_limit_active);
+        Active_Type, M, N, I, (J_idx - 1)>::compute(Y_horizon, Y_min_matrix,
+                                                    Y_max_matrix,
+                                                    Y_limit_penalty,
+                                                    Y_limit_active);
   }
 };
 
@@ -1004,8 +1006,8 @@ struct Row {
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N, std::size_t I>
-struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
-              Out_Penalty_Type, Active_Type, M, N, I, 0> {
+struct Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
+           Active_Type, M, N, I, 0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
@@ -1066,14 +1068,15 @@ struct Column {
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
     Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
-           Active_Type, M, N, I_idx, (N - 1)>::compute(Y_horizon, Y_min_matrix,
-                                                       Y_max_matrix,
-                                                       Y_limit_penalty,
-                                                       Y_limit_active);
+        Active_Type, M, N, I_idx, (N - 1)>::compute(Y_horizon, Y_min_matrix,
+                                                    Y_max_matrix,
+                                                    Y_limit_penalty,
+                                                    Y_limit_active);
     Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
-        Active_Type, M, N, (I_idx - 1)>::compute(Y_horizon, Y_min_matrix,
-                                                 Y_max_matrix, Y_limit_penalty,
-                                                 Y_limit_active);
+           Active_Type, M, N, (I_idx - 1)>::compute(Y_horizon, Y_min_matrix,
+                                                    Y_max_matrix,
+                                                    Y_limit_penalty,
+                                                    Y_limit_active);
   }
 };
 
@@ -1084,9 +1087,9 @@ struct Column {
  * updating both penalty and active set.
  *
  * This struct template provides a static compute function that initiates the
- * column-wise processing for the first column (I_idx == 0) of the input matrices,
- * updating both penalty and active set. It serves as the termination case for
- * the recursive processing of cols in the optimization utility.
+ * column-wise processing for the first column (I_idx == 0) of the input
+ * matrices, updating both penalty and active set. It serves as the termination
+ * case for the recursive processing of cols in the optimization utility.
  *
  * @tparam Y_Mat_Type         Type of the main matrix (Y_horizon).
  * @tparam Y_Min_Matrix_Type  Type of the minimum constraint matrix.
@@ -1097,8 +1100,8 @@ struct Column {
  * @tparam N                  Number of columns in the matrices.
  *
  * The compute() static method:
- *   - Invokes Column processing for the first column (I_idx == 0), updating both
- *   penalty and active set.
+ *   - Invokes Column processing for the first column (I_idx == 0), updating
+ * both penalty and active set.
  *
  * @param Y_horizon           The main input matrix.
  * @param Y_min_matrix        The matrix containing minimum constraints.
@@ -1110,18 +1113,17 @@ struct Column {
 template <typename Y_Mat_Type, typename Y_Min_Matrix_Type,
           typename Y_Max_Matrix_Type, typename Out_Penalty_Type,
           typename Active_Type, std::size_t M, std::size_t N>
-struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
-           Active_Type, M, N, 0> {
+struct Column<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type,
+              Out_Penalty_Type, Active_Type, M, N, 0> {
   static void compute(const Y_Mat_Type &Y_horizon,
                       const Y_Min_Matrix_Type &Y_min_matrix,
                       const Y_Max_Matrix_Type &Y_max_matrix,
                       Out_Penalty_Type &Y_limit_penalty,
                       Active_Type &Y_limit_active) {
     Row<Y_Mat_Type, Y_Min_Matrix_Type, Y_Max_Matrix_Type, Out_Penalty_Type,
-           Active_Type, M, N, 0, (N - 1)>::compute(Y_horizon, Y_min_matrix,
-                                                   Y_max_matrix,
-                                                   Y_limit_penalty,
-                                                   Y_limit_active);
+        Active_Type, M, N, 0, (N - 1)>::compute(Y_horizon, Y_min_matrix,
+                                                Y_max_matrix, Y_limit_penalty,
+                                                Y_limit_active);
   }
 };
 
@@ -1304,7 +1306,7 @@ struct Row {
     out.template set<J_idx, 0>(updated);
 
     Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
-           (J_idx - 1)>::compute(Hf_xx, dX, lam_next, out);
+        (J_idx - 1)>::compute(Hf_xx, dX, lam_next, out);
   }
 };
 
@@ -1341,8 +1343,8 @@ struct Row {
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I>
-struct Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-              I, 0> {
+struct Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
+           0> {
   static void compute(const Fxx_Type &Hf_xx, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -1393,9 +1395,9 @@ struct Column {
   static void compute(const Fxx_Type &Hf_xx, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           I_idx, (STATE_SIZE - 1)>::compute(Hf_xx, dX, lam_next, out);
+        I_idx, (STATE_SIZE - 1)>::compute(Hf_xx, dX, lam_next, out);
     Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-        (I_idx - 1)>::compute(Hf_xx, dX, lam_next, out);
+           (I_idx - 1)>::compute(Hf_xx, dX, lam_next, out);
   }
 };
 
@@ -1429,11 +1431,11 @@ struct Column {
 template <typename Fxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
 struct Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           0> {
+              0> {
   static void compute(const Fxx_Type &Hf_xx, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     Row<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
-           (STATE_SIZE - 1)>::compute(Hf_xx, dX, lam_next, out);
+        (STATE_SIZE - 1)>::compute(Hf_xx, dX, lam_next, out);
   }
 };
 
@@ -1491,9 +1493,10 @@ compute_fxx_lambda_contract(const Fxx_Type &Hf_xx, const dX_Type &dX,
                 "Hf_xx ROWS must equal OUTPUT_SIZE * STATE_SIZE");
   static_assert(Out_Type::ROWS == STATE_SIZE, "out ROWS must equal STATE_SIZE");
 
-  FxxLambdaContract::Column<Fxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
-                         STATE_SIZE, (OUTPUT_SIZE - 1)>::compute(Hf_xx, dX,
-                                                                 lam_next, out);
+  FxxLambdaContract::Column<Fxx_Type, dX_Type, Weight_Type, Out_Type,
+                            OUTPUT_SIZE, STATE_SIZE,
+                            (OUTPUT_SIZE - 1)>::compute(Hf_xx, dX, lam_next,
+                                                        out);
 }
 
 /* fx xu lambda contract */
@@ -1631,7 +1634,7 @@ struct Row {
     out.template set<J_idx, 0>(updated);
 
     Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           INPUT_SIZE, I, (J_idx - 1)>::compute(Hf_xu, dU, lam_next, out);
+        INPUT_SIZE, I, (J_idx - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
 
@@ -1670,7 +1673,7 @@ template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE, std::size_t I>
 struct Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-              INPUT_SIZE, I, 0> {
+           INPUT_SIZE, I, 0> {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
 
@@ -1723,10 +1726,9 @@ struct Column {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
     Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           INPUT_SIZE, I_idx, (STATE_SIZE - 1)>::compute(Hf_xu, dU, lam_next,
-                                                         out);
+        INPUT_SIZE, I_idx, (STATE_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
     Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-        INPUT_SIZE, (I_idx - 1)>::compute(Hf_xu, dU, lam_next, out);
+           INPUT_SIZE, (I_idx - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
 
@@ -1762,11 +1764,11 @@ template <typename Fxu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t INPUT_SIZE>
 struct Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           INPUT_SIZE, 0> {
+              INPUT_SIZE, 0> {
   static void compute(const Fxu_Type &Hf_xu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
     Row<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           INPUT_SIZE, 0, (STATE_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
+        INPUT_SIZE, 0, (STATE_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
 
@@ -1842,7 +1844,7 @@ struct Conditional<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
                       const Weight_Type &lam_next, Out_Type &out) {
 
     Column<Fxu_Type, dU_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-        INPUT_SIZE, (OUTPUT_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
+           INPUT_SIZE, (OUTPUT_SIZE - 1)>::compute(Hf_xu, dU, lam_next, out);
   }
 };
 
@@ -2081,7 +2083,7 @@ struct Row {
     out.template set<K_idx, 0>(updated);
 
     Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
-           (K_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
+        (K_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
   }
 };
 
@@ -2118,8 +2120,8 @@ struct Row {
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I>
-struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-              I, 0> {
+struct Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
+           0> {
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -2170,9 +2172,9 @@ struct Column {
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-           I_idx, (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
+        I_idx, (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
     Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-        (I_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
+           (I_idx - 1)>::compute(Hf_ux, dX, lam_next, out);
   }
 };
 
@@ -2206,11 +2208,11 @@ struct Column {
 template <typename Fuxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
 struct Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-           0> {
+              0> {
   static void compute(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                       const Weight_Type &lam_next, Out_Type &out) {
     Row<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
-           (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
+        (INPUT_SIZE - 1)>::compute(Hf_ux, dX, lam_next, out);
   }
 };
 
@@ -2266,9 +2268,10 @@ compute_fu_xx_lambda_contract(const Fuxx_Type &Hf_ux, const dX_Type &dX,
                 "lam_next ROWS must equal STATE_SIZE");
   static_assert(Out_Type::ROWS == INPUT_SIZE, "out ROWS must equal INPUT_SIZE");
 
-  FuxxLambdaContract::Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type, STATE_SIZE,
-                          INPUT_SIZE, (STATE_SIZE - 1)>::compute(Hf_ux, dX,
-                                                                 lam_next, out);
+  FuxxLambdaContract::Column<Fuxx_Type, dX_Type, Weight_Type, Out_Type,
+                             STATE_SIZE, INPUT_SIZE,
+                             (STATE_SIZE - 1)>::compute(Hf_ux, dX, lam_next,
+                                                        out);
 }
 
 /* fu uu lambda contract */
@@ -2402,7 +2405,7 @@ struct Row {
     out.template set<J_idx, 0>(updated);
 
     Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
-           (J_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
+        (J_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
 
@@ -2439,8 +2442,8 @@ struct Row {
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE,
           std::size_t I>
-struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-              I, 0> {
+struct Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I,
+           0> {
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -2490,10 +2493,10 @@ template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
 struct Column {
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
-    Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-           I_idx, (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
+    Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, I_idx,
+        (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
     Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-        (I_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
+           (I_idx - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
 
@@ -2527,11 +2530,11 @@ struct Column {
 template <typename Fuu_Type, typename dU_Type, typename Weight_Type,
           typename Out_Type, std::size_t STATE_SIZE, std::size_t INPUT_SIZE>
 struct Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-           0> {
+              0> {
   static void compute(const Fuu_Type &Hf_uu, const dU_Type &dU,
                       const Weight_Type &lam_next, Out_Type &out) {
     Row<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE, 0,
-           (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
+        (INPUT_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
 
@@ -2601,7 +2604,7 @@ struct Conditional<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE,
                       const Weight_Type &lam_next, Out_Type &out) {
 
     Column<Fuu_Type, dU_Type, Weight_Type, Out_Type, STATE_SIZE, INPUT_SIZE,
-        (STATE_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
+           (STATE_SIZE - 1)>::compute(Hf_uu, dU, lam_next, out);
   }
 };
 
@@ -2836,7 +2839,7 @@ struct Row {
     out.template set<J_idx, 0>(updated);
 
     Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
-           (J_idx - 1)>::compute(Hh_xx, dX, weight, out);
+        (J_idx - 1)>::compute(Hh_xx, dX, weight, out);
   }
 };
 
@@ -2873,8 +2876,8 @@ struct Row {
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE,
           std::size_t I>
-struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-              I, 0> {
+struct Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, I,
+           0> {
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
     using Value = typename Out_Type::Value_Type;
@@ -2925,9 +2928,9 @@ struct Column {
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
     Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           I_idx, (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
+        I_idx, (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
     Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-        (I_idx - 1)>::compute(Hh_xx, dX, weight, out);
+           (I_idx - 1)>::compute(Hh_xx, dX, weight, out);
   }
 };
 
@@ -2961,11 +2964,11 @@ struct Column {
 template <typename Hxx_Type, typename dX_Type, typename Weight_Type,
           typename Out_Type, std::size_t OUTPUT_SIZE, std::size_t STATE_SIZE>
 struct Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE,
-           0> {
+              0> {
   static void compute(const Hxx_Type &Hh_xx, const dX_Type &dX,
                       const Weight_Type &weight, Out_Type &out) {
     Row<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE, STATE_SIZE, 0,
-           (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
+        (STATE_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
   }
 };
 
@@ -3022,9 +3025,9 @@ compute_hxx_lambda_contract(const Hxx_Type &Hh_xx, const dX_Type &dX,
                 "Hh_xx ROWS must equal OUTPUT_SIZE * STATE_SIZE");
   static_assert(Out_Type::ROWS == STATE_SIZE, "out ROWS must equal STATE_SIZE");
 
-  HxxLambdaContract::Column<Hxx_Type, dX_Type, Weight_Type, Out_Type, OUTPUT_SIZE,
-                         STATE_SIZE, (OUTPUT_SIZE - 1)>::compute(Hh_xx, dX,
-                                                                 weight, out);
+  HxxLambdaContract::Column<Hxx_Type, dX_Type, Weight_Type, Out_Type,
+                            OUTPUT_SIZE, STATE_SIZE,
+                            (OUTPUT_SIZE - 1)>::compute(Hh_xx, dX, weight, out);
 }
 
 /* free_mask at check */
@@ -3337,9 +3340,11 @@ struct Row {
         compute(U_horizon_in, U_max_matrix, atol, at_upper);
 
     Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
-           AtUpper_Type, Value_Type, M, N, I,
-           (J_idx - 1)>::compute(U_horizon_in, U_min_matrix, U_max_matrix, atol,
-                                 at_lower, at_upper);
+        AtUpper_Type, Value_Type, M, N, I, (J_idx - 1)>::compute(U_horizon_in,
+                                                                 U_min_matrix,
+                                                                 U_max_matrix,
+                                                                 atol, at_lower,
+                                                                 at_upper);
   }
 };
 
@@ -3386,7 +3391,7 @@ template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
           std::size_t N, std::size_t I>
 struct Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
-              AtUpper_Type, Value_Type, M, N, I, 0> {
+           AtUpper_Type, Value_Type, M, N, I, 0> {
   static inline void compute(const U_Mat_Type &U_horizon_in,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix,
@@ -3452,16 +3457,18 @@ struct Column {
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
     Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
-           AtUpper_Type, Value_Type, M, N, I_idx,
-           (N - 1)>::compute(U_horizon_in, U_min_matrix, U_max_matrix, atol,
-                             at_lower, at_upper);
+        AtUpper_Type, Value_Type, M, N, I_idx, (N - 1)>::compute(U_horizon_in,
+                                                                 U_min_matrix,
+                                                                 U_max_matrix,
+                                                                 atol, at_lower,
+                                                                 at_upper);
 
     Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
-        AtUpper_Type, Value_Type, M, N, (I_idx - 1)>::compute(U_horizon_in,
-                                                              U_min_matrix,
-                                                              U_max_matrix,
-                                                              atol, at_lower,
-                                                              at_upper);
+           AtUpper_Type, Value_Type, M, N, (I_idx - 1)>::compute(U_horizon_in,
+                                                                 U_min_matrix,
+                                                                 U_max_matrix,
+                                                                 atol, at_lower,
+                                                                 at_upper);
   }
 };
 
@@ -3506,18 +3513,18 @@ template <typename U_Mat_Type, typename U_Min_Matrix_Type,
           typename AtUpper_Type, typename Value_Type, std::size_t M,
           std::size_t N>
 struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
-           AtUpper_Type, Value_Type, M, N, 0> {
+              AtUpper_Type, Value_Type, M, N, 0> {
   static inline void compute(const U_Mat_Type &U_horizon_in,
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix,
                              const Value_Type &atol, AtLower_Type &at_lower,
                              AtUpper_Type &at_upper) {
     Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, AtLower_Type,
-           AtUpper_Type, Value_Type, M, N, 0, (N - 1)>::compute(U_horizon_in,
-                                                                U_min_matrix,
-                                                                U_max_matrix,
-                                                                atol, at_lower,
-                                                                at_upper);
+        AtUpper_Type, Value_Type, M, N, 0, (N - 1)>::compute(U_horizon_in,
+                                                             U_min_matrix,
+                                                             U_max_matrix, atol,
+                                                             at_lower,
+                                                             at_upper);
   }
 };
 
@@ -3588,10 +3595,10 @@ inline auto free_mask_at_check(const U_Mat_Type &U_horizon_in,
   AtUpper_Type at_upper;
 
   FreeMaskAtCheck::Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type,
-                       AtLower_Type, AtUpper_Type, Value_Type, M, N,
-                       (M - 1)>::compute(U_horizon_in, U_min_matrix,
-                                         U_max_matrix, atol, at_lower,
-                                         at_upper);
+                          AtLower_Type, AtUpper_Type, Value_Type, M, N,
+                          (M - 1)>::compute(U_horizon_in, U_min_matrix,
+                                            U_max_matrix, atol, at_lower,
+                                            at_upper);
 
   return std::make_tuple(std::move(at_lower), std::move(at_upper));
 }
@@ -3659,9 +3666,8 @@ struct Row {
     }
 
     Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
-           Value_Type, M, N, I, (J_idx - 1)>::compute(m, gradient, at_lower,
-                                                      at_upper, gtol,
-                                                      active_set);
+        Value_Type, M, N, I, (J_idx - 1)>::compute(m, gradient, at_lower,
+                                                   at_upper, gtol, active_set);
   }
 };
 
@@ -3704,8 +3710,8 @@ struct Row {
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N, std::size_t I>
-struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
-              ActiveSet_Type, Value_Type, M, N, I, 0> {
+struct Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
+           Value_Type, M, N, I, 0> {
   static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
                              const AtLower_Type &at_lower,
                              const AtUpper_Type &at_upper,
@@ -3771,13 +3777,12 @@ struct Column {
                              ActiveSet_Type &active_set) {
 
     Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
-           Value_Type, M, N, I_idx, (N - 1)>::compute(m, gradient, at_lower,
-                                                      at_upper, gtol,
-                                                      active_set);
+        Value_Type, M, N, I_idx, (N - 1)>::compute(m, gradient, at_lower,
+                                                   at_upper, gtol, active_set);
 
     Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
-        Value_Type, M, N, (I_idx - 1)>::compute(m, gradient, at_lower, at_upper,
-                                                gtol, active_set);
+           Value_Type, M, N, (I_idx - 1)>::compute(m, gradient, at_lower,
+                                                   at_upper, gtol, active_set);
   }
 };
 
@@ -3818,8 +3823,8 @@ struct Column {
 template <typename Mask_Type, typename Gradient_Type, typename AtLower_Type,
           typename AtUpper_Type, typename ActiveSet_Type, typename Value_Type,
           std::size_t M, std::size_t N>
-struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
-           Value_Type, M, N, 0> {
+struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
+              ActiveSet_Type, Value_Type, M, N, 0> {
   static inline void compute(Mask_Type &m, const Gradient_Type &gradient,
                              const AtLower_Type &at_lower,
                              const AtUpper_Type &at_upper,
@@ -3827,8 +3832,8 @@ struct Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Ty
                              ActiveSet_Type &active_set) {
 
     Row<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type, ActiveSet_Type,
-           Value_Type, M, N, 0, (N - 1)>::compute(m, gradient, at_lower,
-                                                  at_upper, gtol, active_set);
+        Value_Type, M, N, 0, (N - 1)>::compute(m, gradient, at_lower, at_upper,
+                                               gtol, active_set);
   }
 };
 
@@ -3880,10 +3885,10 @@ inline void free_mask_push_active(Mask_Type &m, const Gradient_Type &gradient,
   static_assert(AtUpper_Type::ROWS == M, "at_upper ROWS mismatch with mask m");
   static_assert(AtUpper_Type::COLS == N, "at_upper COLS mismatch with mask m");
 
-  FreeMaskPushActive::Column<Mask_Type, Gradient_Type, AtLower_Type, AtUpper_Type,
-                          ActiveSet_Type, Value_Type, M, N,
-                          (M - 1)>::compute(m, gradient, at_lower, at_upper,
-                                            gtol, active_set);
+  FreeMaskPushActive::Column<Mask_Type, Gradient_Type, AtLower_Type,
+                             AtUpper_Type, ActiveSet_Type, Value_Type, M, N,
+                             (M - 1)>::compute(m, gradient, at_lower, at_upper,
+                                               gtol, active_set);
 }
 
 /* solver calculate M_inv */
@@ -3935,9 +3940,8 @@ struct Row {
     const auto value = static_cast<Value_Type>(1) / denominator;
     M_inv.template set<I, J_idx>(value);
 
-    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I,
-           (J_idx - 1)>::compute(M_inv, diag_R_full_lambda_factor,
-                                 avoid_zero_limit);
+    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I, (J_idx - 1)>::compute(
+        M_inv, diag_R_full_lambda_factor, avoid_zero_limit);
   }
 };
 
@@ -4023,9 +4027,8 @@ struct Column {
   static inline void compute(Out_Mat_Type &M_inv,
                              const In_Mat_Type &diag_R_full_lambda_factor,
                              const Value_Type &avoid_zero_limit) {
-    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I_idx,
-           (N - 1)>::compute(M_inv, diag_R_full_lambda_factor,
-                             avoid_zero_limit);
+    Row<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, I_idx, (N - 1)>::compute(
+        M_inv, diag_R_full_lambda_factor, avoid_zero_limit);
 
     Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, (I_idx - 1)>::compute(
         M_inv, diag_R_full_lambda_factor, avoid_zero_limit);
@@ -4079,10 +4082,10 @@ struct Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N, 0> {
  * matrix diag_R_full_lambda_factor.
  *
  * This function computes the inverse of a matrix by leveraging a specialized
- * row-wise computation defined in SolverCalculateMInv::Column. It ensures that the
- * matrix dimensions are positive and that the input matrix dimensions match the
- * output matrix dimensions. The computation avoids division by zero by using
- * the provided avoid_zero_limit parameter.
+ * row-wise computation defined in SolverCalculateMInv::Column. It ensures that
+ * the matrix dimensions are positive and that the input matrix dimensions match
+ * the output matrix dimensions. The computation avoids division by zero by
+ * using the provided avoid_zero_limit parameter.
  *
  * @tparam Out_Mat_Type Type of the output matrix (M_inv).
  * @tparam In_Mat_Type Type of the input diagonal matrix
@@ -4109,8 +4112,9 @@ inline void solver_calculate_M_inv(Out_Mat_Type &M_inv,
                 "diag_R_full_lambda_factor COLS mismatch with M_inv");
 
   SolverCalculateMInv::Column<Out_Mat_Type, In_Mat_Type, Value_Type, M, N,
-                           (M - 1)>::compute(M_inv, diag_R_full_lambda_factor,
-                                             avoid_zero_limit);
+                              (M - 1)>::compute(M_inv,
+                                                diag_R_full_lambda_factor,
+                                                avoid_zero_limit);
 }
 
 /* saturate U_horizon */
@@ -4301,7 +4305,7 @@ struct Row {
                                                       U_max_matrix);
 
     Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I,
-           (J_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+        (J_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
   }
 };
 
@@ -4385,10 +4389,10 @@ struct Column {
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
     Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, I_idx,
-           (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+        (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
 
     Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
-        (I_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+           (I_idx - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
   }
 };
 
@@ -4425,7 +4429,7 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
                              const U_Min_Matrix_Type &U_min_matrix,
                              const U_Max_Matrix_Type &U_max_matrix) {
     Row<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0,
-           (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
+        (N - 1)>::compute(U_candidate, U_min_matrix, U_max_matrix);
   }
 };
 
@@ -4452,8 +4456,8 @@ struct Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N, 0> {
  * @param U_max_matrix  Matrix specifying the maximum allowable values for each
  * element.
  *
- * @note The function relies on the SaturateU_Horizon::Column helper for the actual
- * saturation logic.
+ * @note The function relies on the SaturateU_Horizon::Column helper for the
+ * actual saturation logic.
  * @note All matrices must have matching dimensions, enforced via static
  * assertions.
  */
@@ -4476,9 +4480,9 @@ inline void saturate_U_horizon(U_Mat_Type &U_candidate,
   static_assert(U_Max_Matrix_Type::COLS == N,
                 "U_max_matrix COLS mismatch with U_candidate");
 
-  SaturateU_Horizon::Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M, N,
-                         (M - 1)>::compute(U_candidate, U_min_matrix,
-                                           U_max_matrix);
+  SaturateU_Horizon::Column<U_Mat_Type, U_Min_Matrix_Type, U_Max_Matrix_Type, M,
+                            N, (M - 1)>::compute(U_candidate, U_min_matrix,
+                                                 U_max_matrix);
 }
 
 } // namespace MatrixOperation

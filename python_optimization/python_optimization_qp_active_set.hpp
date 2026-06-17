@@ -45,8 +45,10 @@ template <std::size_t M, std::size_t J> struct SetKKTColumn {
   static void set(KKT_Type &KKT, const ActiveSet_Type &active_set,
                   M_Type &M_matrix, const std::size_t &i) {
 
-    KKT.access(J, M + i) = M_matrix.access(active_set.get_active(i), J);
-    KKT.access(M + i, J) = M_matrix.access(active_set.get_active(i), J);
+    KKT.unsafe_access(J, M + i) =
+        M_matrix.unsafe_access(active_set.get_active(i), J);
+    KKT.unsafe_access(M + i, J) =
+        M_matrix.unsafe_access(active_set.get_active(i), J);
 
     SetKKTColumn<M, (J - 1)>::set(KKT, active_set, M_matrix, i);
   }
@@ -71,8 +73,10 @@ template <std::size_t M> struct SetKKTColumn<M, 0> {
   static void set(KKT_Type &KKT, const ActiveSet_Type &active_set,
                   M_Type &M_matrix, const std::size_t &i) {
 
-    KKT.access(0, M + i) = M_matrix.access(active_set.get_active(i), 0);
-    KKT.access(M + i, 0) = M_matrix.access(active_set.get_active(i), 0);
+    KKT.unsafe_access(0, M + i) =
+        M_matrix.unsafe_access(active_set.get_active(i), 0);
+    KKT.unsafe_access(M + i, 0) =
+        M_matrix.unsafe_access(active_set.get_active(i), 0);
   }
 };
 
@@ -838,8 +842,8 @@ protected:
     this->update_L(L);
 
     for (std::size_t i = 0; i < this->active_set.get_number_of_active(); ++i) {
-      this->RHS_.access(NUMBER_OF_VARIABLES + i, 0) =
-          gamma.access(this->active_set.get_active(i), 0);
+      this->RHS_.unsafe_access(NUMBER_OF_VARIABLES + i, 0) =
+          gamma.unsafe_access(this->active_set.get_active(i), 0);
     }
   }
 

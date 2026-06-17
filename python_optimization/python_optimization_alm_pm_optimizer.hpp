@@ -286,13 +286,13 @@ public:
   inline void project(Vector_Type &x) const {
     for (std::size_t i = 0; i < Size; ++i) {
       if (this->_has_lower) {
-        if (x.access(i, 0) < this->_lower.access(i, 0)) {
-          x.access(i, 0) = this->_lower.access(i, 0);
+        if (x.unsafe_access(i, 0) < this->_lower.unsafe_access(i, 0)) {
+          x.unsafe_access(i, 0) = this->_lower.unsafe_access(i, 0);
         }
       }
       if (this->_has_upper) {
-        if (x.access(i, 0) > this->_upper.access(i, 0)) {
-          x.access(i, 0) = this->_upper.access(i, 0);
+        if (x.unsafe_access(i, 0) > this->_upper.unsafe_access(i, 0)) {
+          x.unsafe_access(i, 0) = this->_upper.unsafe_access(i, 0);
         }
       }
     }
@@ -434,7 +434,7 @@ public:
         last_inner_problem_norm_fpr(
             static_cast<T>(ALM_Constants::INNER_PROBLEM_NORM_FPR_INITIAL)) {
     /* Initialize xi(0, 0) = c (penalty parameter) to default */
-    this->xi.access(0, 0) =
+    this->xi.unsafe_access(0, 0) =
         static_cast<T>(ALM_Constants::DEFAULT_INITIAL_PENALTY);
   }
 
@@ -448,7 +448,7 @@ public:
         last_inner_problem_norm_fpr(
             static_cast<T>(ALM_Constants::INNER_PROBLEM_NORM_FPR_INITIAL)) {
 
-    this->xi.access(0, 0) =
+    this->xi.unsafe_access(0, 0) =
         static_cast<T>(ALM_Constants::DEFAULT_INITIAL_PENALTY);
   }
 
@@ -515,7 +515,7 @@ public:
    */
   inline void reset(T xi_initial_penalty = static_cast<T>(
                         ALM_Constants::DEFAULT_INITIAL_PENALTY)) {
-    this->xi.access(0, 0) = xi_initial_penalty;
+    this->xi.unsafe_access(0, 0) = xi_initial_penalty;
 
     this->panoc_cache.reset();
     this->iteration = 0;
@@ -771,7 +771,7 @@ public:
 
     /* PM term: (c/2) * ||F2(u)||^2 */
     if (this->_mapping_f2) {
-      T_ c = xi.access(0, 0);
+      T_ c = xi.unsafe_access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
       T_ f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
 
@@ -798,7 +798,7 @@ public:
 
     /* ALM term: (c/2) * dist^2_C(F1(u) + y/c_bar) */
     if (this->_mapping_f1 && this->_set_c_project) {
-      T_ c = xi.access(0, 0);
+      T_ c = xi.unsafe_access(0, 0);
       T_ c_bar = (c > static_cast<T_>(1)) ? c : static_cast<T_>(1);
 
       /* Extract y from xi(1..N1_) */
@@ -822,7 +822,7 @@ public:
 
     /* PM term: (c/2) * ||F2(u)||^2 */
     if (this->_mapping_f2) {
-      T_ c = xi.access(0, 0);
+      T_ c = xi.unsafe_access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
       T_ f2_sq = PythonNumpy::inner_product(f2_u, f2_u);
 
@@ -867,7 +867,7 @@ public:
 
     /* ALM gradient: c * JF1(u)^T [t(u) - Pi_C(t(u))] */
     if (this->_mapping_f1 && this->_jacobian_f1_trans && this->_set_c_project) {
-      T_ c = xi.access(0, 0);
+      T_ c = xi.unsafe_access(0, 0);
 
       /* Extract y from xi */
       F1_Output_Type y;
@@ -914,7 +914,7 @@ public:
 
     /* PM gradient: c * JF2(u)^T * F2(u) */
     if (this->_mapping_f2 && this->_jacobian_f2_trans) {
-      T_ c = xi.access(0, 0);
+      T_ c = xi.unsafe_access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
       Gradient_Type_ jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
       grad = grad + c * jf2t_f2u;
@@ -942,7 +942,7 @@ public:
 
     /* ALM gradient: c * JF1(u)^T [t(u) - Pi_C(t(u))] */
     if (this->_mapping_f1 && this->_jacobian_f1_trans && this->_set_c_project) {
-      T_ c = xi.access(0, 0);
+      T_ c = xi.unsafe_access(0, 0);
 
       /* Extract y from xi */
       F1_Output_Type y;
@@ -970,7 +970,7 @@ public:
 
     /* PM gradient: c * JF2(u)^T * F2(u) */
     if (this->_mapping_f2 && this->_jacobian_f2_trans) {
-      T_ c = xi.access(0, 0);
+      T_ c = xi.unsafe_access(0, 0);
       F2_Output_Type f2_u = this->_mapping_f2(u);
       Gradient_Type_ jf2t_f2u = this->_jacobian_f2_trans(u, f2_u);
       grad = grad + c * jf2t_f2u;
@@ -1399,7 +1399,7 @@ public:
    * @param penalty Initial penalty value (must be positive).
    */
   inline void set_initial_penalty(const T_ &penalty) {
-    this->_cache.xi.access(0, 0) = penalty;
+    this->_cache.xi.unsafe_access(0, 0) = penalty;
   }
 
   /**
@@ -1408,7 +1408,7 @@ public:
    */
   inline void set_initial_y(const F1_Output_Type_ &y0) {
     for (std::size_t i = 0; i < N1; ++i) {
-      this->_cache.xi.access(i + 1, 0) = y0.access(i, 0);
+      this->_cache.xi.unsafe_access(i + 1, 0) = y0.unsafe_access(i, 0);
     }
   }
 
@@ -1482,7 +1482,7 @@ public:
     }
 
     /* Extract final penalty parameter */
-    T_ c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.unsafe_access(0, 0);
 
     /* Compute original cost at solution (penalty terms excluded) */
     T_ cost_value = this->_compute_cost_at_solution(u);
@@ -1634,7 +1634,7 @@ protected:
       return;
     }
 
-    T_ c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.unsafe_access(0, 0);
 
     /* Extract y from xi */
     F1_Output_Type_ y;
@@ -1738,7 +1738,7 @@ protected:
     const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 1: ||delta y|| <= c * delta */
-    T_ c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.unsafe_access(0, 0);
     bool criterion_1 = (this->_cache.iteration > 0) &&
                        (this->_cache.delta_y_norm_plus <=
                         c * this->_delta_tolerance + small_eps);
@@ -1789,7 +1789,7 @@ protected:
     const T_ small_eps = static_cast<T_>(ALM_Constants::SMALL_EPSILON);
 
     /* Criterion 1: ||delta y|| <= c * delta */
-    T_ c = this->_cache.xi.access(0, 0);
+    T_ c = this->_cache.xi.unsafe_access(0, 0);
     bool criterion_1 = (this->_cache.iteration > 0) &&
                        (this->_cache.delta_y_norm_plus <=
                         c * this->_delta_tolerance + small_eps);
@@ -1889,7 +1889,7 @@ protected:
    * @brief Multiply penalty parameter c by penalty_update_factor.
    */
   inline void _update_penalty_parameter(void) {
-    this->_cache.xi.access(0, 0) *= this->_penalty_update_factor;
+    this->_cache.xi.unsafe_access(0, 0) *= this->_penalty_update_factor;
   }
 
   /**
@@ -1952,10 +1952,10 @@ protected:
    * @return Original cost value f(u).
    */
   inline auto _compute_cost_at_solution(const U_Horizon_Type &u) -> T_ {
-    T_ saved_c = this->_cache.xi.access(0, 0);
-    this->_cache.xi.access(0, 0) = static_cast<T_>(0);
+    T_ saved_c = this->_cache.xi.unsafe_access(0, 0);
+    this->_cache.xi.unsafe_access(0, 0) = static_cast<T_>(0);
     T_ cost = this->_problem.parametric_cost(u, this->_cache.xi);
-    this->_cache.xi.access(0, 0) = saved_c;
+    this->_cache.xi.unsafe_access(0, 0) = saved_c;
     return cost;
   }
 

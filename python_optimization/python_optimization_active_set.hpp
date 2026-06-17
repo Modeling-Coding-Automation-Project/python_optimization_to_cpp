@@ -253,7 +253,8 @@ template <std::size_t M, std::size_t N, std::size_t I> struct ClearLoop {
  * This specialization provides a static inline function `run` that clears (sets
  * to false) all elements of the first column (index 0) of the `flags` object,
  * which is of type `Active_Flags_Type<M, N>`. This is typically used to reset
- * or clear the active set flags for the first column in an optimization algorithm.
+ * or clear the active set flags for the first column in an optimization
+ * algorithm.
  *
  * @tparam M Number of columns in the flags structure.
  * @tparam N Number of rows in the flags structure.
@@ -668,8 +669,9 @@ public:
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
 
-      result.access(pair[COLUMN], pair[COL]) =
-          A.access(pair[COLUMN], pair[COL]) * B.access(pair[COLUMN], pair[COL]);
+      result.unsafe_access(pair[COLUMN], pair[COL]) =
+          A.unsafe_access(pair[COLUMN], pair[COL]) *
+          B.unsafe_access(pair[COLUMN], pair[COL]);
     }
     return result;
   }
@@ -705,8 +707,8 @@ public:
     T total = static_cast<T>(0);
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      total +=
-          A.access(pair[COLUMN], pair[COL]) * B.access(pair[COLUMN], pair[COL]);
+      total += A.unsafe_access(pair[COLUMN], pair[COL]) *
+               B.unsafe_access(pair[COLUMN], pair[COL]);
     }
     return total;
   }
@@ -746,8 +748,8 @@ public:
     Matrix_Type<T, M, N> result;
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      result.access(pair[COLUMN], pair[COL]) =
-          A.access(pair[COLUMN], pair[COL]) * scalar;
+      result.unsafe_access(pair[COLUMN], pair[COL]) =
+          A.unsafe_access(pair[COLUMN], pair[COL]) * scalar;
     }
     return result;
   }
@@ -781,7 +783,7 @@ public:
     T total = static_cast<T>(0);
     for (std::size_t idx = 0; idx < active_set.get_number_of_active(); ++idx) {
       auto pair = active_set.get_active(idx);
-      const T v = A.access(pair[COLUMN], pair[COL]);
+      const T v = A.unsafe_access(pair[COLUMN], pair[COL]);
       total += v * v;
     }
 
