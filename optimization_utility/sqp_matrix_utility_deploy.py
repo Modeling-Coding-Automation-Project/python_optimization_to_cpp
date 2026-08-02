@@ -99,7 +99,7 @@ def create_and_write_state_measurement_hessian_code(
 
     code_text += f"namespace {function_name} {{\n\n"
 
-    code_text += "using namespace PythonMath;\n"
+    code_text += "using namespace PythonNumpy;\n"
 
     code_text += create_sparse_matrix_code(
         SparseAvailable_list[0], type_name, output_type)

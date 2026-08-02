@@ -375,7 +375,7 @@ def create_and_write_state_equation_code(function_name: str):
 
     code_text += f"namespace {function_name} {{\n\n"
 
-    code_text += "using namespace PythonMath;\n\n"
+    code_text += "using namespace PythonNumpy;\n\n"
 
     code_text += "template <typename X_Type, typename U_Type, typename Parameter_Type>\n"
     code_text += "class Function {\n"
@@ -442,7 +442,7 @@ def create_and_write_measurement_equation_code(function_name: str):
 
     code_text += f"namespace {function_name} {{\n\n"
 
-    code_text += "using namespace PythonMath;\n\n"
+    code_text += "using namespace PythonNumpy;\n\n"
 
     code_text += "template <typename X_Type, typename U_Type, " + \
         "typename Parameter_Type, typename Y_Type>\n"
@@ -523,7 +523,7 @@ def create_and_write_state_measurement_jacobian_code(
 
     code_text += f"namespace {function_name} {{\n\n"
 
-    code_text += "using namespace PythonMath;\n"
+    code_text += "using namespace PythonNumpy;\n"
 
     code_text += create_sparse_matrix_code(
         SparseAvailable_list[0], type_name, output_type)
