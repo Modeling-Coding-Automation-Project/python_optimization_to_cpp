@@ -62,7 +62,6 @@
 #include "python_control.hpp"
 #include "python_numpy.hpp"
 
-#include <cmath>
 #include <functional>
 #include <tuple>
 #include <type_traits>

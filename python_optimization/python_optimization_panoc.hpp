@@ -8,7 +8,6 @@
 #include "python_numpy.hpp"
 
 #include <array>
-#include <cmath>
 #include <functional>
 #include <type_traits>
 
