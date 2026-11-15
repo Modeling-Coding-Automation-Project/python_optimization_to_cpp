@@ -121,49 +121,6 @@ template <> struct X_From_Sol<0> {
   }
 };
 
-/* Sol from Sol */
-template <std::size_t Number_Of_Variables, std::size_t M>
-struct Lambda_From_Sol {
-  /**
-   * @brief Sets the Lambda vector from the solution vector.
-   *
-   * This function sets the Lambda vector using the solution vector for the
-   * specified index.
-   *
-   * @tparam Sol_Type The type of the solution vector.
-   * @tparam Lambda_Type The type of the Lambda vector.
-   * @param Lambda The Lambda vector to be updated.
-   * @param sol The solution vector containing the values to set in Lambda.
-   */
-  template <typename Sol_Type, typename Lambda_Type>
-  static void apply(Lambda_Type &Lambda, const Sol_Type &sol) {
-
-    Lambda.template set<M, 0>(sol.template get<(Number_Of_Variables + M), 0>());
-
-    Lambda_From_Sol<Number_Of_Variables, (M - 1)>::apply(Lambda, sol);
-  }
-};
-
-template <std::size_t Number_Of_Variables>
-struct Lambda_From_Sol<Number_Of_Variables, 0> {
-  /**
-   * @brief Sets the Lambda vector from the solution vector when M is 0.
-   *
-   * This function sets the Lambda vector using the solution vector for the
-   * specified index when M is 0.
-   *
-   * @tparam Sol_Type The type of the solution vector.
-   * @tparam Lambda_Type The type of the Lambda vector.
-   * @param Lambda The Lambda vector to be updated.
-   * @param sol The solution vector containing the values to set in Lambda.
-   */
-  template <typename Sol_Type, typename Lambda_Type>
-  static void apply(Lambda_Type &Lambda, const Sol_Type &sol) {
-
-    Lambda.template set<0, 0>(sol.template get<Number_Of_Variables, 0>());
-  }
-};
-
 /* Check gamma violation */
 template <typename T, std::size_t J> struct CheckGammaViolation {
   /**
@@ -238,67 +195,26 @@ template <typename T> struct CheckGammaViolation<T, 0> {
   }
 };
 
-/* Check negative lambda  */
-template <typename T, std::size_t J> struct CheckNegativeLambda {
-  /**
-   * @brief Checks if the lambda value is negative for the specified index.
-   *
-   * This function checks if the lambda value is negative for the specified
-   * index and updates the minimum lambda index, negative lambda found status,
-   * and minimum lambda value accordingly.
-   *
-   * @tparam Lambda_Type The type of the lambda vector.
-   * @param Lambda_candidate The candidate lambda vector to check.
-   * @param tol The tolerance for numerical errors.
-   * @param min_lambda_index The index of the minimum negative lambda (if any).
-   * @param negative_lambda_found Flag indicating if a negative lambda was
-   * found.
-   * @param min_lambda_value The minimum negative lambda value found.
-   */
-  template <typename Lambda_Type>
-  static void check(const Lambda_Type &Lambda_candidate, const T &tol,
-                    std::size_t &min_lambda_index, bool &negative_lambda_found,
-                    T &min_lambda_value) {
-    T lambda_val = Lambda_candidate(J, 0);
-    if ((lambda_val < -tol) && (lambda_val < min_lambda_value)) {
-      min_lambda_value = lambda_val;
-      min_lambda_index = J;
-      negative_lambda_found = true;
-    }
-    CheckNegativeLambda<T, J - 1>::check(
-        Lambda_candidate, tol, min_lambda_index, negative_lambda_found,
-        min_lambda_value);
-  }
-};
-
-template <typename T> struct CheckNegativeLambda<T, 0> {
-  /**
-   * @brief Checks if the lambda value is negative for index 0.
-   *
-   * This function checks if the lambda value is negative for index 0 and
-   * updates the minimum lambda index, negative lambda found status, and
-   * minimum lambda value accordingly.
-   *
-   * @tparam Lambda_Type The type of the lambda vector.
-   * @param Lambda_candidate The candidate lambda vector to check.
-   * @param tol The tolerance for numerical errors.
-   * @param min_lambda_index The index of the minimum negative lambda (if any).
-   * @param negative_lambda_found Flag indicating if a negative lambda was
-   * found.
-   * @param min_lambda_value The minimum negative lambda value found.
-   */
-  template <typename Lambda_Type>
-  static void check(const Lambda_Type &Lambda_candidate, const T &tol,
-                    std::size_t &min_lambda_index, bool &negative_lambda_found,
-                    T &min_lambda_value) {
-    T lambda_val = Lambda_candidate(0, 0);
-    if ((lambda_val < -tol) && (lambda_val < min_lambda_value)) {
-      min_lambda_value = lambda_val;
-      min_lambda_index = 0;
-      negative_lambda_found = true;
+/** Find the most negative multiplier in the active prefix only.
+ * The output is a position in active_set, not an original constraint number.
+ */
+template <typename T, typename Lambda_Type>
+inline bool find_negative_lambda(const Lambda_Type &lambda,
+                                 std::size_t active_count, const T &tol,
+                                 std::size_t &min_lambda_position) {
+  bool found = false;
+  T min_lambda_value = static_cast<T>(0);
+  for (std::size_t active_position = 0; active_position < active_count;
+       ++active_position) {
+    const T value = lambda(active_position, 0);
+    if (value < -tol && value < min_lambda_value) {
+      min_lambda_value = value;
+      min_lambda_position = active_position;
+      found = true;
     }
   }
-};
+  return found;
+}
 
 template <std::size_t J> struct DeactivateAllActiveConstraints {
   /**
@@ -647,9 +563,12 @@ public:
             this->_solve_KKT_inv(this->active_set.get_number_of_active());
         QP_ActiveSetSolverOperation::X_From_Sol<(NUMBER_OF_VARIABLES -
                                                  1)>::apply(X_candidate, sol);
-        QP_ActiveSetSolverOperation::Lambda_From_Sol<
-            NUMBER_OF_VARIABLES,
-            (NUMBER_OF_CONSTRAINTS - 1)>::apply(Lambda_candidate, sol);
+        const auto active_count = this->active_set.get_number_of_active();
+        for (std::size_t active_position = 0; active_position < active_count;
+             ++active_position) {
+          Lambda_candidate(active_position, 0) =
+              sol(NUMBER_OF_VARIABLES + active_position, 0);
+        }
         lambda_candidate_exists = true;
       }
 
@@ -675,22 +594,15 @@ public:
 
       // (2) All constraints are satisfied -> Check lambda
       if (this->active_set.get_number_of_active() > 0) {
-        // Find negative lambda among the active constraints
-        std::size_t min_lambda_index = 0;
-        bool negative_lambda_found = false;
-        T_ min_lambda_value = static_cast<T_>(0);
-
-        if (lambda_candidate_exists) {
-          QP_ActiveSetSolverOperation::CheckNegativeLambda<
-              T_, (NUMBER_OF_CONSTRAINTS - 1)>::check(Lambda_candidate,
-                                                      this->tol,
-                                                      min_lambda_index,
-                                                      negative_lambda_found,
-                                                      min_lambda_value);
-        }
+        std::size_t min_lambda_position = 0;
+        const bool negative_lambda_found =
+            lambda_candidate_exists &&
+            QP_ActiveSetSolverOperation::find_negative_lambda(
+                Lambda_candidate, this->active_set.get_number_of_active(),
+                this->tol, min_lambda_position);
 
         if (negative_lambda_found) {
-          this->active_set.push_inactive(min_lambda_index);
+          this->active_set.deactivate_at(min_lambda_position);
           // Since a constraint was removed, re-optimize in the next loop
           this->X = X_candidate;
           continue;

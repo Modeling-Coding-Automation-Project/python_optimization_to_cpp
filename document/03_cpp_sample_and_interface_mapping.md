@@ -38,6 +38,19 @@
 | `ALM_PM_Optimizer` | `make_ALM_PM_Optimizer<Cost_Matrices_Type, N1, N2>()` | `set_problem(...)` 後に `solve(U0)` |
 | `QP_ActiveSetSolver` | `make_QP_ActiveSetSolver<T, n_var, n_constr>()` | `solve(E, L, M, Gamma)` |
 
+### アクティブ集合の添字
+
+`push_active(constraint_index)` / `push_inactive(constraint_index)` /
+`is_active(constraint_index)` は元の制約番号を受け取ります。
+`get_active(active_position)` / `deactivate_at(active_position)` は、
+現在のアクティブ集合内の位置を受け取ります。集合が `[2, 3]` のとき、
+`deactivate_at(0)` は制約番号2を解除します。既存の `push_inactive(0)` の意味は変わりません。
+
+`ActiveSet2D` にも `deactivate_at(active_position)` があり、座標での解除は
+`push_inactive(col, row)` を使います。解除後も要素の順序を維持します。
+無効な制約番号・座標・集合内位置（空集合を含む）は `std::out_of_range` になります。
+従来の範囲外の添字を末尾へ丸める挙動は廃止しています。
+
 ## 4. SQPサンプル（C++）の実装手順
 
 `sample/sqp_pendulum_demo.cpp` と `sample/sqp_2_mass_spring_damper_demo.cpp` は、次の順序で構成されています。

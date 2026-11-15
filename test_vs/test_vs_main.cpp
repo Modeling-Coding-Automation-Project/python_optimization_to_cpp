@@ -10,6 +10,7 @@
 #include "MCAP_tester.hpp"
 
 #include "sqp_test_data.hpp"
+#include "active_set_regression.hpp"
 
 using namespace Tester;
 
@@ -162,12 +163,9 @@ void test_active_set_2D() {
         NEAR_LIMIT_STRICT,
         "check get number of active after clear.");
 
-    active_pair = active_set.get_active(0);
-
-    tester.expect_near(static_cast<T>(active_pair[0]), static_cast<T>(0), NEAR_LIMIT_STRICT,
-        "check get active col after clear.");
-    tester.expect_near(static_cast<T>(active_pair[1]), static_cast<T>(0), NEAR_LIMIT_STRICT,
-        "check get active row after clear.");
+    ActiveSetRegression::expect_out_of_range([&]() {
+        active_set.get_active(0);
+    });
 
     /* ActiveSet2D MatrixOperator */
     auto A = PythonNumpy::make_DenseMatrix<ROWS, COLS>(
@@ -1299,6 +1297,8 @@ int main() {
     test_panoc_is_finite<double>();
 
     test_panoc_is_finite<float>();
+
+    ActiveSetRegression::run();
 
     test_active_set<double>();
 
