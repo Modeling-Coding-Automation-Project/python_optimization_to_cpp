@@ -1,6 +1,7 @@
 ﻿#include <type_traits>
 #include <iostream>
 #include <cmath>
+#include <limits>
 #include <tuple>
 #include <stdexcept>
 
@@ -11,6 +12,31 @@
 #include "sqp_test_data.hpp"
 
 using namespace Tester;
+
+
+template <typename T>
+void test_panoc_is_finite() {
+    const T finite_values[] = {
+        T(0), T(-0.0), T(1), T(-1), std::numeric_limits<T>::max(),
+        std::numeric_limits<T>::lowest(), std::numeric_limits<T>::min(),
+        std::numeric_limits<T>::denorm_min(), -std::numeric_limits<T>::denorm_min()
+    };
+    const T non_finite_values[] = {
+        std::numeric_limits<T>::infinity(), -std::numeric_limits<T>::infinity(),
+        std::numeric_limits<T>::quiet_NaN(), -std::numeric_limits<T>::quiet_NaN()
+    };
+
+    for (const T value : finite_values) {
+        if (!PythonOptimization::PANOC_Detail::is_finite(value)) {
+            throw std::runtime_error("finite PANOC value was rejected");
+        }
+    }
+    for (const T value : non_finite_values) {
+        if (PythonOptimization::PANOC_Detail::is_finite(value)) {
+            throw std::runtime_error("non-finite PANOC value was accepted");
+        }
+    }
+}
 
 
 template <typename T>
@@ -1157,6 +1183,31 @@ void test_alm_pm_optimizer() {
         }
     );
 
+    {
+        PANOC_Optimizer<Cost_Matrices_Type> panoc;
+        panoc.set_cost_function([](const U_Horizon_Type&) { return T(0); });
+        panoc.set_gradient_function([](const U_Horizon_Type&) {
+            return U_Horizon_Type();
+        });
+        panoc.set_max_iteration(0);
+
+        const T values[] = {
+            T(0), std::numeric_limits<T>::infinity(),
+            -std::numeric_limits<T>::infinity(), std::numeric_limits<T>::quiet_NaN()
+        };
+        for (std::size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
+            U_Horizon_Type initial;
+            initial(INPUT_SIZE - 1, NP - 1) = values[i];
+            panoc.solve(initial);
+            const PANOC_ExitStatus expected = i == 0
+                ? PANOC_ExitStatus::NOT_CONVERGED_ITERATIONS
+                : PANOC_ExitStatus::NOT_FINITE_COMPUTATION;
+            if (panoc.get_solver_status().exit_status != expected) {
+                throw std::runtime_error("incorrect PANOC finite-value status");
+            }
+        }
+    }
+
     /* ALM Problem */
     ALM_Problem_Type<Cost_Matrices_Type, N1, N2> problem;
 
@@ -1244,6 +1295,10 @@ void test_alm_pm_optimizer() {
 
 
 int main() {
+
+    test_panoc_is_finite<double>();
+
+    test_panoc_is_finite<float>();
 
     test_active_set<double>();
 

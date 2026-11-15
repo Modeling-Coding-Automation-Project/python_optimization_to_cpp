@@ -1,3 +1,11 @@
+/**
+ * @file python_optimization_panoc.hpp
+ * @brief Proximal Averaged Newton-type method for Optimal Control (PANOC).
+ *
+ * This header provides a solver for optimization with box constraints, using
+ * projected gradient steps, L-BFGS directions, and a line search. It also
+ * defines the solver cache, status, and supporting matrix ring buffer.
+ */
 #ifndef PYTHON_OPTIMIZATION_PANOC_HPP_
 #define PYTHON_OPTIMIZATION_PANOC_HPP_
 
@@ -9,9 +17,27 @@
 
 #include <array>
 #include <functional>
+#include <limits>
 #include <type_traits>
 
 namespace PythonOptimization {
+
+namespace PANOC_Detail {
+
+/**
+ * @brief Check if a value is finite (not NaN or infinity).
+ *
+ * @tparam T Scalar value type.
+ * @param value Value to check.
+ * @return true if the value is finite.
+ */
+template <typename T> inline bool is_finite(T value) {
+  // Both comparisons reject NaN; infinities lie outside the finite range.
+  return value >= std::numeric_limits<T>::lowest() &&
+         value <= std::numeric_limits<T>::max();
+}
+
+} // namespace PANOC_Detail
 
 namespace PANOC_Constants {
 
@@ -1186,7 +1212,7 @@ protected:
   static inline bool _is_all_finite(const U_Horizon_Type &v) {
     for (std::size_t k = 0; k < NP; ++k) {
       for (std::size_t i = 0; i < INPUT_SIZE; ++i) {
-        if (!std::isfinite(static_cast<double>(v(i, k)))) {
+        if (!PANOC_Detail::is_finite(v(i, k))) {
           return false;
         }
       }

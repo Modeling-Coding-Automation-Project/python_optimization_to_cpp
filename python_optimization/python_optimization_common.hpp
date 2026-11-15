@@ -1,3 +1,11 @@
+/**
+ * @file python_optimization_common.hpp
+ * @brief Common matrix operations and function interfaces for optimization.
+ *
+ * This header provides matrix helpers for inner products, scalar operations,
+ * perturbations, and offset copies, along with cost function interfaces shared
+ * by optimization solvers.
+ */
 #ifndef PYTHON_OPTIMIZATION_COMMON_HPP_
 #define PYTHON_OPTIMIZATION_COMMON_HPP_
 
@@ -230,7 +238,7 @@ inline void
 compute(const Matrix_Type &U, const typename Matrix_Type::Value_Type &delta,
         const typename Matrix_Type::Value_Type &epsilon, Matrix_Type &H) {
   Column<Matrix_Type, Matrix_Type::ROWS, Matrix_Type::COLS,
-      Matrix_Type::ROWS - 1>::compute(U, delta, epsilon, H);
+         Matrix_Type::ROWS - 1>::compute(U, delta, epsilon, H);
 }
 
 } // namespace AbsoluteMaxScalarToMatrix
@@ -371,8 +379,8 @@ using CostFunction_Object = std::function<typename X_Type::Value_Type(
     const X_Type &, const U_Horizon_Type &)>;
 
 template <typename X_Type, typename U_Horizon_Type, typename Gradient_Type>
-using CostAndGradientFunction_Object = std::function<
-    std::tuple<typename X_Type::Value_Type, Gradient_Type>(
+using CostAndGradientFunction_Object =
+    std::function<std::tuple<typename X_Type::Value_Type, Gradient_Type>(
         const X_Type &, const U_Horizon_Type &)>;
 
 } // namespace PythonOptimization
