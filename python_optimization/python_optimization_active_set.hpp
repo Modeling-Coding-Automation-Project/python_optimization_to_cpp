@@ -18,7 +18,6 @@
 
 #include <array>
 #include <functional>
-#include <stdexcept>
 #include <type_traits>
 
 namespace PythonOptimization {
@@ -89,53 +88,71 @@ public:
   /* Function */
 
   /** @brief Activate an original constraint number; duplicates are ignored. */
-  inline void push_active(std::size_t constraint_index) {
-    this->_check_constraint_index(constraint_index);
+  inline auto push_active(std::size_t constraint_index) -> bool {
+    if (!this->_check_constraint_index(constraint_index)) {
+      return false;
+    }
     if (!this->_active_flags[constraint_index]) {
       this->_active_flags[constraint_index] = true;
       this->_active_indices[this->_number_of_active++] = constraint_index;
     }
+    return true;
   }
 
   /** @brief Deactivate an original constraint number; inactive ones are
    * ignored. */
-  inline void push_inactive(std::size_t constraint_index) {
-    this->_check_constraint_index(constraint_index);
+  inline auto push_inactive(std::size_t constraint_index) -> bool {
+    if (!this->_check_constraint_index(constraint_index)) {
+      return false;
+    }
     if (this->_active_flags[constraint_index]) {
       for (std::size_t active_position = 0;
            active_position < this->_number_of_active; ++active_position) {
         if (this->_active_indices[active_position] == constraint_index) {
           this->deactivate_at(active_position);
-          return;
+          return true;
         }
       }
     }
+    return true;
   }
 
   /**
    * @brief Remove by active-set position, preserving the remaining order.
    * @param active_position Position, not an original constraint number.
-   * @throws std::out_of_range If the position is invalid or the set is empty.
+   * @return false if the position is invalid.
    */
-  inline void deactivate_at(std::size_t active_position) {
-    const auto constraint_index = this->get_active(active_position);
+  inline auto deactivate_at(std::size_t active_position) -> bool {
+    std::size_t constraint_index = 0;
+    if (!this->try_get_active(active_position, constraint_index)) {
+      return false;
+    }
     this->_active_flags[constraint_index] = false;
     for (std::size_t position = active_position;
          position + 1 < this->_number_of_active; ++position) {
       this->_active_indices[position] = this->_active_indices[position + 1];
     }
     this->_active_indices[--this->_number_of_active] = 0;
+    return true;
   }
 
   /**
    * @brief Map an active-set position to its original constraint number.
-   * @throws std::out_of_range If the position is invalid or the set is empty.
+   * @return The constraint index, or NUMBER_OF_CONSTRAINTS if invalid.
    */
   inline auto get_active(std::size_t active_position) const -> std::size_t {
+    std::size_t constraint_index = NUMBER_OF_CONSTRAINTS;
+    this->try_get_active(active_position, constraint_index);
+    return constraint_index;
+  }
+
+  inline auto try_get_active(std::size_t active_position,
+                             std::size_t &constraint_index) const -> bool {
     if (active_position >= this->_number_of_active) {
-      throw std::out_of_range("Active-set position out of bounds.");
+      return false;
     }
-    return this->_active_indices[active_position];
+    constraint_index = this->_active_indices[active_position];
+    return true;
   }
 
   /** @brief Read the backing array; only the active prefix contains entries. */
@@ -149,8 +166,19 @@ public:
 
   /** @brief Query an original constraint number. */
   inline auto is_active(std::size_t constraint_index) const -> bool {
-    this->_check_constraint_index(constraint_index);
+    if (!this->_check_constraint_index(constraint_index)) {
+      return false;
+    }
     return this->_active_flags[constraint_index];
+  }
+
+  inline auto try_is_active(std::size_t constraint_index, bool &is_active) const
+      -> bool {
+    if (!this->_check_constraint_index(constraint_index)) {
+      return false;
+    }
+    is_active = this->_active_flags[constraint_index];
+    return true;
   }
 
 public:
@@ -158,10 +186,9 @@ public:
   static constexpr std::size_t NUMBER_OF_CONSTRAINTS = NumberOfConstraints;
 
 protected:
-  inline void _check_constraint_index(std::size_t constraint_index) const {
-    if (constraint_index >= NUMBER_OF_CONSTRAINTS) {
-      throw std::out_of_range("Constraint index out of bounds.");
-    }
+  inline auto _check_constraint_index(std::size_t constraint_index) const
+      -> bool {
+    return constraint_index < NUMBER_OF_CONSTRAINTS;
   }
 
   /* variables */
@@ -346,55 +373,75 @@ public:
    * @param col The column index to be added to the active set.
    * @param row The row index to be added to the active set.
    */
-  inline void push_active(const std::size_t &col, const std::size_t &row) {
-    this->_check_bounds(col, row);
+  inline auto push_active(const std::size_t &col, const std::size_t &row)
+      -> bool {
+    if (!this->_check_bounds(col, row)) {
+      return false;
+    }
     if (!this->_active_flags[col][row]) {
       this->_active_flags[col][row] = true;
       this->_active_pairs[this->_number_of_active][COLUMN] = col;
       this->_active_pairs[this->_number_of_active][COL] = row;
       ++this->_number_of_active;
     }
+    return true;
   }
 
   /** @brief Deactivate a coordinate pair; inactive pairs are ignored. */
-  inline void push_inactive(const std::size_t &col, const std::size_t &row) {
-    this->_check_bounds(col, row);
+  inline auto push_inactive(const std::size_t &col, const std::size_t &row)
+      -> bool {
+    if (!this->_check_bounds(col, row)) {
+      return false;
+    }
     if (this->_active_flags[col][row]) {
       for (std::size_t active_position = 0;
            active_position < this->_number_of_active; ++active_position) {
         const auto &pair = this->_active_pairs[active_position];
         if (pair[COLUMN] == col && pair[COL] == row) {
           this->deactivate_at(active_position);
-          return;
+          return true;
         }
       }
     }
+    return true;
   }
 
   /**
    * @brief Remove the pair at an active-set position, preserving order.
-   * @throws std::out_of_range If the position is invalid or the set is empty.
+   * @return false if the position is invalid.
    */
-  inline void deactivate_at(std::size_t active_position) {
-    const auto pair = this->get_active(active_position);
+  inline auto deactivate_at(std::size_t active_position) -> bool {
+    Index_Pair_Type_ pair{};
+    if (!this->try_get_active(active_position, pair)) {
+      return false;
+    }
     this->_active_flags[pair[COLUMN]][pair[COL]] = false;
     for (std::size_t position = active_position;
          position + 1 < this->_number_of_active; ++position) {
       this->_active_pairs[position] = this->_active_pairs[position + 1];
     }
     this->_active_pairs[--this->_number_of_active] = Index_Pair_Type_{};
+    return true;
   }
 
   /**
    * @brief Map an active-set position to its coordinate pair.
-   * @throws std::out_of_range If the position is invalid or the set is empty.
+   * @return The coordinate pair, or an out-of-range pair if invalid.
    */
   inline auto get_active(const std::size_t &active_position) const
       -> Index_Pair_Type_ {
+    Index_Pair_Type_ pair{{NUMBER_OF_COLUMNS, NUMBER_OF_ROWS}};
+    this->try_get_active(active_position, pair);
+    return pair;
+  }
+
+  inline auto try_get_active(const std::size_t &active_position,
+                             Index_Pair_Type_ &pair) const -> bool {
     if (active_position >= this->_number_of_active) {
-      throw std::out_of_range("Active-set position out of bounds.");
+      return false;
     }
-    return this->_active_pairs[active_position];
+    pair = this->_active_pairs[active_position];
+    return true;
   }
 
   /**
@@ -426,8 +473,19 @@ public:
   /** @brief Query a coordinate pair; invalid coordinates are rejected. */
   inline auto is_active(const std::size_t &col, const std::size_t &row) const
       -> bool {
-    this->_check_bounds(col, row);
+    if (!this->_check_bounds(col, row)) {
+      return false;
+    }
     return this->_active_flags[col][row];
+  }
+
+  inline auto try_is_active(const std::size_t &col, const std::size_t &row,
+                            bool &is_active) const -> bool {
+    if (!this->_check_bounds(col, row)) {
+      return false;
+    }
+    is_active = this->_active_flags[col][row];
+    return true;
   }
 
   /**
@@ -457,10 +515,8 @@ public:
 protected:
   /* Function */
 
-  inline void _check_bounds(std::size_t col, std::size_t row) const {
-    if (col >= NUMBER_OF_COLUMNS || row >= NUMBER_OF_ROWS) {
-      throw std::out_of_range("Column/row index out of bounds.");
-    }
+  inline auto _check_bounds(std::size_t col, std::size_t row) const -> bool {
+    return col < NUMBER_OF_COLUMNS && row < NUMBER_OF_ROWS;
   }
 
 protected:

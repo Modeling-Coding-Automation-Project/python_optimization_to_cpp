@@ -163,9 +163,10 @@ void test_active_set_2D() {
         NEAR_LIMIT_STRICT,
         "check get number of active after clear.");
 
-    ActiveSetRegression::expect_out_of_range([&]() {
-        active_set.get_active(0);
-    });
+    std::array<std::size_t, 2> invalid_pair{};
+    ActiveSetRegression::require(
+        !active_set.try_get_active(0, invalid_pair),
+        "A cleared 2D active set must reject a position lookup");
 
     /* ActiveSet2D MatrixOperator */
     auto A = PythonNumpy::make_DenseMatrix<ROWS, COLS>(
