@@ -14,17 +14,6 @@ inline void require(bool condition, const char *message) {
   }
 }
 
-template <typename Operation>
-void expect_out_of_range(Operation operation) {
-  bool caught = false;
-  try {
-    operation();
-  } catch (const std::out_of_range &) {
-    caught = true;
-  }
-  require(caught, "Expected an invalid active-set index to be rejected");
-}
-
 inline void test_positions_and_constraint_numbers() {
   PythonOptimization::ActiveSet<6> active;
   for (const auto constraint : {5u, 2u, 4u, 1u}) {
@@ -46,25 +35,43 @@ inline void test_positions_and_constraint_numbers() {
   for (const auto value : active.get_active_indices()) {
     require(value == 0, "Unused active positions must be cleared");
   }
-  expect_out_of_range([&]() { active.get_active(0); });
-  expect_out_of_range([&]() { active.deactivate_at(0); });
+  std::size_t index = 99;
+  require(!active.try_get_active(0, index) && index == 99 &&
+              active.get_active(0) == 6,
+          "An empty active set must reject a position lookup");
+  require(!active.deactivate_at(0), "An empty active set must reject removal");
   active.push_active(2);
-  expect_out_of_range([&]() { active.get_active(1); });
-  expect_out_of_range([&]() { active.deactivate_at(1); });
-  expect_out_of_range([&]() { active.deactivate_at(std::size_t(-1)); });
-  expect_out_of_range([&]() { active.push_active(6); });
-  expect_out_of_range([&]() { active.push_inactive(6); });
-  expect_out_of_range([&]() { active.is_active(6); });
+  require(active.try_get_active(0, index) && index == 2,
+          "A valid position lookup must return its constraint index");
+  require(!active.try_get_active(1, index) && index == 2 &&
+              active.get_active(1) == 6,
+          "An invalid active position must be rejected");
+  require(!active.deactivate_at(1) &&
+              !active.deactivate_at(std::size_t(-1)),
+          "Invalid active positions must not be removed");
+  require(!active.push_active(6) && !active.push_inactive(6),
+          "Invalid constraint indices must be rejected");
+  bool is_active = true;
+  require(!active.try_is_active(6, is_active) && is_active &&
+              !active.is_active(6),
+          "An invalid constraint query must be rejected");
+  require(active.try_is_active(2, is_active) && is_active,
+          "A valid constraint query must report its active status");
   require(active.get_number_of_active() == 1 && active.get_active(0) == 2,
           "Invalid operations must leave the set unchanged");
   PythonOptimization::ActiveSet<0> empty;
-  expect_out_of_range([&]() { empty.get_active(0); });
+  require(!empty.try_get_active(0, index) && empty.get_active(0) == 0,
+          "A zero-sized active set must reject a position lookup");
 }
 
 inline void test_2d_positions_and_coordinates() {
   PythonOptimization::ActiveSet2D<3, 3> active;
-  expect_out_of_range([&]() { active.get_active(0); });
-  expect_out_of_range([&]() { active.deactivate_at(0); });
+  std::array<std::size_t, 2> pair{{8, 9}};
+  require(!active.try_get_active(0, pair) && pair[0] == 8 && pair[1] == 9 &&
+              active.get_active(0)[0] == 3 && active.get_active(0)[1] == 3,
+          "An empty 2D active set must reject a position lookup");
+  require(!active.deactivate_at(0),
+          "An empty 2D active set must reject removal");
   active.push_active(2, 1);
   active.push_active(0, 2);
   active.push_active(1, 0);
@@ -86,15 +93,26 @@ inline void test_2d_positions_and_coordinates() {
     require(pair[0] == 0 && pair[1] == 0, "Unused 2D positions must be cleared");
   }
   active.push_active(2, 1);
-  expect_out_of_range([&]() { active.get_active(1); });
-  expect_out_of_range([&]() { active.deactivate_at(1); });
-  expect_out_of_range([&]() { active.push_active(3, 0); });
-  expect_out_of_range([&]() { active.push_inactive(0, 3); });
-  expect_out_of_range([&]() { view.is_active(std::size_t(-1), 0); });
+  require(view.try_get_active(0, pair) && pair[0] == 2 && pair[1] == 1,
+          "A valid 2D position lookup must return its coordinates");
+  require(!active.try_get_active(1, pair) && pair[0] == 2 && pair[1] == 1 &&
+              active.get_active(1)[0] == 3 && active.get_active(1)[1] == 3,
+          "An invalid 2D active position must be rejected");
+  require(!active.deactivate_at(1),
+          "An invalid 2D active position must not be removed");
+  require(!active.push_active(3, 0) && !active.push_inactive(0, 3),
+          "Invalid coordinates must be rejected");
+  bool is_active = true;
+  require(!view.try_is_active(std::size_t(-1), 0, is_active) && is_active &&
+              !view.is_active(std::size_t(-1), 0),
+          "An invalid coordinate query must be rejected");
+  require(view.try_is_active(2, 1, is_active) && is_active,
+          "A valid coordinate query must report its active status");
   require(active.get_number_of_active() == 1 && view.is_active(2, 1),
           "Invalid 2D operations must not clamp to a different pair");
   active.clear();
-  expect_out_of_range([&]() { active.get_active(0); });
+  require(!active.try_get_active(0, pair),
+          "A cleared 2D active set must reject a position lookup");
 }
 
 template <typename T> void test_qp_constraint_release() {
